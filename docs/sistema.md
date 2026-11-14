@@ -116,7 +116,11 @@ aplicados.
 ## 3. Habilidades `[FIRME · HOJA + HOJA2]`
 
 Actitud · Atletismo · Biociencia · Combate a Distancia · Combate Melee · Cultura ·
-Exploración · Interpretación · Sigilo · Tecnociencia.
+Exploración · Interpretación · Pilotaje · Sigilo · Tecnociencia.
+
+**Pilotaje** `[FIRME · fuente/habilidades.md, foto de Drive 2026-11-14]` es habilidad nueva, con
+Terrestre, Aéreo y Exoarmadura. Cuesta y se trata como cualquier otra (creación y XP); las fichas
+que ya había la leen sin entrenar, sin coste (S110).
 
 **Exploración sustituye a Supervivencia** (decisión del usuario, 2026-09-10, resuelve C4 y
 C12): Supervivencia no se usaba en ninguna regla de `HOJA`/`COMBATE`, mientras que
@@ -143,7 +147,7 @@ habilidades. Se sustituye la habilidad entera, no se añade como especialidad de
 
 - **Si la tirada, según el documento fuente, no nombra especialidad, la habilidad suma
   entera** (sin mitad y sin casilla). Ejemplos: Defensa, Iniciativa, Apuntar, Buscar /
-  percibir, Saltar, las herramientas, Volar, el Proyector de Pulso con Tecnociencia, el
+  percibir, Saltar, las herramientas, el Proyector de Pulso con Tecnociencia, el
   Xovromium, Finta, las tiradas de Biociencia de Resonancia e Inducción, la Proeza.
 - **Si la nombra** —en forma larga, "Perspicacia + Biociencia (Medicina)", o corta,
   "Perspicacia + Medicina" (C8, pregunta 26)— va **entera si la ficha la tiene y a la mitad si
@@ -164,9 +168,12 @@ habilidades. Se sustituye la habilidad entera, no se añade como especialidad de
   - **Iniciativa (distrayendo)**: "expresión + manipulación o sigilo" → Manipulación fija;
     casilla "Con Sigilo" en la fila, y Sigilo (a secas en la fuente) va entero.
   - **Escáner Detector 2**: "Tecnociencia (o Biociencia)" → la más alta de las dos, entera.
-  - **Sigilo** tiene especialidades (Esconderse, Hurto: tabla de abajo). La fila Sigilo va
-    con Esconderse ("reflejos + esconderse") y hay fila **Hurto** ("reflejos + hurto",
-    enfrentada a Perspicacia + Exploración).
+  - **Sigilo** tiene especialidades (tabla de abajo; desde la foto del 2026-11-14, Ocultación,
+    Mimetismo y Juego de Manos). La fila **Ocultarse** (id `sigilo`) va con Ocultación
+    ("reflejos + ocultación"), **Pasar desapercibido** (id `mimetismo`) con Mimetismo
+    ("expresión + mimetismo", contra la alerta por Empatía de los testigos) y **Juego de manos**
+    (id `hurto`) con Juego de Manos ("reflejos + juego de manos", enfrentada a Perspicacia +
+    Exploración). **Volar** (Propulsión Aérea) va con Exoarmadura.
   - **Tratar heridas** y los fármacos con tirada (salvo Xovromium): Medicina.
   - **Alerta de Resonancia contra sintéticos**: Tecnociencia entera (deja de llevar
     Informática; antes era supuesto). Rastreo, Superar la barrera e Inducción sintéticos
@@ -239,7 +246,7 @@ valor depende de la ficha (Potencia - Fuerza), no es un número fijo del catálo
 
 Lista cerrada, sacada de la línea "Especialidades:" de cada habilidad en
 `docs/fuente/habilidades.md`. En código: `src/lib/catalog/especialidades.ts` (`{ id, label,
-habilidad }`, ids estables en snake_case sin tildes; añadir una es una fila). 49 en total.
+habilidad }`, ids estables en snake_case sin tildes; añadir una es una fila). 53 en total.
 
 | Habilidad | Especialidades (id) |
 |---|---|
@@ -251,7 +258,8 @@ habilidad }`, ids estables en snake_case sin tildes; añadir una es una fila). 4
 | Cultura (4) | Economía `economia`, Historia `historia`, Lingüística `linguistica`, Sociedad `sociedad` |
 | Exploración (3) | Investigación `investigacion`, Táctica `tactica`, Supervivencia `supervivencia` |
 | Tecnociencia (5) | Astrografía `astrografia`, Física `fisica`, Informática `informatica`, Mecánica `mecanica`, Química `quimica` |
-| Sigilo (2) | Esconderse `esconderse`, Hurto `hurto` (foto de Drive 2026-10-23; antes sin lista) |
+| Pilotaje (3) | Terrestre `terrestre`, Aéreo `aereo`, Exoarmadura `exoarmadura` (habilidad nueva, foto de Drive 2026-11-14) |
+| Sigilo (3) | Ocultación `ocultacion`, Mimetismo `mimetismo`, Juego de Manos `juego_de_manos` (foto de Drive 2026-11-14; antes Esconderse `esconderse` y Hurto `hurto`, desde la del 2026-10-23) |
 | Interpretación | — (la fuente no trae lista: no admite especialidades, S39) |
 
 **Cambio de la foto de Drive del 2026-10-23** (`docs/fuente/habilidades.md`): Combate a
@@ -262,6 +270,13 @@ primer arma de fuego a dos manos del equipo (por su tipo) o, si no lleva ninguna
 queda en el aviso de especialidades; la elección de *Crítico Mejorado* sigue la misma
 traducción, y si se queda sin especialidad la dote se quita (`TODO(revisar)`, no lo decidió
 el usuario). Se aplica igual a los NPCs (comparten `parseSheet`).
+
+**Cambio de la foto de Drive del 2026-11-14** (Sigilo, S110): Esconderse pasa a Ocultación y
+Hurto a Juego de Manos, 1:1; Mimetismo es nueva y nadie la tiene. Las fichas se migran en la
+v24 (`rules/migraciones.ts`) con los mismos totales en las tiradas (test de oro en
+`migraciones.test.ts`); las acciones conservan su id (`sigilo`, `hurto`), así que las favoritas
+no se tocan. Desde la v24, `parseSheet` ya no descarta en silencio una especialidad que no sea
+del catálogo de su habilidad: va al aviso de especialidades de la pestaña Habilidades.
 
 Rastreo, Subsistencia y Trato con Animales son **acciones** de Supervivencia, no
 especialidades. Química es de Tecnociencia y Biónica de Biociencia (la fuente manda sobre lo
@@ -456,9 +471,11 @@ Exploración, el 2026-10-26):
   +1 al siguiente ataque a distancia; crítico: además omite 1 nivel de cobertura. La fuente
   no nombra especialidad: Combate a Distancia entera (§3, usuario 2026-10-23).
 - **Saltar, levantarse** (Potencia + Atletismo, entera) y **Escalar** (Potencia + Atletismo
-  con Escalada), filas aparte desde 2026-10-23 (§3). **Sigilo** (Reflejos + Sigilo con
-  Esconderse) y **Hurto** (Reflejos + Sigilo con Hurto, enfrentada a Perspicacia +
-  Exploración). **Hackeo**, con Informática; **Tratar heridas**, con Medicina; **Convencer /
+  con Escalada), filas aparte desde 2026-10-23 (§3). **Ocultarse** (Reflejos + Sigilo con
+  Ocultación), **Pasar desapercibido** (Expresión + Sigilo con Mimetismo, habilidad social
+  contra la alerta por Empatía de los testigos: solo tu total, el máster compara) y **Juego de
+  manos** (Reflejos + Sigilo con Juego de Manos, enfrentada a Perspicacia + Exploración); foto
+  de Drive 2026-11-14, antes Sigilo con Esconderse y Hurto. **Hackeo**, con Informática; **Tratar heridas**, con Medicina; **Convencer /
   mentir**, con la especialidad de Actitud que se elija al tirar (S89).
 - **Carrera**: Reflejos + Atletismo (Carrera), dificultad 6, acción estándar o compleja.
   Éxito +2 m, crítico +4 m, fallo nada, fallo crítico mueve la mitad; compleja, ×2. Los
@@ -765,7 +782,7 @@ imponen penalizadores por umbral:
     (`estadosParaPintar`, en tu ficha y en la Mesa del máster); el número guardado no cambia.
   - **Moverse escondido (do-01)**: Sigilo trae «¿Te mueves?» — quieto, mitad (−2), total (−4),
     esprint (−8) — y la casilla «Te escondes siendo observado» (−6) (`fuente/habilidades.md`,
-    Esconderse). Movimiento Sigiloso reduce 2, la Mejorada 4 y la Constante todo, solas (bono por
+    Ocultación, antes Esconderse). Movimiento Sigiloso reduce 2, la Mejorada 4 y la Constante todo, solas (bono por
     opción del selector, `SELECTORES_DE_TIRADA`); sus casillas y su texto viejos se quitan. Sustituye
     a S37.
   - **Atacar en Sigilo (di-09)**: disparar estando en Sigilo **resta solo** de tu número: −6 por
@@ -786,8 +803,9 @@ imponen penalizadores por umbral:
     mientras la célula tenga carga. En la esquiva, «Tengo cobertura» (+2) sale **ya marcada**
     (`Estado.marcaCasillas`). Los números van como dato (`NivelModulo.ocultacion`). La Malla
     Plasmática lo sigue anulando como hoy (aviso; la app no sabe si la Malla está activa, S96).
-  - **Esconder arma (eq-30, eq-31)**: fila en Sigilo › Esconderse, **Reflejos + Sigilo
-    (Esconderse)**, con un selector de tus armas de **una mano** equipadas (sin escudos ni golpes
+  - **Esconder arma (eq-30, eq-31)**: fila en Sigilo › Ocultación (antes Esconderse), **Reflejos +
+    Sigilo (Ocultación)** (`TODO(revisar)`: la fuente de 2026-11-14 pone «ocultar objetos pequeños
+    en la ropa» en Juego de Manos), con un selector de tus armas de **una mano** equipadas (sin escudos ni golpes
     a mano vacía); el Mosquito suma +2 en su opción (`bonoEsconder`). Con Compartimento Oculto,
     casilla «En el Compartimento Oculto» +3 (nivel 2: +4) a quien esconde y la opción «Otro
     objeto». El total queda como «Arma escondida: dificultad N» con el arma en la nota. Sin nada
@@ -1037,15 +1055,46 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
 (regla del usuario); solo se pregunta ante duda real.
 
 ### 9.1 Qué es una dote `[FIRME · DOTES]`
-- **113 dotes** con nombre, **coste** en puntos, **requisitos** y efecto en prosa,
+- **121 dotes** con nombre, **coste** en puntos, **requisitos** y efecto en prosa,
   ordenadas bajo la habilidad a la que pertenecen: Actitud 16 · Atletismo 22 · Biociencia 9 ·
-  Combate Melee 32 · Combate a Distancia 12 · Exploración 10 · Sigilo 3 · Tecnociencia 9 (8 en el
-  subgrupo **Psiónica**). Cultura e Interpretación, sin dotes todavía. Las 3 últimas de
+  Combate Melee 32 · Combate a Distancia 12 · Exploración 10 · Pilotaje 3 · Sigilo 8 ·
+  Tecnociencia 9 (8 en el subgrupo **Psiónica**). Cultura e Interpretación, sin dotes todavía. Las 3 últimas de
   Combate a Distancia (*Arquero Poderoso*, *Pistolero*, *Pistolero Infernal*) son de la foto
   del 2026-10-23; el resto de dotes nuevas de esa foto no está transcrito todavía. De la foto
   del 2026-11-14 (T2.M1 del plan de sync): *Ataque Coordinado*, *Defensa Coordinada*, *Estrategia de Combate* e *Interrogador Perspicaz* (Exploración), y *Diagnóstico de
-  Sistemas* (Tecnociencia). Las que dependen
-  de habilidades nuevas (Ocultación, Mimetismo, Juego de Manos, Exoarmadura) esperan a E6.
+  Sistemas* (Tecnociencia). Las que dependen de habilidades nuevas, en E6 (S110): *Paso de
+  Fantasma*, *Fundido Evasivo*, *Perfil Bajo*, *Sustracción Rápida*, *Finta de Manos* (Sigilo),
+  *Piloto de Exoarmadura*, *As de Exoarmadura* y *Salto Servoasistido* (Pilotaje).
+- **Cambios de la foto del 2026-11-14 en dotes que ya había** `[FIRME · DOTES 2026-11-14]`:
+  *Imitación* pide Mimetismo 1 (antes Interpretación 1) y da +3 con Mimetismo 3 o más (la casilla
+  mira Sigilo ≥ 3: con la dote, Sigilo es tu Mimetismo). *Movimiento Sigiloso* pide Ocultación 1 y
+  cuesta 2; la *Mejorada*, Ocultación 3 y la básica, coste 4; la *Constante*, Ocultación 5 y la
+  Mejorada (antes Sigilo 2/3/5 y 3/5/6). Quien ya las tenga sin cumplir, solo con el aviso de
+  requisito roto.
+- **Dotes de Sigilo y Pilotaje (E6)** `[FIRME · DOTES 2026-11-14]`. Lo que la app aplica y lo que
+  es texto:
+  - *Paso de Fantasma*: casilla +3 en Ocultarse por terreno difícil o ruidoso; el −3 a la alerta
+    sísmica o auditiva de quien te busca, aviso (tirada ajena). `TODO(revisar)`: «reduce en 3 los
+    penalizadores» puede sumar de más si el del terreno es menor.
+  - *Fundido Evasivo*: casilla +1 en la esquiva (penumbra, cobertura parcial o camuflaje, ataque a
+    distancia); el nivel de cobertura de más, aviso. «Una vez por turno», límite de la dote y
+    etiqueta (la casilla de la esquiva no cuenta turnos).
+  - *Perfil Bajo*: aviso en Pasar desapercibido (quien te vio tira Perspicacia + Exploración
+    contra 6 + tu Mimetismo para recordarte).
+  - *Sustracción Rápida*: aviso en Juego de manos (hurtar o dejar algo en la misma acción de
+    movimiento; la app no cuenta acciones).
+  - *Finta de Manos*: acción de dote, simple o reacción, Reflejos + Sigilo en Juego de Manos,
+    enfrentada a Perspicacia + Exploración; éxito, siguiente ataque con arma sutil contra un
+    enemigo sorprendido; crítico, desprevenido (texto del resultado). Repetible sin penalizador.
+    Su requisito «Combate Melee» no lleva número: Combate Melee 1 (`TODO(revisar)`).
+  - *Piloto de Exoarmadura* / *As de Exoarmadura*: casilla +2 / +3 en la esquiva «esquivando en
+    vuelo con la propulsión aérea», que compensa la dificultad de maniobra de la esquiva en vuelo;
+    As sustituye a Piloto (vale la mejor) y la pide. La anulación del −1 a los ataques en vuelo,
+    en la tarjeta (ese −1 tampoco lo aplica la app, S94). `TODO(revisar)`: no se topa con la
+    maniobrabilidad (Progresión de Maniobrabilidad −2 + As +3 = +1 de más).
+  - *Salto Servoasistido*: texto en Saltar (bono de Fuerza del exoesqueleto doble para el salto) y
+    en Resistir daño (2 m menos de caída). `TODO(revisar)`: S10 ya cuenta doble ese bono en las
+    fórmulas de movimiento, salto incluido.
 - **Acciones coordinadas** `[FIRME · DOTES 2026-11-14]`: *Ataque Coordinado* y *Defensa
   Coordinada* son acciones de dote (compleja, Perspicacia + Exploración en Táctica, dificultad
   7). El +1 al ataque (o a la defensa) contra el objetivo, tuyo y de tus aliados, y lo que dura en crítico (tantos turnos como tu Táctica) van
@@ -1120,7 +1169,7 @@ aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
 - **Capas de motor nuevas** (Capas de Dotes, usuario 2026-10-15; detalle en
   `docs/modelado-dotes.md` §4). **Se construyen**: `sube_grado` (fracaso → éxito),
   ventaja con casilla (*Ojo Clínico*, *Bioma Predilecto*), valor de bono según la ficha
-  (*Presencia Imponente* +2 con Fuerza ≥ 5, *Imitación* +3 con Interpretación ≥ 3), crítico
+  (*Presencia Imponente* +2 con Fuerza ≥ 5, *Imitación* +3 con Mimetismo ≥ 3), crítico
   con 5 fijo (*Crítico Mejorado*), casillas que tocan el daño (*Golpe Fatigante*, *Derribo
   Brutal*), fatiga cobrada por casilla (*Ojo Clínico*) y *Salto Evasivo* como **bono
   normal** (casilla «Esquivando un área» +1; +2 en la Mejorada; vale la mejor). Cambiado
@@ -1273,7 +1322,7 @@ arriba; 0 pendientes de D2d.
   5, en la misma casilla que su +1), cambiar el **aplicado** (*Negociación Analítica*:
   Perspicacia en vez de Expresión en Convencer / mentir, S70) y tocar el **daño** del golpe.
 - **Valor por umbral de ficha**: *Presencia Imponente* (+1, +2 con Fuerza ≥ 5) e
-  *Imitación* (+2, +3 con Interpretación ≥ 3) ponen una sola casilla con el valor que toca
+  *Imitación* (+2, +3 con Mimetismo ≥ 3; antes Interpretación) ponen una sola casilla con el valor que toca
   según la ficha (valores de requisito: con especie, sin equipo; también el NPC). S38
   resuelto.
 - **Ventaja en acciones de dote**: *Apoyo* (vínculo fuerte) y *Violencia Aterradora* (tras
@@ -1307,7 +1356,8 @@ o eran texto. Decidido:
   elegida esa especialidad.
 - **Cambio de resultado** (*Balanceo*, *Velocista*…): solo el fracaso normal pasa a éxito;
   el fracaso crítico se queda.
-- ***Imitación***: casilla «Imitando a alguien» en Convencer / mentir.
+- ***Imitación***: casilla «Imitando a alguien» en Convencer / mentir. `TODO(revisar)` desde la
+  foto del 2026-11-14 (pide Mimetismo): ¿también, o solo, en Pasar desapercibido?
 - ***Especialidad Médica***, «hemorragia y herida»: solo el estado Heridas, no toda cura.
 - **Sin *Combate Sutil* no hay modo sutil**: tirada con Potencia y daño con Fuerza, también
   el Aguijón del Proyector de Pulso.
@@ -1321,7 +1371,7 @@ o eran texto. Decidido:
 - **Lecturas tomadas por obvias** (validadas sin veto): *Apoyo* vínculo fuerte = casilla de
   ventaja; *Humor Negro* repite contra la misma dificultad; *Humor de Afrontamiento* y
   *Llamada a las Armas* solo a aliados; *Enredar* +2 con casilla; *Imitación* +3 mira
-  Interpretación entera; *Reflejos Felinos* −1 al contador de atacantes solo en esquiva;
+  Mimetismo entero (antes Interpretación); *Reflejos Felinos* −1 al contador de atacantes solo en esquiva;
   *Salto Ofensivo* mantiene el +2 de dificultad y "a distancia" incluye lanzar; *Zafarse* =
   liberarse como reacción estando Atrapado; *Especialidad Médica* solo en tiradas de quien
   trata; *Ojo Clínico* casilla en Medicina y la fatiga solo paga la ventaja; *Autocuidados*
@@ -1533,7 +1583,7 @@ al preparar su modelado:
     dotes y aumentos). El jugador las marca mientras dura el efecto: en una enfrentada la app no
     sabe si se superó al rival, ni lleva la cuenta de la duración. Sin marcar, la tirada no cambia.
     - *Leer Mente*: «Mente leída» +2 en ataques, defensas, las fijas enfrentadas (Convencer /
-      mentir, Discernir mentiras, Resistir distracción, Iniciativa distrayendo, Sigilo, Hurto) y,
+      mentir, Discernir mentiras, Resistir distracción, Iniciativa distrayendo, Ocultarse, Pasar desapercibido, Juego de manos) y,
       por sus datos (no por lista), los **poderes con resolución enfrentada** (Mensaje agresivo,
       Leer Mente, Comando, Modulación, Reconfiguración, Duelo de Métrica) y las **acciones de
       dote con resolución enfrentada** (Burla, Grito de guerra, Violencia aterradora, Finta,
@@ -2903,7 +2953,19 @@ transcribir — Medicina y Farmacia, Herramientas y Accesorios, y Otras Armas a 
 > - **eq-34 Radar, Escáner y Valija de Fabricación**, comprobado: Radar y Escáner abren con su
 >   dificultad (7; 6) y su selector la cambia (penetración de obstáculos 8; escáner profundo 8); la
 >   Valija abre o cierra Fabricar en «Reparar y Fabricar» (`tieneVtf`, también en el servidor).
-> - **eq-36 Movilidad Aérea 3: Velocidad o Maniobrabilidad.** Se elige en Equipo, en la pieza
+> - **Propulsión Aérea** `[FIRME · fuente/equipamiento.md, foto de Drive 2026-11-14]` (antes
+>   Movilidad Aérea; cambia la etiqueta y los textos, el id `movilidad_aerea` y
+>   `topeMovilidadAerea` se quedan, sin migrar). **Maniobras simples** (línea recta, subir o bajar
+>   en vertical) **sin tirada**; **complejas** (virajes, curvas, cambios de rasante, esquivar
+>   obstáculos) con **Reflejos + Pilotaje (Exoarmadura)**, antes Reflejos + Tecnociencia. En la app,
+>   casilla «Maniobra compleja» en «Volar» (`rules/movimiento.ts`): sin marcar, el dado no cuenta y
+>   recorres la velocidad entera (el doble con Máxima Potencia), sin el bonus del crítico
+>   (`resolverVuelo`, `sinTirada`); marcada, como siempre (fallo, la mitad; fracaso crítico,
+>   descontrolado). El mal tiempo o un entorno confinado que vuelven compleja una simple: texto de
+>   la casilla. **Esquiva en vuelo** con Pilotaje (Exoarmadura) y la maniobrabilidad (casilla «En
+>   vuelo: Exoarmadura, −N», S101); su **éxito crítico** avisa de la reacción para desplazarte una
+>   casilla (`habilidadAlternativa.efectoCritico`). El −1 a los ataques en vuelo, en mesa (S94).
+> - **eq-36 Propulsión Aérea (antes Movilidad Aérea) 3: Velocidad o Maniobrabilidad.** Se elige en Equipo, en la pieza
 >   instalada (selector «Progresión», `PiezaEquipada.eleccion`, `fijarEleccionDeNivelAction` con Zod
 >   y permisos); el dato, en el nivel (`NivelModulo.eleccion` y `porEleccion`,
 >   `rules/eleccionNivel.ts`). **Velocidad**: nivel 3, 120 m y crítico de Máxima Potencia +60 m;
@@ -3414,8 +3476,8 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S98 | **Trato con Animales en dos filas**: «Trato con animales: leer» (Perspicacia) y «Trato con animales: interactuar» (Expresión), las dos con Exploración (Supervivencia). No una fila con selector de aplicado: no hay selector de aplicado para filas fijas (solo casillas de dote con `aplicado`) y dos filas dejan marcar favorita cada una. | Decisión de construcción (2026-10-26), revisable. |
 | S99 | **Rastreo, Subsistencia, Trato con animales e Investigación solo se pintan si la ficha tiene su especialidad** (Supervivencia; Investigación) **o si algo de capa 1 le engancha algo a esa fila**: casilla, texto, bono, bono por opción, ventaja, cambio de grado, otra habilidad o fallo crítico con alcance por el id de la fila o por su especialidad. Lo general (grupo, habilidad, aplicado, "todas") no cuenta. Lo decide el motor (`habilitacionEnFicha`, `rules/fichaResuelta.ts`: sin nada de eso, la fila sale oculta; `Accion.soloConEspecialidad`), también para el NPC con sus especialidades. | Decisión del usuario (2026-10-26, opción a). |
 | S100 | **Lo que colgaba de Buscar / percibir por S36, a su tirada** (2026-10-26): *Rastreo al Paso* y *Bioma Predilecto* (rastreo) a Rastreo; la ventaja de *Bioma* en subsistencia a Subsistencia (la casilla pierde el prefijo «Subsistencia:»); *Descartar Teoría* a Investigación, **con su casilla −2** además del texto. **Visión ultravioleta** (Introgresión, R10) partida en dos casillas de +2: «¿Buscas accesos ocultos?» en Buscar / percibir (el id se queda) y «¿Investigación de campo?» en Investigación. **Oído biónico** (Vestíbulo-Auditiva): la ventaja de detectar ocultos se queda en Buscar y la de rastrear por el sonido va a Rastreo, casilla aparte. **Rastro térmico** (sin número en la fuente): la Visión Térmica (aumento) pone una nota en Rastreo y el Visor Térmico nv2 una casilla informativa «Siguiendo un rastro térmico» (+0 con nota, como el modo térmico del nv1); las dos hacen visible la fila (S99) (usuario, 2026-10-26). El poder psiónico *Rastreo* no tiene que ver. | Encargo del usuario (2026-10-26); lo de la casilla −2, decisión de construcción. |
-| S101 | **Maniobrabilidad de Movilidad Aérea como penalizador (pregunta 42, 2026-10-26)**: −3 en los niveles 1-3 y −4 en el 4 (`NivelModulo.maniobrabilidad`), como ajuste fijo a «Volar» y a la esquiva en vuelo. La esquiva gana la casilla «En vuelo: Tecnociencia, −N» si la ficha lleva Movilidad Aérea (`conEsquivaEnVuelo`, `rules/movimiento.ts`; `habilidadAlternativa.ajuste`): esquiva con Tecnociencia en vez de Atletismo y resta la maniobrabilidad (la app no sabe si vuelas, como «Levitando»). Si además puede levitar, la casilla es la de vuelo (solo cabe una habilidad alternativa por fila). La mejora de Maniobrabilidad del nivel 3 («disminuye la dificultad en 1», un punto menos de castigo) se elige en Equipo desde T9 (eq-36, §12); el −1 a los ataques en vuelo, en mesa (S94). | Penalizador y esquiva: Murillo (vía usuario, 2026-10-26). Casilla y prioridad sobre Levitar: decisión de construcción. |
-| S102 | **Efectos de poder sobre uno mismo (P1 de psiónica, 2026-10-28)**, supuestos al construirlos (§10.6), revisados el mismo día con el usuario: (1) **Leer Mente**: "tiradas enfrentadas contra el objetivo" = ataques, defensas, las fijas que la fuente da como enfrentadas (Convencer / mentir, Discernir mentiras, Resistir distracción, Iniciativa distrayendo, Sigilo, Hurto) y, **decidido por el usuario**, los poderes y las acciones de dote con resolución `enfrentada` (por sus datos); el jugador la marca solo contra el leído. Los poderes de ataque (resolución `ataque`) no la llevan: no son `enfrentada` en el catálogo. (2) **Auto-proyección**: "+1 a tiradas de esquiva" = la fila Defensa / esquiva, no los bloqueos. (3) **Precognición**: en ataques de arma, defensas y, **decidido por el usuario**, los poderes de ataque (resolución `ataque`, daño al objetivo o `contraLaDefensa`, que hoy solo lleva Anclaje). Las acciones de dote de ataque (Arrollar) no: el encargo era de poderes. (4) **Estabilizado** (estado, **decidido por el usuario**): −N a cada penalizador de tirada de los estados apuntados al usarla, por separado y sin pasar de 0, detrás de la Neuroprótesis (entre las dos no pasan de 0); heridas y fatiga (nv4+) fuera enteras, también las que lleguen después: la prosa de "no afecta a los nuevos" es de los penalizadores de estado; los −N a atributos de un estado no se tocan (como la Neuroprótesis). Reusarla sustituye al anterior y vuelve a apuntar. (5) **Retrocognición**: el Aturdido automático del fracaso crítico es el grado «fracaso» del estado (sin salvación cuenta como fallarla, **usuario**), 1 turno. (6) **Contención**: el estado se pone en cualquier forma (el psiónico también está dentro de la ampliada); con duración sin número (nv6, nivel 1 personal) dura hasta quitarlo. Quieto y contra el ataque siguen como texto. | Construcción; (1), (3), (4) y (5) cerrados por el usuario el 2026-10-28. |
+| S101 | **Maniobrabilidad de Movilidad Aérea como penalizador (pregunta 42, 2026-10-26)**: −3 en los niveles 1-3 y −4 en el 4 (`NivelModulo.maniobrabilidad`), como ajuste fijo a «Volar» y a la esquiva en vuelo. La esquiva gana la casilla «En vuelo: Tecnociencia, −N» si la ficha lleva Movilidad Aérea (`conEsquivaEnVuelo`, `rules/movimiento.ts`; `habilidadAlternativa.ajuste`): esquiva con Tecnociencia en vez de Atletismo y resta la maniobrabilidad (la app no sabe si vuelas, como «Levitando»). Si además puede levitar, la casilla es la de vuelo (solo cabe una habilidad alternativa por fila). La mejora de Maniobrabilidad del nivel 3 («disminuye la dificultad en 1», un punto menos de castigo) se elige en Equipo desde T9 (eq-36, §12); el −1 a los ataques en vuelo, en mesa (S94). **Desde la foto del 2026-11-14 (Propulsión Aérea, S110)** la esquiva en vuelo y las maniobras complejas van con **Pilotaje (Exoarmadura)**, no Tecnociencia: casilla «En vuelo: Exoarmadura, −N». | Penalizador y esquiva: Murillo (vía usuario, 2026-10-26). Casilla y prioridad sobre Levitar: decisión de construcción. |
+| S102 | **Efectos de poder sobre uno mismo (P1 de psiónica, 2026-10-28)**, supuestos al construirlos (§10.6), revisados el mismo día con el usuario: (1) **Leer Mente**: "tiradas enfrentadas contra el objetivo" = ataques, defensas, las fijas que la fuente da como enfrentadas (Convencer / mentir, Discernir mentiras, Resistir distracción, Iniciativa distrayendo, Ocultarse, Pasar desapercibido, Juego de manos) y, **decidido por el usuario**, los poderes y las acciones de dote con resolución `enfrentada` (por sus datos); el jugador la marca solo contra el leído. Los poderes de ataque (resolución `ataque`) no la llevan: no son `enfrentada` en el catálogo. (2) **Auto-proyección**: "+1 a tiradas de esquiva" = la fila Defensa / esquiva, no los bloqueos. (3) **Precognición**: en ataques de arma, defensas y, **decidido por el usuario**, los poderes de ataque (resolución `ataque`, daño al objetivo o `contraLaDefensa`, que hoy solo lleva Anclaje). Las acciones de dote de ataque (Arrollar) no: el encargo era de poderes. (4) **Estabilizado** (estado, **decidido por el usuario**): −N a cada penalizador de tirada de los estados apuntados al usarla, por separado y sin pasar de 0, detrás de la Neuroprótesis (entre las dos no pasan de 0); heridas y fatiga (nv4+) fuera enteras, también las que lleguen después: la prosa de "no afecta a los nuevos" es de los penalizadores de estado; los −N a atributos de un estado no se tocan (como la Neuroprótesis). Reusarla sustituye al anterior y vuelve a apuntar. (5) **Retrocognición**: el Aturdido automático del fracaso crítico es el grado «fracaso» del estado (sin salvación cuenta como fallarla, **usuario**), 1 turno. (6) **Contención**: el estado se pone en cualquier forma (el psiónico también está dentro de la ampliada); con duración sin número (nv6, nivel 1 personal) dura hasta quitarlo. Quieto y contra el ataque siguen como texto. | Construcción; (1), (3), (4) y (5) cerrados por el usuario el 2026-10-28. |
 | S103 | **Límites de las acciones de dote y contador de Sanar grave (2026-10-28)**, supuestos al construirlos (§9.3, §11.3): (1) **aliados** = los otros personajes en juego (aprobados, sin borrar), la lista más parecida a "compañeros" que hay (no existen grupos ni campañas; la cola del combate solo vale en combate). La ficha del jugador ve sus nombres. (2) **"por aliado"** se reinicia con la escena (Apoyo: «1 vez por aliado y escena», usuario). (3) **"por turno"** = por ronda del combate en curso (cada combatiente actúa una vez por ronda); fuera de combate no se cuenta. (4) Lo gastado vive en `sheet.usosEscena` como contador (`<clave>#<n>`) y el tope de la lista sube de 20 a 40 entradas (`MAX_USOS_ESCENA`, `usosEscena.ts`): sin migración, porque la lectura sigue siendo tolerante. (5) **Sanar grave**: «5 turnos seguidos» no se comprueba; el contador va por escena y se reinicia a mano. | Construcción, sin preguntar; revisables. |
 | S104 | **Sobreesfuerzo (T6a, 2026-11-13)**, supuestos al construirlo (§10.7), todos `TODO(revisar)`: (1) **«fatigado» es el umbral tras pagar el poder** (el que ve el servidor al aplicar el fallo): un gasto que te deja fatigado ya lo dispara; la prosa dice «estando fatigado» sin aclarar si antes o después. (2) **Aturdido sin duración** («queda aturdido», «causa aturdimiento») = 1 turno; el fracaso crítico exhausto que solo cambia el daño (Arianyi y Maestría, implante 3) conserva el Aturdido. (3) **Más suave** casilla a casilla, daño antes que estados (con el implante 1 exhausto, «1 grave» frente a «1 letal y Aturdido» gana Maestría). (4) **Dos fuentes** a la vez (Maolher con implante): vale la que salte con más dificultad. (5) **Prolongar Proeza** no vuelve a tirar sobreesfuerzo (solo el uso). (6) **Muerte cerebral** (implante 1 y 2, exhausto, fracaso crítico): la app la avisa, no la aplica. (7) El **NPC del máster** (modo libre) no mira quién puede tener poderes. | Construcción de T6a; formas de es-01, au-04, au-05, ps-01…04 decididas por el usuario. |
 | S105 | **Poderes sueltos (T6b, 2026-11-13)**, supuestos al construirlos (§10.6b), `TODO(revisar)`: (1) **«La misma fatiga» del Sondeo** = la del uso con lo que el servidor sabe (tramo, descuentos por nivel y los Supresores puestos); las casillas que se marcaron al usarlo (Xovromium) y lo pagado con cargas de Derivación no cuentan al prolongar. (2) **Prolongar el Sondeo** cobra contra la fatiga efectiva; si cruza a exhausto, avisa de la sobrecarga (la salvación, a mano) y no vuelve a saltar el sobreesfuerzo (como prolongar Proeza, S104). (3) Fuera de combate las rondas no corren: el estado sigue hasta quitarlo y prolongar solo cobra. (4) **Proyección**: «por cada 200 kg adicionales» se cuenta por tramos completos (299 kg sobre 100 no suma); sin peso escrito, objeto de hasta 100 kg. (5) **Alerta pasiva**: exhausto es el umbral de la fatiga efectiva (la temporal de Proeza cuenta), como la sobrecarga. | Construcción de T6b; formas de ps-05…08 decididas por el usuario. |
@@ -3423,6 +3485,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S107 | **Sync Drive 2026-11-14, tanda T2 (medianos)**, decisiones del usuario (2026-11-14) y supuestos al construirla (`docs/plan-sync-2026-11-14.md`): (1) **Brazo Biónico, blindaje (lectura A, usuario)**: compite contra la **suma** de armadura + armadura natural (especie y aumentos) y aporta lo que le falte; Deflector, blindaje reactivo y Contención suman aparte. El Tejido Conductor también suma aparte (usuario). (2) **Requisito de atributo en los aumentos (usuario)**: se construye para el Brazo 4 Fuerte (Fuerza 2); supuesto: se mira solo al comprar, con la Fuerza permanente (la de los requisitos de dote), y no se rompe después. (3) **Brazo, ventaja por 2 de fatiga (usuario)**: «prueba que utilice el brazo» = las de Fortaleza, Potencia o Reflejos sin salvaciones, con casilla; límites por descanso, texto (usuario: límites de uso = texto salvo «por escena»). (4) **Densificar «contra traumatismos» (usuario)** = solo daño Cinético, como la Osteotendinosa. (5) **Sanar grave (usuario)**: un botón que cobra 4 y cura 1 grave en el acto; «tarda un minuto», nota. Se borra el efecto `contador` (sin otro uso); las claves viejas de su contador se ignoran al leer, sin migración. (6) **Ojo 4 (usuario)**: manda el documento nuevo, −2 a la cobertura visual y termo-óptica hasta 100 m, ya no la física (cae la lectura de A3 para este nivel). (7) **Aceptados por el usuario (2026-11-14)**: Diagnóstico de Sistemas en las tiradas de Tecnociencia, sin tirada fija de diagnóstico; la visión del Ojo 1 «como los visores de nivel 2», solo texto. (8) **Arköru, Modelos a Medida (usuario)**: el +20 % de peso y +10 % de coste va a toda la familia `armadura`, Ropa Reforzada e Inteligente incluidas; se devuelve al quitarla lo pagado con el recargo (§14.7). (9) **Proyector de Pulso, modo Pulso (usuario)**: «1 carga × 3 disparos» = contador de disparos sueltos guardado en la pieza (`PiezaEquipada.disparosPulso`, 0-2, opcional y tolerante al leer, sin subir `SCHEMA_VERSION`); el primer disparo de cada tres gasta la carga (`dispararPulso`, `rules/recursos.ts`, que llama la server action al confirmar la tirada); cualquier subida de cargas lo pone a 0: `comprarRecarga` y también el «+» a mano de Recursos (`ajustarRecurso`; usuario, 2026-11-14). Los otros modos no tocan el contador: el «× 3 disparos» es solo del modo Pulso (supuesto). (10) **Aguijón (usuario)** («1 carga × nivel en turnos»; fuera la «Duración: Nivel»): acción «Activar Aguijón» que gasta 1 carga y pone el estado propio «Aguijón activo» (`ESTADOS_DE_EQUIPO`, `catalog/estados.ts`) con N rondas (N = nivel), por el camino de «Activar camuflaje» (`estadoAlUsar`); las rondas corren en combate y fuera se quita a mano («Replegar el Aguijón»). Golpear y bloquear con el Aguijón no gastan y, sin el estado, salen bloqueados (`Accion.requiereEstado`, `habilitacionEnFicha`). Supuesto: el bloqueo con el Aguijón también pide el estado. (11) **Nutrición (usuario)**: sin acción «Comer»; los tres consumibles se compran con cantidad (pool de los fármacos, `sheet.farmacos`) y sus efectos van como texto (§12). (12) **Armas modificadas pesadas (usuario)**: los % de peso de varias modificaciones se suman sobre el básico para comparar con el 50 % (§12, Armas Modificadas); supuesto: el −1 va a golpear, bloquear y lanzar con el arma («en su empleo»). | Plan de sync y decisiones del usuario (2026-11-14). |
 | S108 | **Incompatibilidades entre aumentos (E4, sync Drive 2026-11-14)** (§11.1): (1) **Ficha que ya tiene las dos piezas (usuario)**: solo un aviso «incompatible con …» en Equipo, como el requisito roto (A0); no se quita nada, no se bloquea su uso y las dos siguen dando sus efectos. (2) Supuesto: **subir de nivel** un implante que convive con su incompatible también se rechaza (es una compra). (3) El NPC del máster (modo libre) respeta el bloqueo, como los requisitos (§11.1). | Decisión del usuario (1); construcción (2) y (3). |
 | S109 | **Implantes nuevos (E5a, sync Drive 2026-11-14)** (§11.1): Metabolismo Sintético, Control Anímico y Control Sensorial. Decisiones del usuario (2026-11-14): (1) los tres, cerrados por el diseñador; (2) Metabolismo: el «+1 por nivel» sube también la fatiga máxima (+1 … +4), apnea ×2 … ×5 y salvaciones +1 … +4; (3) límites por descanso, texto; «durante N turnos» = activable con N rondas que corren en combate (patrón Neuroprótesis); (4) comer no existe: la comida, texto; (5) Metabolismo incompatible con Biogénesis, Angiogénesis y Regeneración Tisular. Supuestos al construirlo, `TODO(revisar)`: (6) **«habilidades sociales» = Actitud**, la que la app ya trata como social (Proyección); la lectura más estrecha. (7) **«Inteligencia en lugar de Voluntad»** = la salvación se tira con **Perspicacia** (Inteligencia + Percepción), el aplicado con Inteligencia que no comparte nada con Voluntad; podría ser Expresión o el atributo solo. (8) **Parálisis y fatiga inducida** se salvan con Fortaleza (la fuente no lo dice de la parálisis; la causan el daño tóxico y el shock). (9) **Efecto sugestivo**: amenaza nueva del «Contra…» de Voluntad; la sugestión coercitiva cuenta también como efecto sugestivo. (10) Control Anímico y Control Sensorial, sin descripción: sabotaje y Shock del cuerpo por la regla general de los implantes. (11) La reducción de penalizadores de un implante penalizado por el Shock no baja (como la de la Neuroprótesis); apagado, no cuenta. (12) Control Sensorial 2, frase final rota: no se interpreta. (13) La inmunidad de un activable (Control Anímico 2) también la miran el panel del máster y los NPC con sus estados. | Decisiones del usuario (1)-(5); construcción (6)-(13). |
+| S110 | **Habilidades nuevas (E6, sync Drive 2026-11-14)** (§3, §6, §9.1, §12): decisiones del usuario (2026-11-14): (1) **Migración 1:1** de Sigilo en la v24: Esconderse → Ocultación, Hurto → Juego de Manos, con los mismos totales (test de oro); los ids de las acciones (`sigilo`, `hurto`) se quedan, así que las favoritas no cambian. (2) **Nada se pierde en silencio**: `parseSheet` manda al aviso de especialidades (`avisoEspecialidades`, sin duplicar) la especialidad que no es del catálogo de su habilidad, en vez de descartarla. (3) **Mimetismo empieza vacío**: nadie la tiene. (4) **Pilotaje como cualquier habilidad** (coste de creación y XP); entra sin entrenar y no cuesta nada a las fichas que ya había. (5) **Afectados por el cambio de regla** (quien volaba con Tecnociencia, quien tiene Imitación sin Mimetismo o Movimiento Sigiloso sin Ocultación): solo el aviso de requisito roto que ya existe; sin compensaciones. Supuestos al construirlo, `TODO(revisar)`: (6) **Esconder arma** sigue en Ocultación (la migración es 1:1), aunque la fuente pone «ocultar objetos pequeños en la ropa» en Juego de Manos. (7) El bono de *Imitación* sigue en Convencer / mentir. (8) **Pasar desapercibido** (Mimetismo) es una tirada normal con la alerta por Empatía en la nota, como Juego de manos: no guarda estado como Ocultarse; cuenta como enfrentada para Leer Mente y le llegan los aumentos de Expresión; no recibe lo que es «de habilidades sociales» (= Actitud, S109). (9) **Maniobra simple** en la misma fila «Volar»: se tira el dado igualmente (gasta la carga), pero no cuenta. (10) *Movimiento Sigiloso Mejorado* y *Constante* piden la anterior de la cadena, como dice la fuente (antes no se transcribió). (11) Los de las dotes nuevas, en §9.1. | Decisiones del usuario (1)-(5); construcción, revisables (6)-(11). |
 
 ## Conflictos detectados
 
