@@ -83,18 +83,30 @@ describe("selector «Contra…» de las salvaciones", () => {
     assert.equal(sinTocar.costeFatiga, 0);
   });
 
-  test("Biogénesis + Enjambre 3 contra venenos: +4 sin pagar, o +4 con ventaja pagando", () => {
+  // Enjambre 3: +3 contra venenos desde el sync Drive 2026-11-14 (purga +1 por nivel; antes +4).
+  test("Biogénesis + Enjambre 3 contra venenos: +3 sin pagar, o +3 con ventaja pagando", () => {
     const f = resolver(con(conTodas([BIOGENESIS]), ENJAMBRE, { nivel: 3 }));
     const t = tiradaFija(f, "salv_fortaleza");
     const sel = selector(t);
     const base = montar(f, t);
     const sinPagar = montar(f, t, { [sel.id]: "venenos" });
-    assert.equal(sinPagar.modificador - base.modificador, 4);
+    assert.equal(sinPagar.modificador - base.modificador, 3);
     assert.equal(sinPagar.ventaja, null);
     const pagando = montar(f, t, { [sel.id]: "venenos_fatiga" });
-    assert.equal(pagando.modificador - base.modificador, 4);
+    assert.equal(pagando.modificador - base.modificador, 3);
     assert.equal(pagando.costeFatiga, 1);
     assert.ok(pagando.ventaja);
+  });
+
+  // Sync Drive 2026-11-14 (M4.1): purga escalable, +1 por nivel desde el 1 (antes +4 fijo en el 3).
+  test("Enjambre: purga +1/+2/+3/+4 contra toxinas, venenos y enfermedad", () => {
+    for (const nivel of [1, 2, 3, 4]) {
+      const f = resolver(con(defaultSheet(), ENJAMBRE, { nivel }));
+      const t = tiradaFija(f, "salv_fortaleza");
+      const sel = selector(t);
+      for (const contra of ["toxinas", "venenos", "enfermedad"])
+        assert.equal(montar(f, t, { [sel.id]: contra }).modificador - montar(f, t).modificador, nivel, `${contra} ${nivel}`);
+    }
   });
 
   // Triaje 2026-10-28, #21: el +3 contra el aturdimiento tras Densificar.
@@ -106,9 +118,9 @@ describe("selector «Contra…» de las salvaciones", () => {
     assert.ok(opcion);
     assert.match(opcion.nota ?? "", /tras Densificar/);
     assert.equal(montar(f, t, { [sel.id]: "aturdimiento" }).modificador - montar(f, t).modificador, 3);
-    // Con Enjambre 2 no está.
+    // Con Enjambre 2 no está (el 2 ya trae la purga desde el sync Drive 2026-11-14, no esto).
     const f2 = resolver(con(defaultSheet(), ENJAMBRE, { nivel: 2 }));
-    assert.equal(tiradaFija(f2, "salv_fortaleza").condiciones, undefined);
+    assert.equal(selector(tiradaFija(f2, "salv_fortaleza")).opciones.some((o) => o.id === "aturdimiento"), false);
   });
 
   // Sync Drive 2026-11-14: la salvación de la asfixia pasa de Fortaleza a Voluntad.

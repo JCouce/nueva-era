@@ -2033,11 +2033,16 @@ export const IMPLANTES: Implante[] = [
         coste: 22000,
         detalle: [
           "Gracias a este implante, el personaje puede utilizar drogas y medicamentos con un bonificador de +3 exclusivamente cuando las utilice de modo personal. Si un tercero utiliza medicinas para sanar al personaje con este implante, también gana el mismo bonificador.",
+          "El enjambre tiene además una función de purga, el usuario obtiene un bonificador de +1 en tiradas de salvación contra toxinas, venenos y enfermedades. Este función de purga sistémica avanzada aumenta su bonificador en 1 por nivel del enjambre.",
         ],
         modificadores: [],
         // au-07: la casilla «Sobre ti mismo», en Tratar heridas y en los fármacos con tirada.
         condiciones: casillasEnjambreSobreTi(),
+        // Purga (sync Drive 2026-11-14): +1 por nivel contra toxinas, venenos y enfermedades desde el
+        // 1 (antes, +4 fijo en el 3). Misma clave en cada nivel: el alto sustituye al bajo.
+        salvaciones: [{ contra: ["toxinas", "venenos", "enfermedad"], bono: 1 }],
         motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "medicina" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Fármacos" }, mecanismo: "eleccion_jugador", estado: "construido" },
           // El +3 de quien te cura: pieza pasiva sin tirada del portador para el tercero (motor.md,
@@ -2053,6 +2058,7 @@ export const IMPLANTES: Implante[] = [
           "Gracias a unos nanobots de microcirugía, el personaje que adquiera este aumento biónico regenera un nivel de daño no letal por turno, uno letal por minuto (10 turnos) y uno grave por hora. Además si consume un nivel fatiga podrá sanar un nivel letal de forma automática, y si consume 5 a lo largo de un mínimo de 5 turnos, podrá sanar uno grave. Este implante en su función pasiva funciona siempre y cuando el personaje no tenga penalizadores por fatiga.",
         ],
         modificadores: [],
+        salvaciones: [{ contra: ["toxinas", "venenos", "enfermedad"], bono: 2 }],
         // A4a. "Sin penalizadores por fatiga" es solo de la regeneración pasiva (que no entra
         // aquí), no de estas dos.
         acciones: [
@@ -2077,6 +2083,7 @@ export const IMPLANTES: Implante[] = [
           },
         ],
         motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ficha" }, mecanismo: "nota_fija", estado: "pendiente" },
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_sanar_letal" }, mecanismo: "accion_equipo", estado: "construido" },
           // Sanar grave: contador de pulsaciones en la escena; a la quinta, +1 de vida.
@@ -2088,13 +2095,13 @@ export const IMPLANTES: Implante[] = [
         rareza: "Muy Extraño",
         coste: 88000,
         detalle: [
-          "El enjambre evoluciona hacia una red defensiva y de purga sistémica avanzada. El usuario obtiene un bonificador de +4 en tiradas de salvación contra toxinas, venenos y enfermedades.",
+          "El enjambre evoluciona hacia una red defensiva contra traumatismos.",
           "Además, como reacción y con el gasto de un punto de fatiga el enjambre puede densificarse de forma reactiva bajo la dermis, otorgando 3 puntos de blindaje contra un golpe específico. Si el impacto causa atudimiento el usuario recibe un bonificador de +3 contra el efecto.",
         ],
         modificadores: [],
         // El +3 contra el aturdimiento del golpe densificado, en el selector "Contra…".
         salvaciones: [
-          { contra: ["toxinas", "venenos", "enfermedad"], bono: 4 },
+          { contra: ["toxinas", "venenos", "enfermedad"], bono: 3 },
           { contra: ["aturdimiento"], bono: 3, nota: "solo tras Densificar, contra el aturdimiento de ese golpe" },
         ],
         // A4b: casilla en "Resistir daño" que cobra al marcarla.
@@ -2123,6 +2130,7 @@ export const IMPLANTES: Implante[] = [
           "Además, introduce la capacidad de Tempestad Nanobótica: como acción estándar y gastando 2 puntos de fatiga, el usuario puede forzar al enjambre a desbordarse momentáneamente a través de la piel para atacar o sabotear el entorno inmediato. El ataque se resuelve como acción estándar, su alcance es melee y requiere de una tirada de reflejos + tecnociencia. Su daño básico es de 1 Grave, y es cuando acierta al blindaje destruye 1 punto por contacto físico. De la misma forma se puede emplear para sabotear objetos.",
         ],
         modificadores: [],
+        salvaciones: [{ contra: ["toxinas", "venenos", "enfermedad"], bono: 4 }],
         // A4b (usuario, 2026-10-22): 1 grave fijo, sin sumar éxitos; dificultad 0 (la de un
         // ataque por defecto). Quitar blindaje y sabotear, como nota.
         acciones: [
@@ -2142,6 +2150,7 @@ export const IMPLANTES: Implante[] = [
           },
         ],
         motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ficha" }, mecanismo: "nota_fija", estado: "pendiente" },
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_tempestad_nanobotica" }, mecanismo: "accion_equipo", estado: "construido" },
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "blindaje_del_objetivo" }, mecanismo: "nota_fija", estado: "construido" },

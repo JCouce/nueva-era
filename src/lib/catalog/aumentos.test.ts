@@ -186,10 +186,11 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_microprocesador_cuantico_de_enlace 3": 2,
     "aum_microprocesador_cuantico_de_enlace 4": 2,
     // au-07: la casilla «Sobre ti mismo» en Tratar heridas y en los fármacos, y la nota para quien te cura.
-    "aum_enjambre_nanobot 1": 3,
-    "aum_enjambre_nanobot 2": 2, // Sanar letal y Sanar grave (contador de 5 pulsaciones, usuario 2026-10-28)
+    // Sync Drive 2026-11-14 (M4.1): +1 por nivel, la purga (+1/+2/+3/+4) desde el 1.
+    "aum_enjambre_nanobot 1": 4,
+    "aum_enjambre_nanobot 2": 3, // Sanar letal y Sanar grave (contador de 5 pulsaciones, usuario 2026-10-28) y la purga
     // A4b: Incorporar arma, Tempestad Nanobótica y su nota del blindaje del objetivo.
-    "aum_enjambre_nanobot 4": 2,
+    "aum_enjambre_nanobot 4": 3,
     // A5a: activables. Neuroprótesis 1 entera (activar, +1 a las tiradas de los tres aplicados
     // —una entrada desde el sync Drive 2026-11-14, antes una por atributo—, −1 a los
     // penalizadores, −1 en "Contra…" y la nota) y la elección del 2.

@@ -2401,6 +2401,9 @@ sobreesfuerzo.
     que se recupera tras un descanso corto; 3, una por hora; 4, sin límite.
   - **Incompatible con Optimización Foveo-Sensorial** (y los aumentos genéticos de la visión):
     hoy solo texto en la descripción del Ojo; el bloqueo al comprar llega con E4.
+- *Enjambre Nanobot, sync Drive 2026-11-14* `[FIRME · docs/fuente/aumentos.md]`:
+  - **Purga escalable:** +1 por nivel contra toxinas, venenos y enfermedades desde el nivel 1
+    (+1/+2/+3/+4), en el selector «Contra…» de Fortaleza. Sustituye al +4 fijo del nivel 3.
 - *En la app (A7, inmunidades; usuario, 2026-10-22):* `rules/inmunidades.ts`, con los datos en el
   catálogo (`inmuneA` del nivel del implante o de la operación).
   - **Quién:** Ojo Biónico 2, 3 y 4 contra la **ceguera** (fuente "Ojo Biónico N"; el 1, nada) y
