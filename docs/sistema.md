@@ -2390,6 +2390,11 @@ sobreesfuerzo.
   - **Nivel 2:** −1 a la cobertura visual y termo-óptica de cualquier tipo hasta 50 m: la casilla
     «Objetivo con cobertura visual o termo-óptica a 50 m o menos» (+1; la distancia la mira el
     jugador). 28 000 créditos.
+  - **Nivel 3:** 56 000 créditos.
+  - **Nivel 4:** −2 a la cobertura hasta 100 m: «Objetivo con cobertura (física, visual o
+    termo-óptica) a 100 m o menos» (+2). Se mantiene la física (lectura de A3); la foto nueva
+    dice «visual y termo-óptica de cualquier tipo» (`TODO(revisar)`). Pierde su «completamente
+    inmune a la ceguera»: la inmunidad sigue viniendo del nivel 2. 112 000 créditos.
 - *En la app (A7, inmunidades; usuario, 2026-10-22):* `rules/inmunidades.ts`, con los datos en el
   catálogo (`inmuneA` del nivel del implante o de la operación).
   - **Quién:** Ojo Biónico 2, 3 y 4 contra la **ceguera** (fuente "Ojo Biónico N"; el 1, nada) y
@@ -2432,7 +2437,8 @@ sobreesfuerzo.
   los −N a atributos (Enfermedad, Parálisis).~~ Sí (usuario, 2026-11-13, td-11; §11.3).
   *Tumbado por el sync Drive 2026-11-14: la Neuroprótesis ya no rebaja los estados, solo
   heridas y fatiga.*
-- **Ojo Biónico 2 frente a 4**: el 2 es "inmune a efecto de ceguera" y el 4 "completamente
+- **Ojo Biónico 2 frente a 4** *(el sync Drive 2026-11-14 quita la línea del 4: queda solo la
+  del 2)*: el 2 es "inmune a efecto de ceguera" y el 4 "completamente
   inmune a la ceguera". ¿Cubre el 2 una ceguera física (tapar o arrancar el ojo)? La app bloquea
   la ceguera desde el 2 y el máster puede "Aplicar igualmente" (usuario, 2026-10-22).
 - ~~**Neuroprótesis Simpática 4**: si "elimina por completo penalizadores por heridas o fatiga"
@@ -2524,7 +2530,8 @@ sobreesfuerzo.
   - **Hemorragia exanguinante**: no para nunca hasta que te curen por medios médicos.
   - **Cobertura**: los aumentos visuales (Foveo, Ojo 1-3) reducen solo la cobertura visual;
     la total no se reduce salvo con un ataque que la atraviese. **Ojo nivel 4**: −2 niveles
-    de cualquier cobertura, física o visual.
+    de cualquier cobertura, física o visual (desde el sync Drive 2026-11-14, hasta 100 m y
+    también termo-óptica; el 2, hasta 50 m).
   - **Alerta pasiva**: los bonos de vista (Ojo) y de olfato (Detección Química) sí la suben,
     mientras el sentido se pueda usar (en el vacío con traje, no). La ventaja auditiva
     (Vestíbulo-Auditiva) no: solo al buscar activamente.

@@ -4318,7 +4318,7 @@
         {
           "nivel": 3,
           "rareza": "Muy Extraño",
-          "coste": 64000,
+          "coste": 56000,
           "sustituye": [
             {
               "efecto": "+2 a percepción visual",
@@ -4398,7 +4398,7 @@
         {
           "nivel": 4,
           "rareza": "Muy Extraño",
-          "coste": 128000,
+          "coste": 112000,
           "sustituye": [
             {
               "efecto": "+3 a percepción visual",

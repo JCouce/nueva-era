@@ -1842,7 +1842,7 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 3,
         rareza: "Muy Extraño",
-        coste: 64000,
+        coste: 56000,
         detalle: [
           "El ojo aumenta sus bonificadores, otorga un bonificador de +3 a tiradas de percepción visual y otro de +2 a las de ataques a distancia.",
           "Incorpora visión de rayos X que permite ver a través de tejidos sencillos con un alcance de 10 metros.",
@@ -1862,18 +1862,24 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 4,
         rareza: "Muy Extraño",
-        coste: 128000,
+        coste: 112000,
         detalle: [
-          "El cenit de la tecnología optoelectrónica táctica. El personaje obtiene un bonificador de +4 a tiradas de percepción visual y un +3 a las de ataques a distancia, siendo completamente inmune a la ceguera.",
-          "Integra un sistema de visión multi-espectro simultáneo (nocturna, térmica y rayos X con un alcance de 50 metros a través de paredes ligeras o blindajes no reforzados) y un procesador de seguimiento que reduce en dos niveles por completo los penalizadores por cobertura visual.",
+          "El cenit de la tecnología optoelectrónica táctica. El personaje obtiene un bonificador de +4 a tiradas de percepción visual y un +3 a las de ataques a distancia.",
+          "Integra un sistema de visión multi-espectro simultáneo (nocturna, térmica y rayos X con un alcance de 50 metros a través de paredes ligeras o blindajes no reforzados) y un procesador de seguimiento que reduce en 2 niveles los penalizadores por cobertura visual y termo-óptica de cualquier tipo en un alcance de 100 metros.",
         ],
         modificadores: [
           { tipo: "tirada", alcance: DISTANCIA, valor: 3, noApila: VISION_AUMENTADA },
           { tipo: "derivado", id: "alerta", valor: 4, noApila: VISION_AUMENTADA },
         ],
-        // A3: −2 niveles de cualquier cobertura, física o visual (sustituye a la del nivel 2).
-        condiciones: [casillaVisualOjo(4), ...casillasCobertura("aum_ojo", 2, true)],
-        // Los 50 m son solo de los rayos X; nocturna y térmica, 500 m (sistema.md §11, Ojo Biónico).
+        // A3: −2 niveles de cualquier cobertura, física o visual (sustituye a la del nivel 2). Sync
+        // Drive 2026-11-14: «visual y termo-óptica de cualquier tipo en un alcance de 100 metros».
+        // TODO(revisar): se mantiene la física (lectura del usuario de «por completo», A3); la foto
+        // nueva solo nombra visual y termo-óptica «de cualquier tipo».
+        condiciones: [
+          casillaVisualOjo(4),
+          ...casillasCobertura("aum_ojo", 2, true, "Objetivo con cobertura (física, visual o termo-óptica) a 100 m o menos"),
+        ],
+        // Los 50 m son solo de los rayos X; nocturna y térmica, las de los visores 2 (nivel 1).
         textos: [
           {
             id: "rayos_x",
@@ -1881,12 +1887,11 @@ export const IMPLANTES: Implante[] = [
             texto: "Rayos X: ves a través de paredes ligeras o blindajes no reforzados, hasta 50 m; nocturna, térmica y rayos X a la vez.",
           },
         ],
-        // A7: "completamente inmune a la ceguera" (ya la trae el 2; se repite por la fuente del texto).
-        inmuneA: ["ceguera"],
+        // Sync Drive 2026-11-14: sin su «completamente inmune a la ceguera»; la inmunidad sigue
+        // viniendo del nivel 2 (los niveles se acumulan).
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "construido" },
-          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:ceguera" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },

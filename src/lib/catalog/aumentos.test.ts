@@ -159,7 +159,8 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_ojo_bionico 1": 4, // + lo que ve en Buscar (au-06)
     "aum_ojo_bionico 2": 4, // 1 de A2a, la cobertura visual en distancia y Buscar (A3) y la inmunidad (A7)
     "aum_ojo_bionico 3": 3, // + rayos X en Buscar (au-06)
-    "aum_ojo_bionico 4": 6, // 2 de A2a, cualquier cobertura en distancia y Buscar (A3), la inmunidad (A7) y rayos X en Buscar (au-06)
+    // Sync Drive 2026-11-14 (M3.3): sin su propia inmunidad (viene del 2).
+    "aum_ojo_bionico 4": 5, // 2 de A2a, cualquier cobertura en distancia y Buscar (A3) y rayos X en Buscar (au-06)
     "aum_enjambre_nanobot 3": 4, // salvaciones (A2a) y Densificar (A4b), partido en Ajuste y Coste (triaje 2026-10-28, #20); +1: el +3 contra el aturdimiento tras Densificar (#21)
     // A2b: casillas por aplicado y de cualquier tirada, ventaja fija y textos.
     aum_mielinizacion_central: 1,

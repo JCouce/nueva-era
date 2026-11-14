@@ -133,7 +133,8 @@ describe("Introgresión: elección del sentido y compra repetida", () => {
 
 describe("implantes: cualquier nivel directo y subir paga la diferencia", () => {
   test("se compra cualquier nivel directamente", () => {
-    assert.deepEqual(planCompraAumento(defaultSheet(), { catalogoId: OJO, nivel: 3 }), { ok: true, precio: 64_000, subeDe: null });
+    // Ojo 3 a 56.000 desde el sync Drive 2026-11-14.
+    assert.deepEqual(planCompraAumento(defaultSheet(), { catalogoId: OJO, nivel: 3 }), { ok: true, precio: 56_000, subeDe: null });
     assert.equal(planCompraAumento(defaultSheet(), { catalogoId: OJO }).ok, false);
     assert.equal(planCompraAumento(defaultSheet(), { catalogoId: OJO, nivel: 5 }).ok, false);
   });
@@ -201,24 +202,24 @@ describe("implantes: cualquier nivel directo y subir paga la diferencia", () => 
     assert.equal(plan.ok, true);
   });
 
-  test("Ojo Biónico (sync Drive 2026-11-14): nivel 1, 14.000; nivel 2, 28.000", () => {
-    const precios = [1, 2].map((nivel) => planCompraAumento(defaultSheet(), { catalogoId: OJO, nivel }));
-    assert.deepEqual(precios.map((p) => p.ok && p.precio), [14_000, 28_000]);
-    assert.deepEqual([1, 2].map((nivel) => costeDePieza({ instanciaId: "o", catalogoId: OJO, nivel })), [14_000, 28_000]);
+  test("Ojo Biónico (sync Drive 2026-11-14): 14.000 / 28.000 / 56.000 / 112.000", () => {
+    const precios = [1, 2, 3, 4].map((nivel) => planCompraAumento(defaultSheet(), { catalogoId: OJO, nivel }));
+    assert.deepEqual(precios.map((p) => p.ok && p.precio), [14_000, 28_000, 56_000, 112_000]);
+    assert.deepEqual([1, 2, 3, 4].map((nivel) => costeDePieza({ instanciaId: "o", catalogoId: OJO, nivel })), [14_000, 28_000, 56_000, 112_000]);
   });
 
-  // Ojo 1 a 14.000 desde el sync Drive 2026-11-14 (M3.1).
-  test("subir de 1 a 3 cuesta 64.000 − 14.000 y sube la misma instancia", () => {
+  // Ojo 1 a 14.000 y Ojo 3 a 56.000 desde el sync Drive 2026-11-14 (M3.1, M3.3).
+  test("subir de 1 a 3 cuesta 56.000 − 14.000 y sube la misma instancia", () => {
     const s = compra(defaultSheet(), { catalogoId: OJO, nivel: 1 });
     const inst = s.equipo[0].instanciaId;
     assert.deepEqual(planCompraAumento(s, { catalogoId: OJO, nivel: 3 }), {
       ok: true,
-      precio: 50_000,
+      precio: 42_000,
       subeDe: { instanciaId: inst, nivel: 1 },
     });
-    const res = comprarAumento(s, { catalogoId: OJO, nivel: 3 }, ctx({ creditos: 50_000 }));
+    const res = comprarAumento(s, { catalogoId: OJO, nivel: 3 }, ctx({ creditos: 42_000 }));
     assert.ok(res.ok);
-    assert.equal(res.pago.deCreditos, 50_000);
+    assert.equal(res.pago.deCreditos, 42_000);
     assert.deepEqual(res.sheet.equipo, [{ instanciaId: inst, catalogoId: OJO, nivel: 3, eleccion: undefined }]);
   });
 
@@ -296,11 +297,12 @@ describe("pago: primero la bolsa del humano, luego los créditos", () => {
   });
 
   test("subir de nivel acumula lo pagado con la bolsa y devuelve el precio del nivel actual", () => {
-    // Ojo 1 (16.000) con bolsa; subir a 3 (48.000): quedan 54.000 de bolsa, todo de bolsa.
+    // Ojo 1 (14.000) con bolsa; subir a 3 (42.000): quedan 56.000 de bolsa, todo de bolsa
+    // (precios del sync Drive 2026-11-14).
     let s = compra(defaultSheet(), { catalogoId: OJO, nivel: 1 }, ctx({ bolsaTotal: 70_000 }));
     s = compra(s, { catalogoId: OJO, nivel: 3 }, ctx({ bolsaTotal: 70_000 }));
-    assert.equal(s.equipo[0].pagoBolsa, 64_000);
-    assert.deepEqual(devolucionAumento(s, s.equipo[0].instanciaId), { deBolsa: 64_000, deCreditos: 0 });
+    assert.equal(s.equipo[0].pagoBolsa, 56_000);
+    assert.deepEqual(devolucionAumento(s, s.equipo[0].instanciaId), { deBolsa: 56_000, deCreditos: 0 });
   });
 
   test("sin bolsa todo vuelve a créditos; lo que no es aumento da null", () => {
