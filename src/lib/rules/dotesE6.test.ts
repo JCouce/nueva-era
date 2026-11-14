@@ -77,3 +77,14 @@ describe("Fundido Evasivo", () => {
     assert.deepEqual(DOTES.find((d) => d.id === "dote_fundido_evasivo")!.limite, { veces: 1, por: "turno" });
   });
 });
+
+describe("Perfil Bajo", () => {
+  test("aviso en Pasar desapercibido: quien te vio tira contra 6 + tu Mimetismo para recordarte", () => {
+    const t = fija(resolver(ficha([{ id: "dote_perfil_bajo" }])), "mimetismo");
+    assert.match(lineaAntes(t), /Perspicacia \+ Exploración contra dificultad 6 \+ tu Mimetismo/);
+  });
+
+  test("sin la dote, no", () => {
+    assert.doesNotMatch(lineaAntes(fija(resolver(ficha([])), "mimetismo")), /dificultad 6 \+ tu Mimetismo/);
+  });
+});

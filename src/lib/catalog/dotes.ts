@@ -7631,6 +7631,54 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_perfil_bajo",
+    "label": "Perfil Bajo",
+    "grupo": "sigilo",
+    "coste": 1,
+    "requisitos": [
+      {
+        "tipo": "especialidad",
+        "habilidad": "sigilo",
+        "id": "mimetismo",
+        "min": 1
+      },
+      {
+        "tipo": "especialidad",
+        "habilidad": "cultura",
+        "id": "sociedad",
+        "min": 1
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "Aprovechando las dinámicas de las masas y la indiferencia de las grandes ciudades o instalaciones, el personaje sabe exactamente cómo caminar, vestir y actuar para no dejar una impresión memorable. Observadores que hayan presenciado al personaje con o sin disfraz tendrán dificultad para recordar su apariencia, deberán realizar una tirada de **perspicacia + exploración** dificultad **6 + mimetismo** del personaje.",
+    "efectos": [
+      {
+        "tipo": "texto",
+        "lugar": "mimetismo",
+        "texto": "Quien te haya visto, con o sin disfraz, necesita Perspicacia + Exploración contra dificultad 6 + tu Mimetismo para recordar tu aspecto.",
+        "condicion": null,
+        "porque": "tercero",
+        "borrador": 0
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "objetivo_tercero",
+          "id": "mimetismo"
+        },
+        "mecanismo": "nota_fija",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_diagnostico_de_sistemas",
     "label": "Diagnóstico de Sistemas",
     "grupo": "tecnociencia",
@@ -8714,9 +8762,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   213 efectos (203 en el borrador)
+//   214 efectos (204 en el borrador)
 //   construidos: 119
-//   texto: 94
+//   texto: 95
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

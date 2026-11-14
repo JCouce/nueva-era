@@ -67,6 +67,8 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // TODO(revisar): la fuente dice «reduce en 3 los penalizadores»; si el del terreno que pone el
   // máster es menor de 3, la casilla suma de más.
   sigilo: tirada("sigilo"),
+  // «Pasar desapercibido» (Mimetismo, E6): Perfil Bajo.
+  mimetismo: tirada("mimetismo"),
   medicina: tirada("medicina"),
   social: tirada("social"),
   salv_fortaleza: tirada("salv_fortaleza"),

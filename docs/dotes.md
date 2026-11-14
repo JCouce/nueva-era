@@ -16,8 +16,8 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **115 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 0 · Sigilo 5 ·
+> Recuento: **116 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 0 · Sigilo 6 ·
 > Tecnociencia 1 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
@@ -1285,6 +1285,17 @@ El personaje comprende cómo pisar y minimizar vibraciones o sonidos en superfic
 
 **Efecto:**
 Cuando el personaje se encuentra en una zona de penumbra, cobertura parcial o camuflaje natural/urbano y recibe un ataque a distancia, puede emplear una reacción como acción defensiva para fundirse momentáneamente con el entorno. La esquiva recibe un bonificador de +1 a su tirada e incrementa en 1 nivel la cobertura efectiva contra ese ataque. Solo puede usarse una vez por turno.
+
+### Perfil Bajo
+
+**Coste:** 1
+
+**Requisitos:**
+- Mimetismo 1 · especialidad (Sigilo)
+- Sociedad 1 · especialidad (Cultura)
+
+**Efecto:**
+Aprovechando las dinámicas de las masas y la indiferencia de las grandes ciudades o instalaciones, el personaje sabe exactamente cómo caminar, vestir y actuar para no dejar una impresión memorable. Observadores que hayan presenciado al personaje con o sin disfraz tendrán dificultad para recordar su apariencia, deberán realizar una tirada de **perspicacia + exploración** dificultad **6 + mimetismo** del personaje.
 
 
 ## Tecnociencia

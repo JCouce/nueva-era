@@ -7068,6 +7068,40 @@
       "candidataUX": null
     },
     {
+      "id": "dote_perfil_bajo",
+      "label": "Perfil Bajo",
+      "grupo": "sigilo",
+      "coste": 1,
+      "requisitos": [
+        {
+          "tipo": "especialidad",
+          "habilidad": "sigilo",
+          "id": "mimetismo",
+          "min": 1
+        },
+        {
+          "tipo": "especialidad",
+          "habilidad": "cultura",
+          "id": "sociedad",
+          "min": 1
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "texto",
+          "lugar": "mimetismo",
+          "texto": "Quien te haya visto, con o sin disfraz, necesita Perspicacia + Exploración contra dificultad 6 + tu Mimetismo para recordar tu aspecto.",
+          "condicion": null,
+          "porque": "tercero"
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_diagnostico_de_sistemas",
       "label": "Diagnóstico de Sistemas",
       "grupo": "tecnociencia",
