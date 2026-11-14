@@ -6684,6 +6684,62 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_fuego_de_supresion",
+    "label": "Fuego de Supresión",
+    "grupo": "combate_distancia",
+    "coste": 3,
+    "requisitos": [
+      {
+        "tipo": "habilidad",
+        "id": "combate_distancia",
+        "min": 2
+      },
+      {
+        "tipo": "especialidad",
+        "habilidad": "exploracion",
+        "id": "tactica",
+        "min": 1
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "El personaje realiza un ataque de fuego automático, los objetivos pueden decidir esquivarlo de forma automática empleando una reacción, pero al hacerlo reciben un penalizador de -2 en ataques a distancia contra el personaje y sus aliados hasta el final de su siguiente turno.",
+    "efectos": [
+      {
+        "tipo": "objetivo",
+        "lugar": "familia:ataque_fuego",
+        "condicion": null,
+        "efecto": {
+          "tipo": "texto",
+          "texto": "Fuego de supresión: los objetivos pueden esquivarlo sin tirar gastando una reacción, pero entonces sufren −2 en sus ataques a distancia contra ti y tus aliados hasta el final de su siguiente turno.",
+          "cuando": "siempre",
+          "soloEn": {
+            "modo": [
+              "Estándar (F. Auto)",
+              "Compleja (F. Auto)"
+            ]
+          }
+        },
+        "borrador": 0
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "objetivo_tercero",
+          "id": "familia:ataque_fuego"
+        },
+        "mecanismo": "nota_fija",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_vigilancia_tactica",
     "label": "Vigilancia Táctica",
     "grupo": "exploracion",
@@ -9285,9 +9341,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   228 efectos (218 en el borrador)
+//   229 efectos (219 en el borrador)
 //   construidos: 126
-//   texto: 102
+//   texto: 103
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

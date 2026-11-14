@@ -6248,6 +6248,48 @@
       "candidataUX": null
     },
     {
+      "id": "dote_fuego_de_supresion",
+      "label": "Fuego de Supresión",
+      "grupo": "combate_distancia",
+      "coste": 3,
+      "requisitos": [
+        {
+          "tipo": "habilidad",
+          "id": "combate_distancia",
+          "min": 2
+        },
+        {
+          "tipo": "especialidad",
+          "habilidad": "exploracion",
+          "id": "tactica",
+          "min": 1
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "objetivo",
+          "lugar": "familia:ataque_fuego",
+          "condicion": null,
+          "efecto": {
+            "tipo": "texto",
+            "texto": "Fuego de supresión: los objetivos pueden esquivarlo sin tirar gastando una reacción, pero entonces sufren −2 en sus ataques a distancia contra ti y tus aliados hasta el final de su siguiente turno.",
+            "cuando": "siempre",
+            "soloEn": {
+              "modo": [
+                "Estándar (F. Auto)",
+                "Compleja (F. Auto)"
+              ]
+            }
+          }
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_vigilancia_tactica",
       "label": "Vigilancia Táctica",
       "grupo": "exploracion",

@@ -139,7 +139,7 @@ const SALIDA = new URL("src/lib/catalog/dotes.ts", RAIZ);
 // que no dependen de habilidades nuevas (T2.M1 del plan de sync: Ataque Coordinado…) + las que
 // dependen de Ocultación, Mimetismo, Juego de Manos y Exoarmadura (E6) + las dotes atrasadas (fotos
 // anteriores sin transcribir, plan de sync «Después del sync»).
-const TOTAL_ESPERADO = 124;
+const TOTAL_ESPERADO = 125;
 
 const CLAVES_V2 = new Set([
   "id",

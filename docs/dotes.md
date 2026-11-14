@@ -16,8 +16,8 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **124 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 15 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 3 · Sigilo 8 ·
+> Recuento: **125 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 16 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 3 · Sigilo 8 ·
 > Tecnociencia 1 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
@@ -34,7 +34,7 @@
 >
 > **Dotes atrasadas** (estaban en Drive desde fotos anteriores y no se habían transcrito;
 > sync del 2026-11-14, `docs/plan-sync-2026-11-14.md`, «Después del sync»), con el mismo criterio:
-> *Disparo Relámpago*, *Disparo de Interdicción*, *Fuego de Saturación*.
+> *Disparo Relámpago*, *Disparo de Interdicción*, *Fuego de Saturación*, *Fuego de Supresión*.
 
 ## Actitud
 
@@ -1083,6 +1083,17 @@ No hay penalizador por larga distancia en ataques de especialidad.
 
 **Efecto:**
 En un ataque de fuego automático el personaje concentra en una sola casilla todos los proyectiles, aumentando la dificultad de esquiva y el daño en 1.
+
+### Fuego de Supresión
+
+**Coste:** 3
+
+**Requisitos:**
+- Combate a Distancia 2 · habilidad
+- Táctica 1. · especialidad (Exploración)
+
+**Efecto:**
+El personaje realiza un ataque de fuego automático, los objetivos pueden decidir esquivarlo de forma automática empleando una reacción, pero al hacerlo reciben un penalizador de -2 en ataques a distancia contra el personaje y sus aliados hasta el final de su siguiente turno.
 
 ### Disparo de Interdicción
 

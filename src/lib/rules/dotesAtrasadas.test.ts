@@ -122,3 +122,21 @@ describe("Fuego de Saturación", () => {
     assert.equal(avisa({ modo: modoFAuto(t()) }), false);
   });
 });
+
+describe("Fuego de Supresión", () => {
+  const f = resolver(armado(ficha([{ id: "dote_fuego_de_supresion" }]), "fusil_asalto_impetus"));
+  const t = () => fila(f, "ataque_fuego_");
+  const avisa = (modo: string, resultado = ACIERTA) =>
+    efectosSobreObjetivo(t(), { modo }, resultado, () => 1).some((a) => /esquivarlo sin tirar gastando una reacción.*−2 en sus ataques a distancia/.test(a.titulo));
+
+  test("en fuego automático, aviso a «El objetivo» (acierte o no): esquivar con reacción a cambio de −2", () => {
+    const fAuto = t().ataque!.modos.find((m) => m.etiqueta?.includes("F. Auto"))!.id;
+    assert.equal(avisa(fAuto), true);
+    assert.equal(avisa(fAuto, FALLA), true);
+    assert.equal(avisa(t().ataque!.modos[0].id), false);
+  });
+
+  test("sin casilla: no cambia la tirada", () => {
+    assert.equal((t().condiciones ?? []).some((c) => c.id.startsWith("dote_fuego_de_supresion")), false);
+  });
+});
