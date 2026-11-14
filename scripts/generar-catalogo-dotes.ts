@@ -135,8 +135,9 @@ const BORRADOR = new URL("docs/modelado-dotes.json", RAIZ);
 const TRANSCRIPCION = new URL("docs/dotes.md", RAIZ);
 const SALIDA = new URL("src/lib/catalog/dotes.ts", RAIZ);
 // 105 de la foto del 2026-10-14 + Arquero Poderoso, Pistolero y Pistolero Infernal (foto del
-// 2026-10-23, tanda de especialidades de Combate a Distancia).
-const TOTAL_ESPERADO = 108;
+// 2026-10-23, tanda de especialidades de Combate a Distancia) + las de la foto del 2026-11-14
+// que no dependen de habilidades nuevas (T2.M1 del plan de sync: Ataque Coordinado…).
+const TOTAL_ESPERADO = 109;
 
 const CLAVES_V2 = new Set([
   "id",

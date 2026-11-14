@@ -280,3 +280,33 @@ describe("Reflejos Felinos: un atacante adicional menos en la esquiva", () => {
     assert.equal(penal(roto, esquiva, 2) + 0, -2);
   });
 });
+
+describe("sync Drive 2026-11-14 (T2.M1): dotes nuevas de Exploración", () => {
+  test("Ataque Coordinado: compleja, Perspicacia + Exploración en Táctica, dificultad 7", () => {
+    const f = resolver(ficha([{ id: "dote_ataque_coordinado" }]));
+    const t = tirada(f, "dotes_ataque_coordinado")!;
+    assert.equal(t.grupo, "Dotes");
+    assert.equal(t.aplicado, "perspicacia");
+    assert.equal(t.habilidad, "exploracion");
+    assert.deepEqual(t.especialidadesAccion, ["tactica"]);
+    assert.equal(t.dificultadSugerida, 7);
+    assert.match(t.nota ?? "", /^Compleja · /);
+    assert.match(t.nota ?? "", /vía de comunicación fluida/);
+    const m = montar(f, t);
+    assert.equal(m.enEspecialidad, true);
+    assert.equal(m.habilidad?.valor, 6);
+  });
+
+  test("Ataque Coordinado: el +1 al ataque es aviso del resultado; el crítico lo alarga tantos turnos como tu Táctica", () => {
+    const t = tirada(resolver(ficha([{ id: "dote_ataque_coordinado" }])), "dotes_ataque_coordinado")!;
+    assert.match(t.poder!.resultados.exito!, /tú y tus aliados ganáis \+1 en las tiradas de ataque contra el objetivo/);
+    assert.match(t.poder!.resultados.critico!, /^Durante tu siguiente turno.*Además, el bonificador se mantiene tantos turnos como tu puntuación de Táctica/);
+    assert.equal(t.poder!.resultados.fracaso, undefined);
+  });
+
+  test("Ataque Coordinado: sin Táctica 2 no sale", () => {
+    const base = ficha([{ id: "dote_ataque_coordinado" }]);
+    const sinTactica = { ...base, habilidades: { ...base.habilidades, exploracion: { valor: 6, especialidades: [] } } };
+    assert.equal(tirada(resolver(sinTactica), "dotes_ataque_coordinado"), undefined);
+  });
+});

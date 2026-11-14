@@ -6569,6 +6569,81 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_ataque_coordinado",
+    "label": "Ataque Coordinado",
+    "grupo": "exploracion",
+    "coste": 3,
+    "requisitos": [
+      {
+        "tipo": "especialidad",
+        "habilidad": "exploracion",
+        "id": "tactica",
+        "min": 2
+      },
+      {
+        "tipo": "aplicado",
+        "id": "perspicacia",
+        "min": 1
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "El personaje realiza un análisis como acción compleja de un objetivo, la prueba se resuelve con una tirada de **perspicacia + táctica** dificultad 7, en caso de **éxito,** durante su siguiente turno tanto el personaje como sus aliados ganan un bonificador de **+1 en tiradas de ataque** contra el objetivo, en caso de **éxito crítico**, el bonificador se mantiene durante tantos turnos como la puntuación de **táctica** del personaje.\n\nPara que el ataque coordinado pueda ser viable, los personajes aliados deben poder mantener una vía de comunicación fluida entre ellos.",
+    "efectos": [
+      {
+        "tipo": "accion",
+        "accion": {
+          "id": "dotes_ataque_coordinado",
+          "label": "Ataque coordinado",
+          "economia": "compleja",
+          "limite": null,
+          "resolucion": {
+            "tipo": "tirada",
+            "aplicado": "perspicacia",
+            "habilidad": "exploracion",
+            "especialidad": "tactica",
+            "dificultad": 7
+          },
+          "objetivoTira": [],
+          "resultados": {
+            "exito": {
+              "texto": "Durante tu siguiente turno, tú y tus aliados ganáis +1 en las tiradas de ataque contra el objetivo. La app no se lo suma: cada uno lo pone en su tirada."
+            },
+            "critico": {
+              "texto": "Además, el bonificador se mantiene tantos turnos como tu puntuación de Táctica."
+            }
+          },
+          "notas": [
+            {
+              "texto": "Analizas a un objetivo para coordinar el ataque.",
+              "condicion": null
+            },
+            {
+              "texto": "Los aliados deben poder mantener una vía de comunicación fluida entre ellos.",
+              "condicion": null
+            }
+          ]
+        },
+        "borrador": 0
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "accion",
+        "afecta": {
+          "modo": "accion_nueva",
+          "id": "dotes_ataque_coordinado"
+        },
+        "mecanismo": "accion_sin_equipo",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_encontrar_el_angulo",
     "label": "Encontrar el Ángulo",
     "grupo": "exploracion",
@@ -8177,8 +8252,8 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   202 efectos (192 en el borrador)
-//   construidos: 110
+//   203 efectos (193 en el borrador)
+//   construidos: 111
 //   texto: 92
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0

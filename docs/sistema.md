@@ -1008,12 +1008,18 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
 (regla del usuario); solo se pregunta ante duda real.
 
 ### 9.1 Qué es una dote `[FIRME · DOTES]`
-- **108 dotes** con nombre, **coste** en puntos, **requisitos** y efecto en prosa,
+- **109 dotes** con nombre, **coste** en puntos, **requisitos** y efecto en prosa,
   ordenadas bajo la habilidad a la que pertenecen: Actitud 16 · Atletismo 22 · Biociencia 9 ·
-  Combate Melee 32 · Combate a Distancia 12 · Exploración 6 · Sigilo 3 · Tecnociencia 8 (todas
+  Combate Melee 32 · Combate a Distancia 12 · Exploración 7 · Sigilo 3 · Tecnociencia 8 (todas
   en el subgrupo **Psiónica**). Cultura e Interpretación, sin dotes todavía. Las 3 últimas de
   Combate a Distancia (*Arquero Poderoso*, *Pistolero*, *Pistolero Infernal*) son de la foto
-  del 2026-10-23; el resto de dotes nuevas de esa foto no está transcrito todavía.
+  del 2026-10-23; el resto de dotes nuevas de esa foto no está transcrito todavía. De la foto
+  del 2026-11-14 (T2.M1 del plan de sync): *Ataque Coordinado* (Exploración). Las que dependen
+  de habilidades nuevas (Ocultación, Mimetismo, Juego de Manos, Exoarmadura) esperan a E6.
+- **Acciones coordinadas** `[FIRME · DOTES 2026-11-14]`: *Ataque Coordinado* es una acción de
+  dote (compleja, Perspicacia + Exploración en Táctica, dificultad 7). El +1 al ataque contra el
+  objetivo, tuyo y de tus aliados, y lo que dura en crítico (tantos turnos como tu Táctica) van
+  como texto del resultado: la app no toca fichas ajenas ni cuenta turnos.
 - El grupo solo ordena: no es requisito (*Mata Gigantes*, en Combate Melee, pide Táctica).
 - **Pool de creación** por letra: A 18 · B 15 · C 12 · D 9 · E 6 (`HOJA3`). Lo que sobra al
   aprobar la ficha **se pierde**.
