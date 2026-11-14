@@ -474,8 +474,8 @@ export function comprarRecarga(
 // gasta al primer disparo de cada tres; el contador (`disparosPulso`) vive en la pieza
 // (usuario, 2026-11-14) y cualquier recarga lo pone a 0 (comprarRecarga y el «+» de
 // ajustarRecurso).
-// TODO(revisar): los otros modos (Pulso Cargado, Barrido, Activar Aguijón) no tocan el contador;
-// un Pulso tras ellos sigue con la carga en curso si le quedaban disparos.
+// Los otros modos (Pulso Cargado, Barrido, Activar Aguijón) no tocan el contador: el «× 3
+// disparos» es solo del modo Pulso, y un Pulso tras ellos sigue con la carga en curso.
 export const DISPAROS_POR_CARGA_PULSO = 3;
 
 // Lo que gasta el próximo Pulso: 1 si empieza carga nueva, 0 si quedan disparos de la última.
