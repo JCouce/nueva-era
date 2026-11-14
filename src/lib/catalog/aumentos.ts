@@ -1342,6 +1342,32 @@ const CONTRAGOLPE_MQE_1 = "1 nivel de daño letal y salvación de Voluntad (difi
 // vale el mayor (grupo "vision_aumentada", también en la Mira Telescópica).
 const DISTANCIA = { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" } as const;
 
+// Brazo Biónico (sync Drive 2026-11-14): «por el gasto de dos puntos de fatiga el personaje puede
+// realizar una prueba que utilice el brazo en exclusiva con ventaja». Casilla en las pruebas con un
+// aplicado de Fuerza o Agilidad (Fortaleza, Potencia, Reflejos), sin las salvaciones; la marca el
+// jugador cuando la prueba es solo con el brazo. Mismo id en los cuatro niveles: el alto sustituye
+// al bajo (acumulaPorClave). El límite, nota (los descansos no se miden); el del nivel 3, por
+// escena (`usoPorEscena`); el 4, sin límite.
+// TODO(revisar): «prueba que utilice el brazo» = cualquier prueba de Fortaleza, Potencia o Reflejos
+// (no solo las filas que ya llevan «Con el brazo biónico»).
+function casillaVentajaBrazo(limite: string | null, porEscena = false): CondicionTirada {
+  return {
+    id: "aum_brazo_ventaja",
+    tipo: "toggle",
+    etiqueta: "Prueba solo con el brazo (ventaja, 2 de fatiga)",
+    alcance: { tipo: "aplicado", aplicados: ["fortaleza", "potencia", "reflejos"], salvoGrupo: "Salvaciones" },
+    valorActivo: 0,
+    ventaja: true,
+    costeFatiga: 2,
+    ...(porEscena && { usoPorEscena: true as const }),
+    nota: `Una prueba que use el brazo biónico en exclusiva, con ventaja. ${limite ?? "Sin límite de uso."}`,
+  };
+}
+const MOTOR_VENTAJA_BRAZO: MotorMetadata[] = [
+  { tipo: "resolucion", afecta: { modo: "accion_existente", id: "aplicado:fortaleza|potencia|reflejos" }, mecanismo: "eleccion_jugador", estado: "construido" },
+  { tipo: "coste", afecta: { modo: "accion_existente", id: "aplicado:fortaleza|potencia|reflejos" }, mecanismo: "eleccion_jugador", estado: "construido" },
+];
+
 function casillaVisualOjo(valor: number): CondicionTirada {
   return {
     id: "aum_ojo_visual",
@@ -1626,6 +1652,7 @@ export const IMPLANTES: Implante[] = [
           "Se puede incorporar un arma en su interior siempre que su uso sea a una mano, mientras esté incorporada, su desenfundado es gratuito y no puede ser desarmado. Para incorporar este arma, es preciso una acción extendida de 10 minutos y realizar una tirada de perspicacia + biónica dificultad 8 con el instrumental adecuado. Para desprendese del arma es preciso la misma acción, pero si esta quiere ser extraída de un cuerpo sin respetar su salud, se realiza como el resto de implantes cuando son saqueados.",
         ],
         modificadores: [],
+        condiciones: [casillaVentajaBrazo("Una vez por descanso largo.")],
         // A6a: iguala la Fuerza y la Agilidad del usuario (sync Drive 2026-11-14: antes, Agilidad −1).
         // Ni bloquea ni hace letal.
         extremidad: { fuerza: { delta: 0 }, agilidad: { delta: 0 } },
@@ -1639,6 +1666,7 @@ export const IMPLANTES: Implante[] = [
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_fuego_<instancia>" }, mecanismo: "nota_fija", estado: "construido" },
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "desarmar" }, mecanismo: "nota_fija", estado: "construido" },
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_montar_arma_brazo" }, mecanismo: "accion_equipo", estado: "construido" },
+          ...MOTOR_VENTAJA_BRAZO,
         ],
         // A4b: solo la tirada (usuario, 2026-10-22). El vínculo del arma con el brazo se fija en
         // Equipo (A6b), sin exigir esta tirada.
@@ -1661,6 +1689,7 @@ export const IMPLANTES: Implante[] = [
           "El brazo biónico de segundo nivel tiene un blindaje de 3 puntos que no se apila con armaduras ni con otros aumentos (se aplica el mayor), pero permite utilizar el brazo como arma para bloquear. Además, el brazo biónico causa daño letal en sus ataques de pelea, y aumenta en 1 el daño de sus golpes y la dificultad de aturdimiento por crítico.",
         ],
         modificadores: [],
+        condiciones: [casillaVentajaBrazo("Una vez tras un descanso largo y de nuevo por cada descanso corto.")],
         // A6a: Fuerza +1 (tope 5), la misma Agilidad, blindaje 3, bloquea y letal en pelea.
         extremidad: { fuerza: { delta: 1, tope: 5 }, agilidad: { delta: 0 }, blindaje: 3, bloquea: true, peleaLetal: true, pelea: { danio: 1, aturdimiento: 1 } },
         // A6a: casilla (Fuerza y Agilidad), blindaje en "Resistir daño" (casilla), letal en la
@@ -1671,6 +1700,7 @@ export const IMPLANTES: Implante[] = [
           { tipo: "resolucion", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_bloquear_brazo" }, mecanismo: "accion_equipo", estado: "construido" },
+          ...MOTOR_VENTAJA_BRAZO,
         ],
       },
       {
@@ -1696,9 +1726,11 @@ export const IMPLANTES: Implante[] = [
           },
         ],
         modificadores: [],
+        condiciones: [casillaVentajaBrazo("Una vez por escena de combate.", true)],
         motor: [
           { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "resolucion", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          ...MOTOR_VENTAJA_BRAZO,
         ],
       },
       {
@@ -1730,9 +1762,11 @@ export const IMPLANTES: Implante[] = [
           },
         ],
         modificadores: [],
+        condiciones: [casillaVentajaBrazo(null)],
         motor: [
           { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee_<instancia>" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "resolucion", afecta: { modo: "accion_existente", id: "aumentos_bloquear_brazo" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          ...MOTOR_VENTAJA_BRAZO,
         ],
       },
     ],

@@ -4,7 +4,7 @@ import { defaultSheet, type Sheet } from "./sheet";
 import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { accionesDeAtaque } from "./combate";
 import { montarTirada, eleccionSinTocar, type EleccionTirada } from "./montaje";
-import { resolverDanio, type Accion } from "./acciones";
+import { ACCIONES, resolverDanio, type Accion } from "./acciones";
 import { brazoBionico, ID_BLOQUEAR_BRAZO, ID_CASILLA_BRAZO } from "./brazoBionico";
 import { casillaBlindajeBrazo, desgloseBlindaje, SIN_ARMADURA_NATURAL } from "./blindaje";
 import type { EstadoActivo } from "./estados";
@@ -308,6 +308,53 @@ describe("Brazo Biónico: golpe de pelea, +N al daño y al aturdimiento del crí
     const t = fila(s, "Golpear con Tonfa o Porra")!;
     assert.equal(montar(s, t, true).danio.ajustes.some((a) => a.fuente === "Con el brazo biónico"), false);
     assert.ok(!(t.efectosObjetivo ?? []).some((e) => e.tipo === "ajusteSalvacion"));
+  });
+});
+
+// Sync Drive 2026-11-14 (M2.7): ventaja por 2 de fatiga en una prueba solo con el brazo. Límite:
+// 1 por descanso largo, 2 y descansos cortos (texto), 3 por escena (usoPorEscena), 4 sin límite.
+describe("Brazo Biónico: casilla de ventaja por 2 de fatiga", () => {
+  const VENTAJA = "aum_brazo_ventaja";
+  const fija = (s: Sheet, id: string) => conExtrasDeFicha(resolver(s), ACCIONES.find((a) => a.id === id)!);
+  const casillaV = (t: Accion) => t.condiciones?.find((c) => c.id === VENTAJA);
+
+  test("en las pruebas de Potencia, Fortaleza o Reflejos; no en las salvaciones ni en otras", () => {
+    const s = conBrazo(ficha(), 1);
+    assert.ok(casillaV(fija(s, "atletismo")));
+    assert.ok(casillaV(fija(s, "escalar")));
+    assert.equal(casillaV(fija(s, "salv_fortaleza")), undefined);
+    assert.equal(casillaV(fija(s, "investigacion")), undefined);
+    assert.equal(casillaV(fija(ficha(), "atletismo")), undefined);
+  });
+
+  test("marcada: ventaja y 2 de fatiga", () => {
+    const s = conBrazo(ficha({ fuerza: 2, agilidad: 2 }), 2);
+    const f = resolver(s);
+    const t = fija(s, "atletismo");
+    const c = casillaV(t)!;
+    const e = eleccionSinTocar(t);
+    const sin = montarTirada(f, t, e);
+    const con = montarTirada(f, t, { ...e, estadoCondiciones: { ...e.estadoCondiciones, [VENTAJA]: true } });
+    assert.equal(sin.ventaja, null);
+    assert.equal(sin.costeFatiga, 0);
+    assert.equal(con.ventaja, c.etiqueta);
+    assert.equal(con.costeFatiga, 2);
+    assert.equal(con.modificador, sin.modificador);
+  });
+
+  test("límite por nivel: texto en el 1 y el 2, por escena en el 3, sin límite en el 4", () => {
+    const de = (nivel: number, modelo?: string) => {
+      const c = casillaV(fija(conBrazo(ficha(), nivel, modelo), "atletismo"));
+      assert.ok(c && c.tipo === "toggle");
+      return c;
+    };
+    assert.match(de(1).nota ?? "", /Una vez por descanso largo\./);
+    assert.equal(de(1).usoPorEscena, undefined);
+    assert.match(de(2).nota ?? "", /descanso corto/);
+    assert.equal(de(2).usoPorEscena, undefined);
+    assert.equal(de(3, "fuerte").usoPorEscena, true);
+    assert.match(de(4, "agil").nota ?? "", /Sin límite de uso\./);
+    assert.equal(de(4, "agil").usoPorEscena, undefined);
   });
 });
 

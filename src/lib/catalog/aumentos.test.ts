@@ -200,10 +200,11 @@ describe("integridad del catálogo de aumentos", () => {
     // A6a: la casilla del brazo (1-4), el blindaje y el bloqueo (2-4), el letal en pelea (2) y la
     // fila "Bloquear con el brazo biónico" (2). El nivel 1 suma la casilla a Incorporar arma.
     // A6b: las notas del arma incorporada (cuerpo a cuerpo, fuego y desarme) en el nivel 1.
-    "aum_brazo_bionico 1": 5,
-    "aum_brazo_bionico 2": 4,
-    "aum_brazo_bionico 3": 2,
-    "aum_brazo_bionico 4": 2,
+    // Sync Drive 2026-11-14 (M2.7): +2 por nivel, la casilla de ventaja (Resolución y Coste).
+    "aum_brazo_bionico 1": 7,
+    "aum_brazo_bionico 2": 6,
+    "aum_brazo_bionico 3": 4,
+    "aum_brazo_bionico 4": 4,
     // T6a (au-04, au-05): el 1 habilita la psiónica y añade la salvación de sobreesfuerzo; cada
     // nivel, cuándo salta y su tabla.
     "aum_implante_de_resonancia_metrica 1": 2,
