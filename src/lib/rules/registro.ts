@@ -30,7 +30,7 @@
 //     categoría y dañar otra deja el número igual) y devuelve exactamente el de antes.
 //     Las entradas viejas, sin desglose, vuelven al número y el desglose se normaliza.
 import { z } from "zod";
-import { leerEstados, ponerEstado, quitarEstado, type CambioEstadoNpc } from "./estadosFicha";
+import { esEstadoLegado, leerEstados, ponerEstado, quitarEstado, type CambioEstadoNpc } from "./estadosFicha";
 import type { EstadoActivo } from "./estados";
 import {
   devolverVida,
@@ -139,6 +139,11 @@ function leerEstadoGuardado(v: unknown): EstadoActivo | null | undefined {
   return e;
 }
 
+// El id suelto del cambio, el de ahora: si lo guardado era un estado que leerEstados traduce
+// (Sorprendido y desprevenido → Sorprendido o Desprevenido), el traducido.
+const idDelCambio = (estadoId: string, antes: EstadoActivo | null, despues: EstadoActivo | null): string =>
+  (esEstadoLegado(estadoId) && (despues ?? antes)?.estadoId) || estadoId;
+
 const datosVidaSchema = z.object({
   recurso: z.enum(["vida", "fatiga"]),
   delta: z.number().int(),
@@ -176,7 +181,7 @@ export function leerDatosRegistro(tipo: string, json: unknown): DatosRegistro | 
       const despues = leerEstadoGuardado(c.despues);
       // Un estado que ya no existe en el catálogo: no se puede devolver tal cual.
       if (antes === undefined || despues === undefined) return null;
-      leidos.push({ ...c, antes, despues });
+      leidos.push({ ...c, estadoId: idDelCambio(c.estadoId, antes, despues), antes, despues });
     }
     if (tipo === "fin_escena" || tipo === "limpiar_estados") return { tipo, cambios: leidos };
     const npcsJson = (json as { npcs?: unknown } | null)?.npcs;
@@ -188,7 +193,7 @@ export function leerDatosRegistro(tipo: string, json: unknown): DatosRegistro | 
       const antes = leerEstadoGuardado(c.antes);
       const despues = leerEstadoGuardado(c.despues);
       if (antes === undefined || despues === undefined) return null;
-      npcs.push({ ...c, antes, despues });
+      npcs.push({ ...c, estadoId: idDelCambio(c.estadoId, antes, despues), antes, despues });
     }
     return { tipo, cambios: leidos, npcs };
   }

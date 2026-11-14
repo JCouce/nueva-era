@@ -35,6 +35,28 @@ describe("leerEstados (E1a: lector tolerante de Character.estados y Combatiente.
     );
   });
 
+  test("el «Sorprendido y desprevenido» de antes se lee como el estado suelto, con sus rondas", () => {
+    assert.deepEqual(
+      leerEstados([
+        { estadoId: "sorprendido_desprevenido", gradoId: "sorprendido", rondasRestantes: 2 },
+        { estadoId: "sorprendido_desprevenido", gradoId: "desprevenido", rondasRestantes: null, finDeEscena: true },
+      ]),
+      [
+        { estadoId: "sorprendido", gradoId: "activo", rondasRestantes: 2 },
+        { estadoId: "desprevenido", gradoId: "activo", rondasRestantes: null, finDeEscena: true },
+      ],
+    );
+    assert.deepEqual(leerEstados([{ estadoId: "sorprendido_desprevenido", gradoId: "otro", rondasRestantes: 1 }]), []);
+  });
+
+  test("Sorprendido y Desprevenido son dos estados que se ponen y quitan por separado", () => {
+    const sorprendido: EstadoActivo = { estadoId: "sorprendido", gradoId: "activo", rondasRestantes: null };
+    const desprevenido: EstadoActivo = { estadoId: "desprevenido", gradoId: "activo", rondasRestantes: 1 };
+    const ambos = ponerEstado(ponerEstado([], sorprendido), desprevenido);
+    assert.deepEqual(leerEstados(ambos), [sorprendido, desprevenido]);
+    assert.deepEqual(quitarEstado(ambos, "desprevenido"), [sorprendido]);
+  });
+
   test("una duración rara queda como hasta quitarlo", () => {
     const raras = [-1, 1.5, "3", Number.NaN, 10_000, true, { n: 2 }];
     for (const rondasRestantes of raras) {

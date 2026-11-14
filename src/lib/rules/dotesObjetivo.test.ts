@@ -156,8 +156,8 @@ describe("Asesino: el objetivo sigue sorprendido", () => {
     assert.equal(c.resumen, "aviso al objetivo");
     for (const r of [ACIERTA, FALLA]) {
       const [aviso] = efectosSobreObjetivo(t, con(c.id), r, () => 1);
-      assert.equal(aviso.estadoId, "sorprendido_desprevenido");
-      assert.match(aviso.titulo, /^El objetivo sufre Sorprendido o desprevenido: lo sigue estando/);
+      assert.equal(aviso.estadoId, null);
+      assert.match(aviso.titulo, /^El objetivo sigue Sorprendido o Desprevenido, el que tuviera/);
     }
     assert.deepEqual(efectosSobreObjetivo(t, {}, ACIERTA, () => 1), []);
   });

@@ -232,6 +232,42 @@ describe("limpiar estados", () => {
   });
 });
 
+describe("registro guardado con «Sorprendido y desprevenido» (antes de separarlos)", () => {
+  const VIEJO = { estadoId: "sorprendido_desprevenido", gradoId: "desprevenido", rondasRestantes: null };
+  const AHORA: EstadoActivo = { estadoId: "desprevenido", gradoId: "activo", rondasRestantes: null };
+  const datosViejos = {
+    cambios: [
+      {
+        characterId: "pj1",
+        estadoId: "sorprendido_desprevenido",
+        antes: null,
+        despues: VIEJO,
+        restado: { vida: 0, fatiga: 0 },
+        combatientes: [],
+      },
+    ],
+    npcs: [{ combatienteId: "k1", nombre: "Guardia", estadoId: "sorprendido_desprevenido", antes: VIEJO, despues: null }],
+  };
+
+  test("se lee con el estado nuevo, también el id suelto del cambio", () => {
+    const d = leerDatosRegistro("estado_poner", datosViejos);
+    assert.ok(d && d.tipo === "estado_poner");
+    assert.equal(d.cambios[0].estadoId, "desprevenido");
+    assert.deepEqual(d.cambios[0].despues, AHORA);
+    assert.equal(d.npcs?.[0].estadoId, "desprevenido");
+    assert.deepEqual(d.npcs?.[0].antes, AHORA);
+  });
+
+  test("y se deshace sobre el estado nuevo", () => {
+    const d = leerDatosRegistro("estado_poner", datosViejos);
+    assert.ok(d && d.tipo === "estado_poner");
+    const plan = planDeshacerEstados(d, [{ ...pjVacio(), estados: [AHORA] }], [], [], [{ id: "k1", nombre: "Guardia", estados: [] }]);
+    assert.ok(plan.ok);
+    assert.deepEqual(plan.plan.personajes[0].estados, []);
+    assert.deepEqual(plan.plan.npcs, [{ id: "k1", estados: [AHORA] }]);
+  });
+});
+
 function cambio(o: { objetivo: "ficha" | "combatiente"; id: string; nombre: string; npc: boolean; actual: number }, despues: number) {
   return { objetivo: o.objetivo, id: o.id, nombre: o.nombre, npc: o.npc, antes: o.actual, despues };
 }

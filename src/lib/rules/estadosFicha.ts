@@ -28,6 +28,22 @@ function valorValido(v: unknown): v is number {
   return typeof v === "number" && Number.isInteger(v) && Math.abs(v) <= MAX_VALOR_ESTADO;
 }
 
+// Ids viejos que se guardaron y ya no están en el catálogo: (estadoId, gradoId) → el de ahora.
+// «Sorprendido y desprevenido» era un estado con dos grados hasta 2026-11-14; ahora son dos.
+const LEGADO: Readonly<Record<string, Readonly<Record<string, { estadoId: string; gradoId: string }>>>> = {
+  sorprendido_desprevenido: {
+    sorprendido: { estadoId: "sorprendido", gradoId: "activo" },
+    desprevenido: { estadoId: "desprevenido", gradoId: "activo" },
+  },
+};
+
+function traducirLegado(estadoId: string, gradoId: string): { estadoId: string; gradoId: string } {
+  const grados = Object.hasOwn(LEGADO, estadoId) ? LEGADO[estadoId] : undefined;
+  return (grados && Object.hasOwn(grados, gradoId) && grados[gradoId]) || { estadoId, gradoId };
+}
+
+export const esEstadoLegado = (estadoId: string): boolean => Object.hasOwn(LEGADO, estadoId);
+
 // Nunca revienta: lo que no es una lista da []; una entrada sin ids, o con un estado o
 // grado que ya no existe en el catálogo, se descarta; una duración que no se entiende
 // queda como "hasta quitarlo" (que el máster lo vea y lo quite, mejor que perderlo). Un
@@ -37,8 +53,12 @@ export function leerEstados(json: unknown): EstadoActivo[] {
   const porId = new Map<string, EstadoActivo>();
   for (const e of json) {
     if (typeof e !== "object" || e === null) continue;
-    const { estadoId, gradoId, rondasRestantes, finDeEscena, forzado, cubre, valor, nota } = e as Record<string, unknown>;
-    if (typeof estadoId !== "string" || typeof gradoId !== "string") continue;
+    const { estadoId: idGuardado, gradoId: gradoGuardado, rondasRestantes, finDeEscena, forzado, cubre, valor, nota } = e as Record<
+      string,
+      unknown
+    >;
+    if (typeof idGuardado !== "string" || typeof gradoGuardado !== "string") continue;
+    const { estadoId, gradoId } = traducirLegado(idGuardado, gradoGuardado);
     if (!estadoPorId(estadoId)?.grados.some((g) => g.id === gradoId)) continue;
     const activo: EstadoActivo = rondasValidas(rondasRestantes)
       ? { estadoId, gradoId, rondasRestantes }

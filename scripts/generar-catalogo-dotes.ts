@@ -422,16 +422,15 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
   },
   // T3b (do-05): «si el personaje ataca a un objetivo sorprendido o desprevenido, segundos ataques
   // mantienen la condición de sorpresivo» → casilla «Objetivo sorprendido o desprevenido» y aviso
-  // de que lo sigue estando, acierte o no. Cada rama, la suya (requisito por rama).
+  // de que lo sigue estando, acierte o no. Cada rama, la suya (requisito por rama). Desde que
+  // Sorprendido y Desprevenido son dos estados (2026-11-14), el aviso es texto: sigue el que tenga.
   "dote_asesino#0": {
     tipo: "objetivo",
     lugar: "familia:ataque_melee",
     condicion: "Objetivo sorprendido o desprevenido",
     efecto: {
-      tipo: "estado",
-      estadoId: "sorprendido_desprevenido",
-      etiqueta: "Sorprendido o desprevenido",
-      duracion: { tipo: "sinDuracion", motivo: "lo sigue estando, con el mismo grado, contra tus siguientes ataques" },
+      tipo: "texto",
+      texto: "El objetivo sigue Sorprendido o Desprevenido, el que tuviera, contra tus siguientes ataques",
       cuando: "siempre",
     },
   },
@@ -440,10 +439,8 @@ const CONVERSIONES: Record<string, Record<string, unknown> | Record<string, unkn
     lugar: "familia:ataque_fuego",
     condicion: "Objetivo sorprendido o desprevenido",
     efecto: {
-      tipo: "estado",
-      estadoId: "sorprendido_desprevenido",
-      etiqueta: "Sorprendido o desprevenido",
-      duracion: { tipo: "sinDuracion", motivo: "lo sigue estando, con el mismo grado, contra tus siguientes ataques" },
+      tipo: "texto",
+      texto: "El objetivo sigue Sorprendido o Desprevenido, el que tuviera, contra tus siguientes ataques",
       cuando: "siempre",
     },
   },

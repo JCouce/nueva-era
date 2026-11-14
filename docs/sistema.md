@@ -718,8 +718,8 @@ imponen penalizadores por umbral:
     Derribado** de ese golpe (la de la maniobra o el Derribo (N) de un arma). Sin derribo en el
     golpe, no avisa.
   - **Asesino**: casilla «Objetivo sorprendido o desprevenido» (no suma; «aviso al objetivo») y,
-    acierte o no, «sigue Sorprendido o desprevenido, con el mismo grado, contra tus siguientes
-    ataques». Melee y disparo, por rama.
+    acierte o no, «sigue Sorprendido o Desprevenido, el que tuviera, contra tus siguientes
+    ataques» (aviso de texto desde que son dos estados). Melee y disparo, por rama.
   - **Onda Residual**: tras Expansión, acierte o no (estalla igual), la zona: media velocidad y
     −2 a Reflejos dentro del área **1 turno**, salvo al psiónico. El narrativo sigue en la nota.
   - Modelo (`rules/efectosArma.ts`, schema Zod): `cuando: "siempre"`; `soloEn.casilla`;
@@ -860,6 +860,11 @@ imponen penalizadores por umbral:
   derribado, enfermedad, entorpecido, envenenamiento, fatiga, **fusión**, hemorragia,
   heridas, inmovilizado, llamarada, miedo, parálisis, shock, sordera, sorprendido y
   desprevenido, inconsciencia y muerte.
+  *En la app* `[usuario, 2026-11-14]`: **Sorprendido** y **Desprevenido** son dos estados sueltos
+  de un solo grado (antes, uno «Sorprendido y desprevenido» con dos grados, que no salía buscando
+  «Sorprendido»); señalar al enemigo convierte Desprevenido en Sorprendido y Sorprendido en nada.
+  Lo guardado con el id viejo (`sorprendido_desprevenido`) lo traduce al leerlo `leerEstados`
+  (también en el registro del máster), sin migración.
 - **Descanso** `[FIRME · fuente/reglas-base.md «Curación y Descanso» + usuario, cuestionario de cierre 2026-11-14: au-01, au-02, au-03]`:
   descanso largo de 8 horas (recupera toda la fatiga gastada y sana dos niveles de no letal);
   **2 descansos breves de 10 minutos al día, +3 de fatiga cada uno**, y **5 comidas, +2 cada

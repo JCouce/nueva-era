@@ -5195,13 +5195,8 @@ export const DOTES: readonly DoteCatalogo[] = [
         "lugar": "familia:ataque_melee",
         "condicion": "Objetivo sorprendido o desprevenido",
         "efecto": {
-          "tipo": "estado",
-          "estadoId": "sorprendido_desprevenido",
-          "duracion": {
-            "tipo": "sinDuracion",
-            "motivo": "lo sigue estando, con el mismo grado, contra tus siguientes ataques"
-          },
-          "etiqueta": "Sorprendido o desprevenido",
+          "tipo": "texto",
+          "texto": "El objetivo sigue Sorprendido o Desprevenido, el que tuviera, contra tus siguientes ataques",
           "cuando": "siempre"
         },
         "requisitoAlcance": {
@@ -5216,13 +5211,8 @@ export const DOTES: readonly DoteCatalogo[] = [
         "lugar": "familia:ataque_fuego",
         "condicion": "Objetivo sorprendido o desprevenido",
         "efecto": {
-          "tipo": "estado",
-          "estadoId": "sorprendido_desprevenido",
-          "duracion": {
-            "tipo": "sinDuracion",
-            "motivo": "lo sigue estando, con el mismo grado, contra tus siguientes ataques"
-          },
-          "etiqueta": "Sorprendido o desprevenido",
+          "tipo": "texto",
+          "texto": "El objetivo sigue Sorprendido o Desprevenido, el que tuviera, contra tus siguientes ataques",
           "cuando": "siempre"
         },
         "requisitoAlcance": {

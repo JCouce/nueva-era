@@ -110,6 +110,11 @@ export type Estado = {
   reduceUmbral?: Partial<Record<RecursoUmbral, number>>;
 };
 
+const RESUMEN_SORPRESA =
+  "Otro personaje que haya percibido la amenaza puede usar una reacción para señalar al " +
+  "enemigo cuando ataque: Desprevenido pasa a Sorprendido y Sorprendido a nada (no acumulable " +
+  "contra el mismo enemigo).";
+
 export const ESTADOS: Estado[] = [
   {
     id: "atrapado",
@@ -871,16 +876,15 @@ export const ESTADOS: Estado[] = [
       },
     ],
   },
+  // Sorprendido y Desprevenido fueron un solo estado con dos grados hasta 2026-11-14 (el máster
+  // no lo encontraba buscando «Sorprendido»); lo guardado con el id viejo lo traduce leerEstados.
   {
-    id: "sorprendido_desprevenido",
-    label: "Sorprendido y desprevenido",
-    resumen:
-      "Otro personaje que haya percibido la amenaza puede usar una reacción para señalar al " +
-      "enemigo cuando ataque, reduciendo un grado el nivel de sorpresa (no acumulable contra el " +
-      "mismo enemigo).",
+    id: "sorprendido",
+    label: "Sorprendido",
+    resumen: RESUMEN_SORPRESA,
     grados: [
       {
-        id: "sorprendido",
+        id: "activo",
         label: "Sorprendido",
         modificadores: [],
         detalle: [
@@ -889,8 +893,15 @@ export const ESTADOS: Estado[] = [
         ],
         duracionTurnos: null,
       },
+    ],
+  },
+  {
+    id: "desprevenido",
+    label: "Desprevenido",
+    resumen: RESUMEN_SORPRESA,
+    grados: [
       {
-        id: "desprevenido",
+        id: "activo",
         label: "Desprevenido",
         modificadores: [],
         detalle: [

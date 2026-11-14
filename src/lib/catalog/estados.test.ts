@@ -6,9 +6,10 @@ import { ESTADOS, estadoPorId } from "./estados";
 // un id duplicado o un grado sin modificadores por descuido se cuela fácil.
 describe("integridad del catálogo de estados", () => {
   // 20 del documento + Supresores y Dosis acumulada, de la munición especial (cuestionario eq-22),
-  // + Shock en el equipo (S73: el Shock del documento se parte en cuerpo y equipo, pl-01).
-  test("son los 20 que cita docs/sistema.md §7 (Fatiga/Heridas/Muerte no cuentan aparte) más los 2 de munición y el Shock en el equipo", () => {
-    assert.equal(ESTADOS.length, 23);
+  // + Shock en el equipo (S73: el Shock del documento se parte en cuerpo y equipo, pl-01)
+  // + 1 porque «Sorprendido y desprevenido» son dos estados sueltos (usuario, 2026-11-14).
+  test("son los 20 que cita docs/sistema.md §7 (Fatiga/Heridas/Muerte no cuentan aparte) más los 2 de munición, el Shock en el equipo y Sorprendido/Desprevenido por separado", () => {
+    assert.equal(ESTADOS.length, 24);
   });
 
   test("lo que degrada, lo que arrastra y lo que toca a las piezas apunta a algo que existe", () => {
