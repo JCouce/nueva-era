@@ -261,9 +261,10 @@ export function casillaBlindajeBrazo(
   sheet: Pick<Sheet, "equipo">,
   tipo: TipoDanio,
   penalizadas?: ReadonlyMap<string, PiezaPenalizada>,
+  inutilizadas?: ReadonlyMap<string, string>,
 ): CasillaBlindajeBrazo | null {
   const brazo = blindajeDelBrazo(sheet);
-  if (!brazo) return null;
+  if (!brazo || apagada(inutilizadas, brazo.origen)) return null;
   const noCuenta = blindajeNoCuenta(tipo);
   const porShock = bloqueoDeReaccion(penalizadas, brazo.origen);
   return {
@@ -287,6 +288,11 @@ export type CasillaBlindajeReactivo = {
   bloqueada: string | null;
 };
 
+// Con su pieza apagada por el Shock (FichaResuelta.piezasInutilizadas) la casilla no sale: no se
+// puede marcar ni cobrar fatiga (resolverGolpe ya no la suma).
+const apagada = (inutilizadas: ReadonlyMap<string, string> | undefined, origen: OrigenAporte | undefined) =>
+  Boolean(origen?.instanciaId && inutilizadas?.has(origen.instanciaId));
+
 const MOTIVO_NO_CUENTA = {
   mental: "No vale contra el daño mental: no lo para el blindaje.",
   fuego: "No vale contra el fuego: contra el fuego solo cuenta la armadura (con Mejora Ignífuga).",
@@ -300,9 +306,10 @@ export function casillaBlindajeReactivo(
   marcada: boolean,
   fatiga: number = sheet.fatigaActual,
   penalizadas?: ReadonlyMap<string, PiezaPenalizada>,
+  inutilizadas?: ReadonlyMap<string, string>,
 ): CasillaBlindajeReactivo | null {
   const r = blindajeReactivoDeAumentos(sheet);
-  if (!r) return null;
+  if (!r || apagada(inutilizadas, r.origen)) return null;
   const noCuenta = blindajeNoCuenta(tipo);
   const porShock = bloqueoDeReaccion(penalizadas, r.origen);
   const deOtroTipo = r.tipos && !r.tipos.includes(tipo) ? (r.soloContra ?? "No vale contra este tipo de daño.") : null;

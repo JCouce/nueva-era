@@ -679,6 +679,15 @@ describe("Shock (fracaso): sin acciones complejas ni reacciones con los implante
     assert.ok(resolverGolpe(sin, golpe).desglose.some((l) => /Densificar/.test(l.etiqueta)));
   });
 
+  test("fracaso crítico: con el implante apagado, Densificar y el bloqueo con el brazo no salen en Resistir daño", () => {
+    const f = resolver(s, [shock("fracaso_critico")]);
+    assert.equal(casillaBlindajeReactivo(f.ficha, "cinetico", false, f.fatigaEnJuego.actual, f.piezasPenalizadas, f.piezasInutilizadas), null);
+    assert.equal(casillaBlindajeBrazo(f.ficha, "cinetico", f.piezasPenalizadas, f.piezasInutilizadas), null);
+    const sin = resolver(s, []);
+    assert.ok(casillaBlindajeReactivo(sin.ficha, "cinetico", false, sin.fatigaEnJuego.actual, sin.piezasPenalizadas, sin.piezasInutilizadas));
+    assert.ok(casillaBlindajeBrazo(sin.ficha, "cinetico", sin.piezasPenalizadas, sin.piezasInutilizadas));
+  });
+
   test("fracaso: lo que admite otra vía o no es complejo sigue (Activar Neuroprótesis, Tempestad, el golpe Estándar)", () => {
     const f = resolver(s, [shock("fracaso")]);
     // «Acción gratuita en tu turno o reacción»: queda la gratuita.
