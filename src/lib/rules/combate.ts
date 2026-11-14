@@ -36,12 +36,12 @@ import type { MotorMetadata } from "./motor";
 import type { TextoEnTirada } from "./especie";
 import { conTextosDeFicha } from "./textosTirada";
 import { textoCortoDeEfecto, type EfectoArma, type EfectoEnTirada } from "./efectosArma";
-import { DISPAROS_POR_CARGA_PULSO, escudoRoto, gastoDelModo, gastoDisparoPulso, MOTIVO_ESCUDO_ROTO, recursoDe } from "./recursos";
+import { claveBateria, DISPAROS_POR_CARGA_PULSO, escudoRoto, gastoDelModo, gastoDisparoPulso, MOTIVO_ESCUDO_ROTO, recursoDe } from "./recursos";
 import { sinMejorasNoAdmitidas } from "./compatibilidadArma";
 import { bloqueadaPor, conHabilitacion, esVisible, habilitacionDeFamilia } from "./habilitacion";
 import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type AccionDirecta } from "./acciones";
 import { RUIDO_DISPARO, modosDeOcultacion, ocultacionDeNivel, textoSigiloAlAtacar, type SigiloAlAtacar } from "./sigilo";
-import { ESTADO_AGUIJON_ID, ESTADO_CAMUFLAJE_ID } from "../catalog/estados";
+import { ESTADO_AGUIJON_ID, ESTADO_CAMUFLAJE_ID, ESTADO_MALLA_ID, TURNOS_MALLA } from "../catalog/estados";
 import { atributoEfectivo, aplicado } from "./derivados";
 import { criticoDesarmado, golpeDesarmado, type AfectacionGolpe } from "./golpeDesarmado";
 import { ID_RETROCESO_ENTROPICO, retrocesoEntropico } from "./retrocesoEntropico";
@@ -1690,6 +1690,30 @@ function tiradaDetonacionPulsoTermico(pieza: PiezaEquipada): AccionDirecta | nul
   };
 }
 
+// «Activar Malla Plasmática» (usuario 2026-11-14): «reacción ante un ataque entrante o acción
+// gratuita en el propio turno; cada activación consume 1 carga y da 10 turnos de campo continuo».
+// Gasta 1 carga de su batería (claveBateria, recursos.ts) y pone «Malla activa» 10 rondas, como
+// «Activar Aguijón». Sin batería, bloqueada; con la pieza apagada por el Shock, lo hace
+// habilitacionEnFicha por su `origen`.
+function accionActivarMalla(sheet: Sheet, pieza: PiezaEquipada): AccionDirecta {
+  const clave = claveBateria(pieza.instanciaId);
+  const bateria = recursoDe(sheet, clave);
+  return {
+    id: `activar_malla_${pieza.instanciaId}`,
+    label: "Activar Malla Plasmática",
+    grupo: "Acciones",
+    confirmarLabel: "Activar",
+    nota:
+      "Reacción ante un ataque entrante o acción gratuita en tu turno. " +
+      `Gasta 1 carga de la batería${bateria ? ` (quedan ${bateria.actual}/${bateria.max})` : ""} y te pone «Malla activa» ${TURNOS_MALLA} rondas: ` +
+      "mientras dure, el colchón absorbe, devuelves los golpes cuerpo a cuerpo y puedes sacrificarlo o detonarlo; " +
+      "−8 al Sigilo frente a la vista y anula el Camuflaje activo. Las rondas corren en combate; fuera, apágala a mano.",
+    estadoAlUsar: { estadoId: ESTADO_MALLA_ID, fijo: { gradoId: "activo", turnos: TURNOS_MALLA } },
+    gastoRecurso: { instanciaId: clave, cantidad: 1 },
+    ...(bateria?.actual === 0 && { habilitacion: bloqueadaPor(MOTIVO_SIN_CARGAS, "duro") }),
+  };
+}
+
 // "Activar camuflaje trifásico": acción gratuita que gasta 1 carga de su célula (subsistemas.ts)
 // y te pone el estado Camuflaje con el modo elegido (estático o dinámico) y la duración de su
 // nivel (T4, eq-25). Mientras dura, su cobertura se suma por sentido a tu Sigilo y la esquiva
@@ -1793,6 +1817,7 @@ export function accionesDirectasDeAtaque(sheet: Sheet): AccionDirecta[] {
         origen: origenDePieza("equipo", cat, pieza.instanciaId),
       });
     } else if (cat?.familia === "subsistema" && pieza.catalogoId === "malla_plasmatica") {
+      acciones.push({ ...accionActivarMalla(sheet, pieza), origen: origenDePieza("equipo", cat, pieza.instanciaId) });
       const detonacion = tiradaDetonacionPulsoTermico(pieza);
       if (detonacion) acciones.push({ ...detonacion, origen: origenDePieza("equipo", cat, pieza.instanciaId) });
     } else if (cat?.familia === "subsistema" && pieza.catalogoId === "camuflaje_trifasico") {

@@ -1165,6 +1165,12 @@ export const ESTADOS_DE_OCULTACION: Estado[] = [
 // Aguijón no gastan y sin él no se pueden usar (Accion.requiereEstado, habilitacionEnFicha). No
 // están en ESTADOS: no salen en el selector del máster.
 export const ESTADO_AGUIJON_ID = "aguijon_activo";
+// «Malla activa» (usuario 2026-11-14): «Activar Malla Plasmática» gasta 1 carga de su batería y lo
+// pone 10 rondas («cada activación consume 1 carga y da 10 turnos de campo continuo»). Mientras
+// dura, la Malla hace lo suyo: devolver el golpe, sacrificar el colchón y detonarlo, el −8 al
+// Sigilo y anular el Camuflaje activo. Sin él, nada de eso.
+export const ESTADO_MALLA_ID = "malla_activa";
+export const TURNOS_MALLA = 10;
 
 export const ESTADOS_DE_EQUIPO: Estado[] = [
   {
@@ -1180,6 +1186,23 @@ export const ESTADOS_DE_EQUIPO: Estado[] = [
         label: "Aguijón activo",
         modificadores: [],
         detalle: ["1 carga lo mantiene tantas rondas como el nivel del Proyector."],
+        duracionTurnos: null,
+      },
+    ],
+  },
+  {
+    id: ESTADO_MALLA_ID,
+    label: "Malla activa",
+    resumen:
+      "La Malla Plasmática tiene el campo levantado: el colchón absorbe, devuelve los golpes cuerpo a " +
+      "cuerpo y se puede sacrificar o detonar. −8 al Sigilo frente a la vista y anula el Camuflaje activo.",
+    quitarJugador: "Apagar la Malla",
+    grados: [
+      {
+        id: "activo",
+        label: "Malla activa",
+        modificadores: [],
+        detalle: [`1 carga de la batería da ${TURNOS_MALLA} rondas de campo continuo.`],
         duracionTurnos: null,
       },
     ],

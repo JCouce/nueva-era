@@ -1780,15 +1780,17 @@ describe("accionesDirectasDeAtaque", () => {
     sheet = equipar(sheet, { instanciaId: "mp1", catalogoId: "malla_plasmatica", nivel, instaladoEnId: "a1" });
     return sheet;
   }
+  // Desde 2026-11-14 la Malla también trae «Activar Malla Plasmática» (mallaPlasmatica.test.ts).
+  const detonacion = (sheet: Sheet) => accionesDirectasDeAtaque(sheet).filter((a) => a.id.startsWith("detonacion_pulso_termico_"));
 
   test("Malla Plasmática nivel 1 no genera detonación de pulso térmico", () => {
     const sheet = conMallaPlasmatica(1);
-    assert.deepEqual(accionesDirectasDeAtaque(sheet), []);
+    assert.deepEqual(accionesDirectasDeAtaque(sheet).map((a) => a.id), ["activar_malla_mp1"]);
   });
 
   test("Malla Plasmática nivel 2: detonación en área 6x6, dificultades con nivel 2", () => {
     const sheet = conMallaPlasmatica(2);
-    const [accion] = accionesDirectasDeAtaque(sheet);
+    const [accion] = detonacion(sheet);
     assert.equal(accion.label, "Detonar pulso térmico (Malla Plasmática)");
     assert.equal(accion.grupo, "Ataques");
     assert.match(accion.nota ?? "", /área 6x6/);
@@ -1798,7 +1800,7 @@ describe("accionesDirectasDeAtaque", () => {
 
   test("Malla Plasmática nivel 4: el área pasa a 10x10", () => {
     const sheet = conMallaPlasmatica(4);
-    const [accion] = accionesDirectasDeAtaque(sheet);
+    const [accion] = detonacion(sheet);
     assert.match(accion.nota ?? "", /área 10x10/);
   });
 
@@ -1808,7 +1810,7 @@ describe("accionesDirectasDeAtaque", () => {
   // qué instancia gasta, no un número ya calculado.
   test("recursoInstanciaId apunta a la instancia de Malla Plasmática, y la nota no lleva ningún número de colchón", () => {
     const sheet = ajustarRecurso(conMallaPlasmatica(2), "mp1", -5); // 7/12
-    const [accion] = accionesDirectasDeAtaque(sheet);
+    const [accion] = detonacion(sheet);
     assert.equal(accion.recursoInstanciaId, "mp1");
     assert.equal(accion.categoriaDanio, "Plasma");
     assert.doesNotMatch(accion.nota ?? "", /\d+\/\d+/);
