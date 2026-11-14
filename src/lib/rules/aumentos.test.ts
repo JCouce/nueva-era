@@ -156,11 +156,19 @@ describe("implantes: cualquier nivel directo y subir paga la diferencia", () => 
     assert.deepEqual([1, 2, 3, 4].map((nivel) => costeDePieza({ instanciaId: "e", catalogoId: ENJAMBRE, nivel })), [22_000, 44_000, 88_000, 176_000]);
   });
 
-  test("Brazo Biónico (sync Drive 2026-11-14): nivel 1, 8.000", () => {
-    const BRAZO = "aum_brazo_bionico";
-    const plan = planCompraAumento(defaultSheet(), { catalogoId: BRAZO, nivel: 1 });
-    assert.equal(plan.ok && plan.precio, 8_000);
-    assert.equal(costeDePieza({ instanciaId: "b", catalogoId: BRAZO, nivel: 1 }), 8_000);
+  test("Brazo Biónico (sync Drive 2026-11-14): 8.000 / 16.000 / 32.000 / 64.000", () => {
+    const modelo = (nivel: number) => (nivel >= 3 ? "agil" : undefined);
+    const fuerza2 = { ...defaultSheet().atributos, fuerza: 2 };
+    const precios = [1, 2, 3, 4].map((nivel) => planCompraAumento(defaultSheet(), { catalogoId: BRAZO, nivel, eleccion: modelo(nivel) }, fuerza2));
+    assert.deepEqual(precios.map((p) => p.ok && p.precio), [8_000, 16_000, 32_000, 64_000]);
+    assert.deepEqual(
+      [1, 2, 3, 4].map((nivel) => costeDePieza({ instanciaId: "b", catalogoId: BRAZO, nivel, eleccion: modelo(nivel) })),
+      [8_000, 16_000, 32_000, 64_000],
+    );
+    // Subir de 2 a 4 (Fuerte) paga la diferencia.
+    const s = compra({ ...defaultSheet(), atributos: fuerza2 }, { catalogoId: BRAZO, nivel: 2 });
+    const sube = planCompraAumento(s, { catalogoId: BRAZO, nivel: 4, eleccion: "fuerte" }, fuerza2);
+    assert.equal(sube.ok && sube.precio, 64_000 - 16_000);
   });
 
   // Sync Drive 2026-11-14 (M2.5): requisito de atributo en los aumentos, con la Fuerza permanente

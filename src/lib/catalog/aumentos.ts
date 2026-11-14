@@ -1655,7 +1655,7 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 2,
         rareza: "Poco Habitual",
-        coste: 25000,
+        coste: 16000,
         detalle: [
           "La fuerza del brazo es un punto superior a la del usuario salvo en caso de que la fuerza del usuario sea de 5 o más, en tales circunstancias el aumento de fuerza del brazo biónico no se contabiliza y se iguala a la del usuario. Su agilidad es idéntica a la del usuario.",
           "El brazo biónico de segundo nivel tiene un blindaje de 3 puntos que no se apila con armaduras ni con otros aumentos (se aplica el mayor), pero permite utilizar el brazo como arma para bloquear. Además, el brazo biónico causa daño letal en sus ataques de pelea, y aumenta en 1 el daño de sus golpes y la dificultad de aturdimiento por crítico.",
@@ -1676,7 +1676,7 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 3,
         rareza: "Extraño",
-        coste: 50000,
+        coste: 32000,
         detalle: [
           "El usario puede escoger entre un modelo fuerte o ágil:",
         ],
@@ -1704,7 +1704,7 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 4,
         rareza: "Muy Extraño",
-        coste: 100000,
+        coste: 64000,
         detalle: [
           "Tres modelos a elegir:",
         ],

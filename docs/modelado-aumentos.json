@@ -3750,7 +3750,7 @@
         {
           "nivel": 2,
           "rareza": "Poco Habitual",
-          "coste": 25000,
+          "coste": 16000,
           "sustituye": [
             {
               "efecto": "Fuerza del brazo igual a la del usuario",
@@ -3872,7 +3872,7 @@
         {
           "nivel": 3,
           "rareza": "Extraño",
-          "coste": 50000,
+          "coste": 32000,
           "sustituye": [
             {
               "efecto": "Fuerza +1 (máx 5) y blindaje 3 del nivel 2",
@@ -3979,7 +3979,7 @@
         {
           "nivel": 4,
           "rareza": "Muy Extraño",
-          "coste": 100000,
+          "coste": 64000,
           "sustituye": [
             {
               "efecto": "Valores de extremidad del nivel 3",
