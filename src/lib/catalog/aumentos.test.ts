@@ -256,7 +256,8 @@ describe("integridad del catálogo de aumentos", () => {
     // armadura y la cobertura en el Sigilo).
     "aum_chasis_osteomuscular 2": 12,
     "aum_chasis_osteomuscular 3": 12,
-    "aum_chasis_osteomuscular 4": 12,
+    // 4: + la casilla de ventaja (Resolución y Coste) y la acción de duplicar la carga (Coste).
+    "aum_chasis_osteomuscular 4": 15,
   };
 
   test("A1, A2a, A2b, A3, A4a, A4b, A5a, A5b, A6a, A6b y A7: solo lo construido (o lo narrativo) está marcado como construido", () => {

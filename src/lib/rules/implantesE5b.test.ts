@@ -15,6 +15,7 @@ import { permisosDeDotes } from "./dotesEfectos";
 import { resolverGolpe, type EntradaResistir } from "./resistirDanio";
 import type { EstadoActivo } from "./estados";
 import { aumentosIncompatibles, planCompraAumento } from "./aumentos";
+import { usoDeAccionAumento } from "./aumentosAcciones";
 
 const CHASIS = "aum_chasis_osteomuscular";
 
@@ -50,6 +51,8 @@ function selector(f: FichaResuelta, id: string): Extract<CondicionTirada, { tipo
   return c;
 }
 const linea = (m: TiradaMontada, re: RegExp) => m.desglose.filter((l) => re.test(l.etiqueta));
+// Las líneas del Chasis sin la de su casilla de ventaja (nivel 4, a 0).
+const SIN_VENTAJA = /^(?!Fuerza del chasis).*Chasis/;
 
 const GOLPE: EntradaResistir = { tipo: "cinetico", critico: false, danio: 10, reactivo: false, conBrazo: false, marcadas: [], rompeBlindaje: 0, categoria: null };
 const lineaChasis = (s: Sheet, estados: EstadoActivo[] = [], tipo: EntradaResistir["tipo"] = "cinetico") =>
@@ -110,11 +113,11 @@ describe("E5b · Chasis Osteomuscular, niveles 2-4", () => {
     for (const nivel of [2, 3, 4]) {
       const f = resolver(conChasis(nivel));
       const salto = montar(f, "atletismo", { aum_chasis_derribo: true });
-      assert.deepEqual(linea(salto, /Chasis/).map((l) => l.valor), [nivel], `derribo ${nivel}`);
+      assert.deepEqual(linea(salto, /evitar un derribo/).map((l) => l.valor), [nivel], `derribo ${nivel}`);
       const aturdido = montar(f, "salv_fortaleza", { [selector(f, "salv_fortaleza").id]: "aturdimiento" });
-      assert.deepEqual(linea(aturdido, /Chasis/).map((l) => l.valor), [nivel], `aturdimiento ${nivel}`);
+      assert.deepEqual(linea(aturdido, SIN_VENTAJA).map((l) => l.valor), [nivel], `aturdimiento ${nivel}`);
       const shock = montar(f, "salv_fortaleza", { [selector(f, "salv_fortaleza").id]: "shock" });
-      assert.deepEqual(linea(shock, /Chasis/), [], "solo el aturdimiento");
+      assert.deepEqual(linea(shock, SIN_VENTAJA), [], "solo el aturdimiento");
     }
     const n1 = resolver(conChasis(1));
     assert.equal(tiradaFija(n1, "atletismo").condiciones?.some((c) => c.id === "aum_chasis_derribo") ?? false, false);
@@ -249,5 +252,59 @@ describe("E5b · Integración táctica: Camuflaje Trifásico", () => {
   test("el Proyector no sale con el Camuflaje elegido, ni al revés", () => {
     assert.equal(filas(conCamuflaje(2)).some((t) => /Proyector/.test(t.label)), false);
     assert.equal(activar(con(base(), CHASIS, { nivel: 2, eleccion: "proyector_pulso" })), undefined);
+  });
+});
+
+describe("E5b · Chasis Osteomuscular, nivel 4", () => {
+  const n4 = () => con(base(), CHASIS, { nivel: 4, eleccion: "proyector_pulso" });
+
+  test("casilla de ventaja por 2 de fatiga en Potencia y Fortaleza (salvaciones incluidas), no en Reflejos", () => {
+    const f = resolver(n4());
+    const salto = montar(f, "atletismo", { aum_chasis_ventaja: true });
+    assert.match(salto.ventaja ?? "", /^Fuerza del chasis \(ventaja, 2 de fatiga\)/);
+    assert.equal(salto.costeFatiga, 2);
+    const salv = montar(f, "salv_fortaleza", { aum_chasis_ventaja: true });
+    assert.ok(salv.ventaja);
+    assert.equal(tiradaFija(f, "salv_reflejos").condiciones?.some((c) => c.id === "aum_chasis_ventaja") ?? false, false);
+    assert.equal(tiradaFija(resolver(con(base(), CHASIS, { nivel: 3, eleccion: "proyector_pulso" })), "atletismo").condiciones?.some((c) => c.id === "aum_chasis_ventaja") ?? false, false, "solo el 4");
+  });
+
+  test("Duplicar la capacidad de carga cobra 2 de fatiga (la carga, a mano)", () => {
+    const uso = usoDeAccionAumento(n4(), [], "aumentos_chasis_carga");
+    assert.ok(uso.ok);
+    assert.equal(uso.sheet.fatigaActual, 6);
+    const fila = resolver(n4()).accionesAumentos.directas.find((a) => a.id === "aumentos_chasis_carga");
+    assert.match(fila?.nota ?? "", /Una vez por descanso/);
+    assert.equal(resolver(conChasis(1)).accionesAumentos.directas.some((a) => a.id === "aumentos_chasis_carga"), false);
+  });
+});
+
+describe("E5b · Chasis Osteomuscular y el Shock", () => {
+  const shock = (gradoId: string): EstadoActivo[] => [{ estadoId: "shock", gradoId, rondasRestantes: 1 }];
+  const s = () => con(base(), CHASIS, { nivel: 3, eleccion: "proyector_pulso" });
+
+  test("en fracaso pierde 2 de cada bono: Fuerza +1, armadura natural 1 y +1 contra el aturdimiento", () => {
+    const fuerza = resolver(base()).atributos.fuerza;
+    const f = resolver(s(), shock("fracaso"));
+    assert.equal(f.atributos.fuerza - fuerza, 1);
+    assert.deepEqual(lineaChasis(s(), shock("fracaso")).map((l) => l.valor), [1]);
+    const aturdido = montar(f, "salv_fortaleza", { [selector(f, "salv_fortaleza").id]: "aturdimiento" });
+    assert.deepEqual(linea(aturdido, /Chasis/).map((l) => l.valor), [1]);
+  });
+
+  test("en fracaso crítico se apaga: sin Fuerza ni armadura, y el Proyector integrado sale bloqueado", () => {
+    const fuerza = resolver(base()).atributos.fuerza;
+    const ficha = s();
+    const f = resolver(ficha, shock("fracaso_critico"));
+    assert.equal(f.atributos.fuerza, fuerza);
+    assert.deepEqual(lineaChasis(ficha, shock("fracaso_critico")).map((l) => l.valor), [0]);
+    const disparo = filas(ficha, shock("fracaso_critico")).find((t) => t.label === "Disparar Proyector de Pulso integrado (Combate a Distancia)")!;
+    assert.equal(conExtrasDeFicha(f, disparo).habilitacion?.estado, "bloqueada");
+  });
+
+  test("el Camuflaje integrado se apaga con el Chasis", () => {
+    const cam = con(base(), CHASIS, { nivel: 2, eleccion: "camuflaje_trifasico" });
+    assert.ok(resolver(cam).ocultacion);
+    assert.equal(resolver(cam, shock("fracaso_critico")).ocultacion, null);
   });
 });

@@ -1601,6 +1601,33 @@ const MOTOR_INTEGRACION: MotorMetadata[] = [
   { tipo: "numerico", afecta: { modo: "accion_existente", id: "sigilo" }, mecanismo: "suma_derivado", estado: "construido" },
 ];
 
+// Nivel 4: «una vez por descanso, 2 de fatiga para duplicar durante un turno la capacidad de carga o
+// para una prueba de potencia o fortaleza de soportar o vencer una resistencia con ventaja». La
+// prueba, casilla de ventaja en las tiradas de Potencia o Fortaleza (salvaciones incluidas: «resistir
+// efectos de aturdimiento físico»); la carga, acción sin dado que solo cobra. El «una vez por
+// descanso», texto (la app no lleva los descansos; usuario, 2026-11-14).
+const LIMITE_CHASIS_4 = "Una vez por descanso, entre esto y duplicar la carga (la app no lleva los descansos).";
+const CASILLA_VENTAJA_CHASIS: CondicionTirada = {
+  id: "aum_chasis_ventaja",
+  tipo: "toggle",
+  etiqueta: "Fuerza del chasis (ventaja, 2 de fatiga)",
+  alcance: { tipo: "aplicado", aplicados: ["potencia", "fortaleza"] },
+  valorActivo: 0,
+  ventaja: true,
+  costeFatiga: 2,
+  nota: `Soportar o vencer una resistencia: hacer o evitar agarres y derribos, soportar impactos cinéticos extremos, resistir el aturdimiento físico o una proeza de fuerza bruta (romper objetos). ${LIMITE_CHASIS_4}`,
+};
+// TODO(revisar) (S111): la capacidad de carga duplicada no se aplica a la ficha (no hay un estado que
+// multiplique la carga): la acción cobra la fatiga y lo dice.
+const ACCION_CARGA_CHASIS: AccionAumentoCatalogo = {
+  id: "aumentos_chasis_carga",
+  label: "Duplicar la capacidad de carga",
+  // La fuente no dice qué acción es.
+  economia: "",
+  costeFatiga: 2,
+  nota: `Durante un turno tu capacidad de carga se duplica: la app no la cambia, cuéntala a mano. ${LIMITE_CHASIS_4}`,
+};
+
 // Lo común a cada nivel: Fuerza, armadura natural y golpe desarmado.
 const MOTOR_NIVEL_CHASIS: MotorMetadata[] = [
   // Fuerza +N: Modificador "atributo" (atributos, aplicados, derivados y daño de Fuerza).
@@ -2601,9 +2628,21 @@ export const IMPLANTES: Implante[] = [
           "Una vez por descanso, el usuario puede gastar 2 puntos de fatiga para duplicar durante un turno su capacidad de carga o para realizar una prueba de potencia o fortaleza que implique soportar o vencer una resistencia con ventaja: Realizar o evitar agarres y derribos, soportar impactos cinéticos extremos, resistir efectos de aturdimiento físico y llevar a cabo proezas de fuerza bruta como romper objetos.",
         ],
         ...nivelChasis(4),
+        condiciones: [casillaDerriboChasis(4), CASILLA_VENTAJA_CHASIS],
+        acciones: [ACCION_CARGA_CHASIS],
         variantes: VARIANTES_INTEGRACION,
         etiquetaVariantes: ETIQUETA_INTEGRACION,
-        motor: [...MOTOR_NIVEL_CHASIS, ...MOTOR_SALVACIONES_CHASIS, ...MOTOR_INTEGRACION],
+        motor: [
+          ...MOTOR_NIVEL_CHASIS,
+          ...MOTOR_SALVACIONES_CHASIS,
+          ...MOTOR_INTEGRACION,
+          // Casilla de ventaja en Potencia y Fortaleza (Resolución y Coste).
+          { tipo: "resolucion", afecta: { modo: "accion_existente", id: "aplicado:potencia|fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "coste", afecta: { modo: "accion_existente", id: "aplicado:potencia|fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          // Duplicar la carga: la acción cobra; la carga duplicada, sin aplicar (TODO arriba).
+          { tipo: "coste", afecta: { modo: "accion_nueva", id: "aumentos_chasis_carga" }, mecanismo: "accion_equipo", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "derivado:carga" }, mecanismo: "suma_derivado", estado: "pendiente" },
+        ],
       },
     ],
   },

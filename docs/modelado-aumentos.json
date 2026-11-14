@@ -6424,6 +6424,23 @@
                 "ropa_reforzada",
                 "sin armadura"
               ]
+            },
+            {
+              "tipo": "ventaja",
+              "alcance": "aplicado:potencia|fortaleza",
+              "coste": {
+                "fatiga": 2
+              },
+              "limite": "una vez por descanso (texto)"
+            },
+            {
+              "tipo": "accion",
+              "id": "aumentos_chasis_carga",
+              "coste": {
+                "fatiga": 2
+              },
+              "efecto": "duplica la capacidad de carga un turno (texto, sin aplicar)",
+              "limite": "una vez por descanso (texto)"
             }
           ],
           "motor": [
@@ -6535,6 +6552,42 @@
               },
               "mecanismo": "suma_derivado",
               "estado": "construido"
+            },
+            {
+              "tipo": "resolucion",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "aplicado:potencia|fortaleza"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "coste",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "aplicado:potencia|fortaleza"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "coste",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "aumentos_chasis_carga"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "derivado:carga"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "pendiente"
             }
           ]
         }
