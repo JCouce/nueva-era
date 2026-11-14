@@ -192,6 +192,9 @@ function LineaDesglose({ etiqueta, valor }: { etiqueta: string; valor: number })
   );
 }
 
+// Primer toque de − o + en la esquiva enemiga: arranca en una esquiva normal.
+const ESQUIVA_INICIAL = 7;
+
 export function AccionModal({
   titulo,
   subtitulo,
@@ -261,6 +264,7 @@ export function AccionModal({
     estadoCondiciones: EstadoCondiciones;
     dificultad: number | null;
     circunstancial: number;
+    contraEsquiva: boolean;
   }) => void;
 }) {
   const condiciones: CondicionTirada[] = tirada.condiciones ?? [];
@@ -276,7 +280,15 @@ export function AccionModal({
       ? String(dificultadInicial)
       : "",
   );
-  const [circunstancial, setCircunstancial] = useState(circunstancialInicial);
+  const [circunstancialElegido, setCircunstancial] = useState(circunstancialInicial);
+  // En un ataque, el hueco del circunstancial es la esquiva del objetivo (§6): su total hace de
+  // dificultad, o «no esquiva» y vale la dificultad de siempre. Sin elegir, no se tira.
+  const esAtaque = Boolean(tirada.ataque);
+  const [esquiva, setEsquiva] = useState<number | "no" | null>(null);
+  const contraEsquiva = esAtaque && typeof esquiva === "number";
+  const faltaEsquiva = esAtaque && esquiva === null;
+  const circunstancial = esAtaque ? 0 : circunstancialElegido;
+  const dificultadEfectiva = contraEsquiva ? esquiva : dificultad;
   // El dado "rueda" (número aleatorio cambiando rápido) durante RODANDO_MS,
   // luego se congela en el valor REAL (`dadoAsentado`) durante ASENTADO_MS
   // antes de que llegue el `resultado` completo del padre — ver
@@ -327,7 +339,7 @@ export function AccionModal({
       setIndiceMejor(reales.indexOf(dado));
       setDadoAsentado(true);
       setTimeout(() => {
-        onTirar({ dado, dados, montada, estadoCondiciones: estado, dificultad, circunstancial });
+        onTirar({ dado, dados, montada, estadoCondiciones: estado, dificultad: dificultadEfectiva, circunstancial, contraEsquiva });
         setRodando(false);
         setDadoAsentado(false);
       }, ASENTADO_MS);
@@ -514,7 +526,7 @@ export function AccionModal({
         </div>
       )}
 
-      {!resultado && !rodando && !seTiraSinDificultad(tirada) && (
+      {!resultado && !rodando && !seTiraSinDificultad(tirada) && (!esAtaque || esquiva === "no") && (
         <div className="mt-4 border-t border-border pt-3">
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
             {"// Dificultad"}
@@ -568,7 +580,46 @@ export function AccionModal({
         </div>
       )}
 
-      {!resultado && !rodando && (
+      {!resultado && !rodando && esAtaque && (
+        <div className="mt-3 border-t border-border pt-3">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted">{"// Esquiva enemiga"}</p>
+          <p className="font-sans text-prosa-sm text-soft">El total que saca el objetivo al esquivar</p>
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setEsquiva("no")}
+              className={`clip-chamfer-sm h-11 flex-1 border px-2 font-mono text-xs uppercase active:scale-95 ${
+                esquiva === "no" ? "border-accent text-accent" : "border-border text-muted"
+              }`}
+            >
+              No esquiva
+            </button>
+            <button
+              type="button"
+              onClick={() => setEsquiva((v) => (typeof v === "number" ? Math.max(0, v - 1) : ESQUIVA_INICIAL))}
+              aria-label="Bajar esquiva"
+              className="h-11 w-11 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
+            >
+              −
+            </button>
+            <span
+              className={`w-12 text-center font-mono text-2xl tabular-nums ${typeof esquiva === "number" ? "text-accent" : "text-muted"}`}
+            >
+              {typeof esquiva === "number" ? esquiva : "—"}
+            </span>
+            <button
+              type="button"
+              onClick={() => setEsquiva((v) => (typeof v === "number" ? v + 1 : ESQUIVA_INICIAL))}
+              aria-label="Subir esquiva"
+              className="h-11 w-11 border border-border bg-elevated font-mono text-lg leading-none text-muted active:scale-95"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!resultado && !rodando && !esAtaque && (
         <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
@@ -631,11 +682,14 @@ export function AccionModal({
         <button
           type="button"
           onClick={dispararTirada}
-          disabled={Boolean(bloqueo)}
+          disabled={Boolean(bloqueo) || faltaEsquiva}
           className="clip-chamfer-sm mt-3 w-full border border-accent bg-accent py-3 font-display text-sm font-semibold uppercase tracking-wide text-black active:scale-[0.98] disabled:border-border disabled:bg-elevated disabled:text-muted"
         >
           Tirar ({signo(totalPrevisto)})
         </button>
+      )}
+      {!resultado && !rodando && faltaEsquiva && !bloqueo && (
+        <AvisoRecurso texto="Pon la esquiva enemiga o marca «No esquiva» para tirar." />
       )}
       {!resultado && !rodando && avisoRecurso && <AvisoRecurso texto={avisoRecurso} />}
       {!resultado && !rodando && bloqueo && <AvisoRecurso texto={bloqueo} />}

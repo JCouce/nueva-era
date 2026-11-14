@@ -178,6 +178,7 @@ function tonoResultado(h: Lanzamiento): string {
 function textoExitos(h: Lanzamiento): string {
   if (h.sinDado) return "usado";
   if (h.margen === null) return `total ${h.total}`;
+  if (h.contraEsquiva && h.margen === 0) return "empate, esquiva";
   const n = Math.abs(h.margen);
   return h.margen >= 0 ? `${n} éxito${n === 1 ? "" : "s"}` : `${n} fracaso${n === 1 ? "" : "s"}`;
 }
@@ -1254,6 +1255,7 @@ export function AccionesTab({
     estadoCondiciones,
     dificultad,
     circunstancial,
+    contraEsquiva,
   }: {
     // El dado ya se tiró dentro de AccionModal, al pulsar Tirar — no aquí.
     // Así el modal conoce el valor real desde el principio de la animación
@@ -1266,14 +1268,16 @@ export function AccionesTab({
     estadoCondiciones: EstadoCondiciones;
     dificultad: number | null;
     circunstancial: number;
+    contraEsquiva: boolean;
   }) => {
     if (!modal) return;
     const { tirada } = modal;
     const sutilActivo = modal.eleccion.sutil;
     // Total y márgenes de crítico (la VTM "complejo" incluida) vienen montados.
-    const r = tirarMontada(montada, dado, dificultad);
+    const r = tirarMontada(montada, dado, dificultad, contraEsquiva);
 
-    setMemoria((m) => ({ ...m, [tirada.id]: { dificultad, circunstancial } }));
+    // La esquiva es de ese objetivo y ese golpe: no se recuerda como dificultad.
+    if (!contraEsquiva) setMemoria((m) => ({ ...m, [tirada.id]: { dificultad, circunstancial } }));
 
     const modoId = tirada.ataque
       ? typeof estadoCondiciones.modo === "string"

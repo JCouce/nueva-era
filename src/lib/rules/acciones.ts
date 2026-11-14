@@ -857,6 +857,8 @@ export type Resultado = {
   // Un fracaso que cuenta como éxito por una casilla marcada (Balanceo, D2d): lo pone
   // tirarMontada (montaje.ts), con el margen que sacó de verdad; el margen pasa a 0.
   cambioGrado?: { fuente: string; margenOriginal: number };
+  // Ataque contra la esquiva del objetivo (§6): la dificultad es su total y el empate es suyo.
+  contraEsquiva?: true;
 };
 
 // Un éxito se consigue igualando la dificultad. El crítico llega al superarla
@@ -868,6 +870,7 @@ export function resolverTirada({
   dificultad = null,
   margenCriticoExito = MARGEN_CRITICO,
   margenCriticoFallo = MARGEN_CRITICO,
+  contraEsquiva = false,
 }: {
   dado: number;
   modificador: number;
@@ -879,6 +882,8 @@ export function resolverTirada({
   // a 0; la Rigidez narcisista de Elión baja el de fallo a 1 (`falloCritico`).
   margenCriticoExito?: number;
   margenCriticoFallo?: number;
+  // La dificultad es la esquiva del objetivo: igualarla no basta (el empate favorece al defensor).
+  contraEsquiva?: boolean;
 }): Resultado {
   const total = dado + modificador + circunstancial;
   if (dificultad === null) {
@@ -894,6 +899,7 @@ export function resolverTirada({
     };
   }
   const margen = total - dificultad;
+  const exito = contraEsquiva ? margen > 0 : margen >= 0;
   return {
     dado,
     modificador,
@@ -901,9 +907,10 @@ export function resolverTirada({
     total,
     dificultad,
     margen,
-    exito: margen >= 0,
-    critico: margen >= margenCriticoExito || margen <= -margenCriticoFallo,
-    ...(margen >= MARGEN_CRITICO && { criticoNatural: true as const }),
+    exito,
+    critico: exito ? margen >= margenCriticoExito : margen <= -margenCriticoFallo,
+    ...(exito && margen >= MARGEN_CRITICO && { criticoNatural: true as const }),
+    ...(contraEsquiva && { contraEsquiva: true as const }),
   };
 }
 

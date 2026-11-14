@@ -465,3 +465,24 @@ describe("el dado", () => {
     assert.equal(vistas.size, CARAS_DADO);
   });
 });
+
+describe("ataque contra la esquiva (§6)", () => {
+  test("el empate lo gana el defensor", () => {
+    const r = resolverTirada({ dado: 5, modificador: 4, dificultad: 9, contraEsquiva: true });
+    assert.equal(r.margen, 0);
+    assert.equal(r.exito, false);
+    assert.equal(r.critico, false);
+    assert.equal(r.contraEsquiva, true);
+  });
+  test("superarla por 6 es crítico; el margen es total − esquiva", () => {
+    const r = resolverTirada({ dado: 11, modificador: 4, dificultad: 9, contraEsquiva: true });
+    assert.equal(r.margen, 6);
+    assert.equal(r.exito, true);
+    assert.equal(r.critico, true);
+  });
+  test("con «cualquier éxito es crítico», el empate sigue siendo fallo y no crítico", () => {
+    const r = resolverTirada({ dado: 5, modificador: 4, dificultad: 9, contraEsquiva: true, margenCriticoExito: 0 });
+    assert.equal(r.exito, false);
+    assert.equal(r.critico, false);
+  });
+});

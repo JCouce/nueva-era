@@ -234,11 +234,15 @@ export function ContenidoResultado({
           {resultado.dificultad !== null && (
             <>
               <br />
-              {"vs "}
+              {resultado.contraEsquiva ? "vs esquiva " : "vs "}
               <span className="text-foreground">{resultado.dificultad}</span>
               <br />
               <span className={tono}>
-                {margen! >= 0 ? `${margen} éxitos` : `${Math.abs(margen!)} fracasos`}
+                {resultado.contraEsquiva && margen === 0
+                  ? "empate: gana la esquiva"
+                  : margen! >= 0
+                    ? `${margen} éxitos`
+                    : `${Math.abs(margen!)} fracasos`}
               </span>
             </>
           )}

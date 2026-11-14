@@ -437,6 +437,12 @@ Detalle completo en `docs/sistema-y-combate.md`. Lo esencial:
   atacante adicional** en esa ronda. Aunque no supere al atacante, el defensor **resta su
   resultado** al del atacante. Gastar la reacción normal del turno en defender limpia los
   penalizadores acumulados.
+- En la app (usuario, 2026-11-15): en todo ataque, el hueco del modificador circunstancial es
+  **«Esquiva enemiga»**: el total que el máster canta del objetivo, o «No esquiva» (vale la
+  dificultad de siempre). Sin elegir una de las dos no se tira. La esquiva hace de dificultad:
+  margen = total − esquiva, **el empate es fallo** (favorece al defensor), crítico con margen ≥ 6.
+  No se recuerda entre tiradas. Excepción consciente a «la app solo conoce tu tirada»: el número
+  lo teclea el atacante, no se cruzan tiradas. Motor: `resolverTirada({ contraEsquiva })`.
 - **Alerta** (percepción pasiva) = **6 + Perspicacia + Exploración**. Es la dificultad
   contra la que tira el sigilo ajeno; **en empate gana alerta**.
 - **Cobertura** en niveles 1-5: del 1 al 4 suma su valor a la dificultad de ataques y

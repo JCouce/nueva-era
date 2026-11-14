@@ -526,8 +526,14 @@ function especialidadFijaMontada(sheet: Sheet, tirada: Accion, tiene: boolean): 
 // La tirada ya montada contra el dado y la dificultad, con sus márgenes. Con una casilla de
 // fracaso → éxito marcada (Balanceo, Como Pez en el Agua), el fracaso normal cuenta como éxito
 // sin éxitos de más (margen 0); el fracaso crítico se queda (§9.5).
-export function tirarMontada(montada: TiradaMontada, dado: number, dificultad: number | null): Resultado {
+export function tirarMontada(
+  montada: TiradaMontada,
+  dado: number,
+  dificultad: number | null,
+  contraEsquiva = false,
+): Resultado {
   const r = resolverTirada({
+    contraEsquiva,
     dado,
     modificador: montada.modificador,
     circunstancial: montada.circunstancial,
