@@ -2102,8 +2102,7 @@ export const IMPLANTES: Implante[] = [
         rareza: "Muy Extraño",
         coste: 88000,
         detalle: [
-          "El enjambre evoluciona hacia una red defensiva contra traumatismos.",
-          "Además, como reacción y con el gasto de un punto de fatiga el enjambre puede densificarse de forma reactiva bajo la dermis, otorgando 3 puntos de blindaje contra un golpe específico. Si el impacto causa atudimiento el usuario recibe un bonificador de +3 contra el efecto.",
+          "El enjambre evoluciona hacia una red defensiva contra traumatismos, como reacción ante un impacto y con el gasto de un punto de fatiga el enjambre puede densificarse de forma reactiva bajo la dermis, otorgando 3 puntos de blindaje adicional contra un golpe específico. Si el impacto causa atudimiento el usuario recibe un bonificador de +3 en la tirada de salvación contra el efecto.",
         ],
         modificadores: [],
         // El +3 contra el aturdimiento del golpe densificado, en el selector "Contra…".
@@ -2112,11 +2111,15 @@ export const IMPLANTES: Implante[] = [
           { contra: ["aturdimiento"], bono: 3, nota: "solo tras Densificar, contra el aturdimiento de ese golpe" },
         ],
         // A4b: casilla en "Resistir daño" que cobra al marcarla.
+        // Sync Drive 2026-11-14: «red defensiva contra traumatismos»: solo contra el daño cinético
+        // (supuesto: traumatismo = golpe físico, el Cinético de la app, como la Osteotendinosa).
         blindajeReactivo: {
           etiqueta: "Densificar",
           valor: 3,
           costeFatiga: 1,
-          nota: "Reacción, contra este golpe. Si te aturde, +3 a la salvación: elige «Aturdimiento» en el «Contra…» de la Salvación de Fortaleza.",
+          nota: "Reacción, contra este golpe, solo contra traumatismos (daño cinético). Si te aturde, +3 a la salvación: elige «Aturdimiento» en el «Contra…» de la Salvación de Fortaleza.",
+          tipos: ["cinetico"],
+          soloContra: "Solo contra traumatismos (daño cinético).",
         },
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },

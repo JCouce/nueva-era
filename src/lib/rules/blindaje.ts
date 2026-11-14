@@ -228,7 +228,9 @@ export function desgloseBlindaje(
   const conductor = bonoTejidoConductor(sheet, tipo);
   if (conductor) lineas.push({ etiqueta: "Tejido Conductor", ...conductor });
 
-  const r = reactivo ? blindajeReactivoDeAumentos(sheet) : null;
+  const delAumento = reactivo ? blindajeReactivoDeAumentos(sheet) : null;
+  // Solo contra sus tipos, si los dice (Densificar: traumatismos, Cinético).
+  const r = delAumento && (!delAumento.tipos || delAumento.tipos.includes(tipo)) ? delAumento : null;
   // Su nota va junto a la casilla (casillaBlindajeReactivo), no repetida en el desglose.
   if (r) lineas.push({ etiqueta: `${r.etiqueta} · ${r.fuente}`, valor: r.valor, ...(r.origen && { origen: r.origen }) });
 
@@ -293,6 +295,7 @@ export function casillaBlindajeReactivo(
   const r = blindajeReactivoDeAumentos(sheet);
   if (!r) return null;
   const noCuenta = blindajeNoCuenta(tipo);
+  const deOtroTipo = r.tipos && !r.tipos.includes(tipo) ? (r.soloContra ?? "No vale contra este tipo de daño.") : null;
   const sinFatiga =
     !marcada && fatiga < r.costeFatiga ? `No te llega la fatiga: cuesta ${r.costeFatiga} y te quedan ${fatiga}.` : null;
   return {
@@ -300,7 +303,7 @@ export function casillaBlindajeReactivo(
     valor: r.valor,
     costeFatiga: r.costeFatiga,
     nota: r.nota,
-    bloqueada: noCuenta ? MOTIVO_NO_CUENTA[tipo as "mental" | "fuego"] : sinFatiga,
+    bloqueada: noCuenta ? MOTIVO_NO_CUENTA[tipo as "mental" | "fuego"] : (deOtroTipo ?? sinFatiga),
   };
 }
 

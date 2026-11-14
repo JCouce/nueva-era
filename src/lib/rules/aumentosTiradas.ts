@@ -130,8 +130,17 @@ export type TextoDeNivel = { id: string; en: DestinoTexto; texto: string };
 export type ArmaduraNaturalAumento = { valor: number; tipos: TipoDanio[]; nota: string };
 
 // +valor de blindaje contra un golpe, por costeFatiga, como reacción. Vale donde cuente el
-// blindaje (no contra Mental ni Fuego sin Ignífuga), igual que la armadura natural.
-export type BlindajeReactivo = { etiqueta: string; valor: number; costeFatiga: number; nota: string };
+// blindaje (no contra Mental ni Fuego sin Ignífuga), igual que la armadura natural. `tipos`: solo
+// contra esos tipos de daño (Densificar, «red defensiva contra traumatismos»: Cinético; sync Drive
+// 2026-11-14); `soloContra`, cómo lo dice la casilla cuando el golpe es de otro tipo.
+export type BlindajeReactivo = {
+  etiqueta: string;
+  valor: number;
+  costeFatiga: number;
+  nota: string;
+  tipos?: TipoDanio[];
+  soloContra?: string;
+};
 
 // ── Lo que aporta cada aumento que funciona ─────────────────────────────
 

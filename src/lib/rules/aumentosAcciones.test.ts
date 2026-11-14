@@ -355,16 +355,23 @@ describe("A4b: Densificar", () => {
   const enj = (nivel: number, fatiga = 3) => conRecursos(con(defaultSheet(), ENJAMBRE, nivel), fatiga);
   const conTipos: TipoDanio[] = ["cinetico", "electrico", "frio", "corrosivo", "plasma", "sonico", "toxico"];
 
-  test("marcada: +3 en los tipos en los que cuenta el blindaje", () => {
-    for (const tipo of conTipos) {
-      const ficha = enj(3);
-      const d = desgloseBlindaje(ficha, tipo, SIN_ARMADURA_NATURAL, true);
-      // Con la pieza de origen, para el Shock (conShockEnLineas).
-      const origen = { tipo: "aumento", id: "aum_enjambre_nanobot", label: "Enjambre Nanobot", instanciaId: ficha.equipo[0].instanciaId };
-      assert.deepEqual(d, [{ etiqueta: "Densificar · Enjambre Nanobot 3", valor: 3, origen }], tipo);
-      assert.equal(casillaBlindajeReactivo(enj(3), tipo, false)!.bloqueada, null, tipo);
-    }
+  // Sync Drive 2026-11-14 (M4.4): «red defensiva contra traumatismos»: solo contra el Cinético
+  // (antes, en todos los tipos en los que cuenta el blindaje).
+  test("marcada: +3 contra traumatismos (Cinético)", () => {
+    const ficha = enj(3);
+    const d = desgloseBlindaje(ficha, "cinetico", SIN_ARMADURA_NATURAL, true);
+    // Con la pieza de origen, para el Shock (conShockEnLineas).
+    const origen = { tipo: "aumento", id: "aum_enjambre_nanobot", label: "Enjambre Nanobot", instanciaId: ficha.equipo[0].instanciaId };
+    assert.deepEqual(d, [{ etiqueta: "Densificar · Enjambre Nanobot 3", valor: 3, origen }]);
+    assert.equal(casillaBlindajeReactivo(enj(3), "cinetico", false)!.bloqueada, null);
     assert.deepEqual(desgloseBlindaje(enj(3), "cinetico", SIN_ARMADURA_NATURAL, false), []);
+  });
+
+  test("contra el resto de tipos con blindaje, nada: la casilla sale apagada diciendo que es solo contra traumatismos", () => {
+    for (const tipo of conTipos.filter((t) => t !== "cinetico")) {
+      assert.deepEqual(desgloseBlindaje(enj(3), tipo, SIN_ARMADURA_NATURAL, true), [], tipo);
+      assert.equal(casillaBlindajeReactivo(enj(3), tipo, false)!.bloqueada, "Solo contra traumatismos (daño cinético).", tipo);
+    }
   });
 
   test("nada contra Mental ni Fuego sin Ignífuga: la casilla sale apagada con el motivo", () => {
