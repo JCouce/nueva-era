@@ -373,7 +373,7 @@ export const ARMADURAS: Armadura[] = [
     label: "Armadura Pesada Avanzada",
     resumen: "La versión prototipo de la armadura pesada: mismo perfil, mejor en todo.",
     descripcion: DESCRIPCION_AVANZADA,
-    blindaje: 8,
+    blindaje: 9,
     bonifMaxAgilidad: 1,
     ranurasSubsistema: 3,
     topeExoesqueleto: 4,

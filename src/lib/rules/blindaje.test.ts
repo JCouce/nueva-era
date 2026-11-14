@@ -28,6 +28,11 @@ describe("blindajeContra", () => {
     assert.equal(blindajeContra(s, "cinetico", SIN_ARMADURA_NATURAL), 7);
   });
 
+  test("Armadura Pesada Avanzada: blindaje 9 (sync Drive 2026-11-14)", () => {
+    const s = equipar(defaultSheet(), { instanciaId: "arm1", catalogoId: "armadura_pesada_avanzada" });
+    assert.equal(blindajeContra(s, "cinetico", SIN_ARMADURA_NATURAL), 9);
+  });
+
   test("Mental y Fuego se quedan en 0 aunque haya blindaje de sobra", () => {
     let s = equipar(defaultSheet(), { instanciaId: "arm1", catalogoId: "armadura_pesada" }); // blindaje 8
     s = equipar(s, { instanciaId: "d1", catalogoId: "escudo_deflector", nivel: 4, instaladoEnId: "arm1" });
