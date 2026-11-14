@@ -106,6 +106,10 @@ export type CondicionTirada = (
       // activa»). Sin él, conExtrasDeFicha la deja bloqueada con `motivo`, o la quita si no trae
       // motivo (la casilla del −8 al Sigilo, que el estado además deja marcada: marcaCasillas).
       requiereEstado?: { estadoId: string; motivo?: string };
+      // Tirar con ella marcada gasta este estado puesto (la oportunidad del Antipatógeno: la
+      // segunda salvación se usa una vez). montarTirada lo devuelve en `estadosGastados` y la
+      // pantalla se lo quita al tirar.
+      gastaEstado?: string;
       // La tirada se hace con la Fuerza y la Agilidad de una extremidad propia (Brazo Biónico,
       // A6a de aumentos): montarTirada recalcula el aplicado y, si toca, el daño con ellas.
       extremidad?: AtributosExtremidad;

@@ -23,7 +23,9 @@ import type { CondicionTirada } from "./condiciones";
 import type { ConsecuenciaPropia } from "./consecuenciasPropias";
 import type { Grado } from "./psionica";
 import type { EstadoAlUsar } from "./sigilo";
+import type { EstadoActivo } from "./estados";
 import {
+  ESTADO_ANTIPATOGENO_ID,
   ESTADO_BAJO_ANALGESICO_ID,
   ESTADO_BAJO_CALMANTE_ID,
   ESTADO_BAJO_ULTRA_ID,
@@ -37,19 +39,26 @@ import {
 const SIN_TIRADA = new Set(["farmaco_analgesico", "farmaco_antipatogeno", "farmaco_ultra_estimulante"]);
 
 // El estado que pone usar la dosis (fármacos como estados, usuario 2026-11-14): «Bajo Analgésico»
-// (−1 a heridas) y «Bajo Ultra Estimulante» (sus bonos y, al acabarse, el bajón: fa-03). Hasta
+// (−1 a heridas), «Bajo Ultra Estimulante» (sus bonos y, al acabarse, el bajón: fa-03) y
+// «Antipatógeno» (la oportunidad de la segunda salvación, que se gasta al tirarla). Hasta
 // quitarlo: la fuente da horas o minutos y la app no mide el tiempo. Usarlo con el estado puesto lo
 // renueva (ponerEstado sustituye: no acumula). Lo aplica el servidor (consecuencia propia «usar»).
 const ESTADO_AL_USAR: Readonly<Record<string, EstadoAlUsar>> = {
   farmaco_analgesico: { estadoId: ESTADO_BAJO_ANALGESICO_ID, fijo: { gradoId: "activo", turnos: null } },
+  farmaco_antipatogeno: { estadoId: ESTADO_ANTIPATOGENO_ID, fijo: { gradoId: "activo", turnos: null } },
   farmaco_ultra_estimulante: { estadoId: ESTADO_BAJO_ULTRA_ID, fijo: { gradoId: "activo", turnos: null } },
 };
 
-// Lo que los Geles te ponen al superar su tirada: el efecto del Analgésico.
+// Lo que los Geles te ponen al superar su tirada: los efectos del Analgésico y el Antipatógeno.
 function conAnalgesicoAlSuperar(): Partial<Record<Grado, ConsecuenciaPropia>> {
   const c: ConsecuenciaPropia = {
-    texto: "Incluye el Analgésico: te pones «Bajo Analgésico» (−1 al penalizador por heridas). La curación, a mano.",
-    estados: [{ estadoId: ESTADO_BAJO_ANALGESICO_ID, gradoId: "activo" }],
+    texto:
+      "Incluye el Analgésico y el Antipatógeno: te pones «Bajo Analgésico» (−1 al penalizador por heridas) y " +
+      "«Antipatógeno» (segunda salvación con +3). La curación, a mano.",
+    estados: [
+      { estadoId: ESTADO_BAJO_ANALGESICO_ID, gradoId: "activo" },
+      { estadoId: ESTADO_ANTIPATOGENO_ID, gradoId: "activo" },
+    ],
   };
   return { critico: c, exito: c };
 }
@@ -148,9 +157,9 @@ const CON_TIRADA: Record<
       return { critico: calma, exito: calma };
     })(),
   },
-  // Los Geles «incluyen de forma integrada los efectos del analgésico» (el Avanzado y el Nano-Elixir
-  // funcionan como el Gel): superada la tirada, la app pone «Bajo Analgésico» (renueva el que
-  // hubiera). La curación sigue a mano.
+  // Los Geles «incluyen de forma integrada los efectos del analgésico y el antipatógeno» (el
+  // Avanzado y el Nano-Elixir funcionan como el Gel): superada la tirada, la app pone «Bajo
+  // Analgésico» y «Antipatógeno» (renueva los que hubiera). La curación sigue a mano.
   // TODO(revisar): la fuente no dice si con la tirada fallada el gel hace algo; se supone que no.
   // TODO(revisar): la curación va por éxitos acumulados (margen) y «a discreción del interventor»
   // (no letal, letal o grave), con el peaje de fatiga del Gel por nivel sanado: sin reparto que
@@ -158,17 +167,17 @@ const CON_TIRADA: Record<
   farmaco_gel_sanador: {
     nota:
       "Perspicacia + Medicina, dificultad 4 — cada éxito sana un nivel no letal, cada 2 uno letal, cada 4 uno grave (a mano), " +
-      "con 1, 2 o 4 de fatiga por nivel sanado. Con éxito, la app te pone «Bajo Analgésico».",
+      "con 1, 2 o 4 de fatiga por nivel sanado. Con éxito, la app te pone «Bajo Analgésico» y «Antipatógeno».",
     dificultad: 4,
     consecuenciasPropias: conAnalgesicoAlSuperar(),
   },
   farmaco_gel_sanador_avanzado: {
-    nota: "Perspicacia + Medicina, dificultad 4 — igual que Gel Sanador (curación a mano), sin el peaje de fatiga. Con éxito, «Bajo Analgésico».",
+    nota: "Perspicacia + Medicina, dificultad 4 — igual que Gel Sanador (curación a mano), sin el peaje de fatiga. Con éxito, «Bajo Analgésico» y «Antipatógeno».",
     dificultad: 4,
     consecuenciasPropias: conAnalgesicoAlSuperar(),
   },
   farmaco_nano_elixir: {
-    nota: "Perspicacia + Medicina, dificultad 4 — igual que Gel Sanador Avanzado (curación a mano), con +5 ya sumado a esta tirada. Con éxito, «Bajo Analgésico».",
+    nota: "Perspicacia + Medicina, dificultad 4 — igual que Gel Sanador Avanzado (curación a mano), con +5 ya sumado a esta tirada. Con éxito, «Bajo Analgésico» y «Antipatógeno».",
     // «No se apila con aumentos tecnológicos de nanomedicina» (au-07): con el Enjambre, el mayor.
     ajustesFijos: [{ valor: 5, fuente: "Nano-Elixir", noApila: NO_APILA_NANOMEDICINA }],
     dificultad: 4,
@@ -244,22 +253,14 @@ export function accionesDirectasDeFarmacos(sheet: Sheet, notasEspecie: string[],
 }
 
 // Antipatógeno (R9, 2026-10-24): "permite una segunda tirada de salvación, con un bonificador de
-// +3" si el personaje está envenenado, enfermo o intoxicado. Casilla en la salvación de Fortaleza
-// mientras queda alguna dosis de algo que lo incluya (los Geles Sanadores "incluyen los efectos
-// del Analgésico y el Antipatógeno"; el Avanzado y el Nano-Elixir funcionan como el Gel). La dosis
-// se gasta con su "Usar"; la casilla no gasta nada.
+// +3" si el personaje está envenenado, enfermo o intoxicado. Oportunidad puntual (fármacos como
+// estados, usuario 2026-11-14): la casilla sale en la salvación de Fortaleza solo con el estado
+// «Antipatógeno» puesto (lo pone su «Usar» o superar un Gel, que «incluye sus efectos») y tirar con
+// ella marcada lo gasta (`gastaEstado`). Sin el estado no sale, aunque queden dosis.
 export const ID_CASILLA_ANTIPATOGENO = "farmaco_antipatogeno_segunda_salvacion";
-const CON_EFECTO_ANTIPATOGENO = [
-  "farmaco_antipatogeno",
-  "farmaco_gel_sanador",
-  "farmaco_gel_sanador_avanzado",
-  "farmaco_nano_elixir",
-];
 
-// Antipatógeno: la casilla de la segunda salvación (abajo).
-export function casillasDeFarmacos(sheet: Pick<Sheet, "farmacos">): CondicionTirada[] {
-  const conAntipatogeno = FARMACOS.find((f) => CON_EFECTO_ANTIPATOGENO.includes(f.id) && (sheet.farmacos[f.id] ?? 0) > 0);
-  if (!conAntipatogeno) return [];
+export function casillasDeFarmacos(estados: readonly EstadoActivo[]): CondicionTirada[] {
+  if (!estados.some((e) => e.estadoId === ESTADO_ANTIPATOGENO_ID)) return [];
   return [
     {
       id: ID_CASILLA_ANTIPATOGENO,
@@ -269,9 +270,10 @@ export function casillasDeFarmacos(sheet: Pick<Sheet, "farmacos">): CondicionTir
       alcance: { tipo: "tiradaId", id: "salv_fortaleza" },
       nota:
         "Solo envenenado, enfermo o intoxicado: la segunda salvación que da el Antipatógeno (o un Gel " +
-        "Sanador, que incluye su efecto). Revierte un nivel de gravedad. Uno cada 8 horas; la dosis se " +
-        "gasta con su «Usar».",
-      origen: { tipo: "farmaco", id: conAntipatogeno.id, label: conAntipatogeno.label },
+        "Sanador, que incluye su efecto). Revierte un nivel de gravedad. Tirarla gasta el estado " +
+        "«Antipatógeno». Uno cada 8 horas.",
+      gastaEstado: ESTADO_ANTIPATOGENO_ID,
+      origen: { tipo: "estado", id: ESTADO_ANTIPATOGENO_ID, label: "Antipatógeno" },
     },
   ];
 }

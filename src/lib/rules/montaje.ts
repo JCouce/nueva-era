@@ -143,6 +143,9 @@ export type TiradaMontada = {
   // ahorro de Mielinización si no ha ahorrado nada (sin casillas de pago y fuera de un poder).
   // Las bloqueadas ("Usada esta escena") cuentan como desmarcadas.
   usosEscena: string[];
+  // Estados puestos que gasta esta tirada (CondicionTirada.gastaEstado de las casillas marcadas:
+  // el Antipatógeno). Las bloqueadas cuentan como desmarcadas.
+  estadosGastados: string[];
 };
 
 const SIN_AJUSTE_DANIO: AjusteDanio = { ajustes: [], categoria: null, sinBonoExitos: null };
@@ -469,6 +472,7 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     ...fatiga,
     casillasSinEfecto: porAplicado.sinEfecto,
     usosEscena: usosGastados(activas, fatiga, tirada.grupo === "Psiónica"),
+    estadosGastados: [...new Set(activas.flatMap((c) => (c.gastaEstado ? [c.gastaEstado] : [])))],
   };
 }
 

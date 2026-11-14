@@ -117,9 +117,11 @@ describe("el recordatorio al usar o tomar la dosis", () => {
     assert.ok(accionesDeFarmacos(defaultSheet(), [], true).some((a) => a.id === "farmaco_farmaco_xovromium"));
   });
 
-  test("el Antipatógeno no pone nada", () => {
-    const [usar] = accionesDirectasDeFarmacos(conFarmaco("farmaco_antipatogeno", 1), []);
-    assert.equal(usar.estadoAlUsar, undefined);
+  test("el Analgésico y el Antipatógeno ponen su estado (fármacos como estados)", () => {
+    for (const [id, estado] of [["farmaco_analgesico", "bajo_analgesico"], ["farmaco_antipatogeno", "antipatogeno"]] as const) {
+      const [usar] = accionesDirectasDeFarmacos(conFarmaco(id, 1), []);
+      assert.deepEqual(estadoPorUso(usar, null), activo(estado), id);
+    }
   });
 
   const xovromium = () => {

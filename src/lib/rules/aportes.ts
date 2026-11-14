@@ -46,7 +46,7 @@ function tiposDeCasilla(c: CondicionTirada): TipoAporte[] {
   if (c.tipo === "toggle") {
     if (c.valorActivo !== 0 || (c.valorInactivo ?? 0) !== 0) tipos.add("ajuste");
     if (c.ventaja || c.subeGrado || c.aplicado || c.danio || c.extremidad || c.margenCriticoExito !== undefined) tipos.add("resolucion");
-    if (c.costeFatiga || c.ahorroFatiga || c.usoPorEscena || c.gastoActivo || c.gastoInactivo) tipos.add("coste");
+    if (c.costeFatiga || c.ahorroFatiga || c.usoPorEscena || c.gastoActivo || c.gastoInactivo || c.gastaEstado) tipos.add("coste");
     // Enciende bonos por opción de otro selector (Bioma Predilecto en «Marcha»).
     if (c.resumen) tipos.add("habilitador");
   }

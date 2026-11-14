@@ -29,7 +29,7 @@ import {
   vidaTrasCambioDeEstados,
   GRADOS,
   bonosDeDisciplina,
-  esEstadoDePoder,
+  loQuitaElJugador,
   estadoPorId,
   estadosPropiosDeUso,
   modificadoresActivos,
@@ -642,7 +642,9 @@ export async function estadoDePoderNpcAction(
 
   if (op.data.tipo === "quitar") {
     const estadoId = op.data.estadoId;
-    if (!esEstadoDePoder(estadoId)) return { ok: false, error: "Estado no válido" };
+    // Los de poder y los que se quita el propio portador (la oportunidad del Antipatógeno, que
+    // gasta su tirada).
+    if (!loQuitaElJugador(estadoId)) return { ok: false, error: "Estado no válido" };
     if (!estados.some((e) => e.estadoId === estadoId)) return { ok: true, mensaje: "Ya no estaba puesto." };
     await cambiarEstadosDeNpcs([id.data], { tipo: "quitar", estadoId });
     revalidateCombate();

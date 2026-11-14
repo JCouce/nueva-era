@@ -148,14 +148,24 @@ describe("Valija Médica, Antipatógeno y Estabilizadores Neurales", () => {
     }
   });
 
-  test("Antipatógeno: casilla +3 en la salvación de Fortaleza mientras quede una dosis (o un Gel)", () => {
-    const fila = (s: Sheet) => conExtrasDeFicha(resolver(s), ACCIONES.find((a) => a.id === "salv_fortaleza")!);
-    assert.ok(!(fila(defaultSheet()).condiciones ?? []).some((c) => c.id === ID_CASILLA_ANTIPATOGENO));
-    for (const id of ["farmaco_antipatogeno", "farmaco_gel_sanador"]) {
-      const c = fila(conFarmaco(id, 1)).condiciones?.find((x) => x.id === ID_CASILLA_ANTIPATOGENO);
-      assert.ok(c && c.tipo === "toggle" && c.valorActivo === 3, id);
-    }
-    assert.ok(!(fila(conFarmaco("farmaco_antipatogeno", 0)).condiciones ?? []).some((c) => c.id === ID_CASILLA_ANTIPATOGENO));
+  // Oportunidad puntual (fármacos como estados, 2026-11-14): la casilla sale con el estado, no
+  // con la dosis, y tirar con ella marcada lo gasta.
+  test("Antipatógeno: casilla +3 en la salvación de Fortaleza solo con el estado «Antipatógeno»", () => {
+    const ANTI: EstadoActivo = { estadoId: "antipatogeno", gradoId: "activo", rondasRestantes: null };
+    const ficha = (s: Sheet, estados: EstadoActivo[]) => resolverFicha(s, { estados, vitalidad: VITALIDAD_DE_FICHA });
+    const fila = (f: FichaResuelta) => conExtrasDeFicha(f, ACCIONES.find((a) => a.id === "salv_fortaleza")!);
+    const casilla = (f: FichaResuelta) => fila(f).condiciones?.find((x) => x.id === ID_CASILLA_ANTIPATOGENO);
+    // Con dosis y sin estado, nada.
+    for (const id of ["farmaco_antipatogeno", "farmaco_gel_sanador"]) assert.equal(casilla(ficha(conFarmaco(id, 2), [])), undefined, id);
+    const f = ficha(defaultSheet(), [ANTI]);
+    const c = casilla(f);
+    assert.ok(c && c.tipo === "toggle" && c.valorActivo === 3);
+    const t = fila(f);
+    const marcada = montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: { ...estadoInicial(t.condiciones ?? []), [ID_CASILLA_ANTIPATOGENO]: true } });
+    const sinMarcar = montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: estadoInicial(t.condiciones ?? []) });
+    assert.equal(marcada.total - sinMarcar.total, 3);
+    assert.deepEqual(marcada.estadosGastados, ["antipatogeno"]);
+    assert.deepEqual(sinMarcar.estadosGastados, []);
   });
 
   test("Estabilizadores Neurales purga un grado, no todo, salvo con crítico", () => {
@@ -215,17 +225,18 @@ describe("fármacos con duración: el estado aplica el efecto", () => {
     assert.deepEqual(estadoPorUso(directa("farmaco_ultra_estimulante"), null), ULTRA);
   });
 
-  test("Calmante y Geles: superar la tirada pone su estado; fallarla, nada", () => {
+  test("Calmante y Geles: superar la tirada pone su estado (los Geles, también el Antipatógeno); fallarla, nada", () => {
+    const ANTI = activo("antipatogeno");
     const casos = [
-      ["farmaco_calmante", CALMANTE],
-      ["farmaco_gel_sanador", ANALGESICO],
-      ["farmaco_gel_sanador_avanzado", ANALGESICO],
-      ["farmaco_nano_elixir", ANALGESICO],
+      ["farmaco_calmante", [CALMANTE]],
+      ["farmaco_gel_sanador", [ANALGESICO, ANTI]],
+      ["farmaco_gel_sanador_avanzado", [ANALGESICO, ANTI]],
+      ["farmaco_nano_elixir", [ANALGESICO, ANTI]],
     ] as const;
-    for (const [id, estado] of casos) {
+    for (const [id, estados] of casos) {
       for (const grado of ["exito", "critico"] as const) {
         const c = consecuenciaPropia(conTirada(id), { tipo: "grado", grado });
-        assert.deepEqual(estadosActivosDe(c?.estados ?? []), [estado], `${id} ${grado}`);
+        assert.deepEqual(estadosActivosDe(c?.estados ?? []), estados, `${id} ${grado}`);
       }
       for (const grado of ["fracaso", "fracasoCritico"] as const) assert.equal(consecuenciaPropia(conTirada(id), { tipo: "grado", grado }), null, `${id} ${grado}`);
     }

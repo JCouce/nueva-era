@@ -548,7 +548,7 @@ export function resolverFicha(
         casillasDeAumentos(enUso, activables.salvaciones, [...salvacionesDeEspecie(especie), ...salvacionesDeEquipo(enUso)], afectacion, inmunidades),
         sheet.usosEscena,
       ),
-      ...casillasDeFarmacos(sheet),
+      ...casillasDeFarmacos(conEfecto),
       ...casillasDePsionica(psionica.paraEfectos),
     ]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(enUso), ...activables.textos],

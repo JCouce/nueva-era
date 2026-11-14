@@ -1274,6 +1274,19 @@ export const ESTADOS_DE_FARMACO: Estado[] = [
       "Dura 1 hora, y 1 más por cada 4 éxitos de la tirada: quítalo cuando se acabe.",
     ],
   }),
+  deFarmaco({
+    id: ESTADO_ANTIPATOGENO_ID,
+    label: "Antipatógeno",
+    resumen:
+      "Anticuerpos sintéticos en la sangre: una segunda salvación contra el veneno, la enfermedad o la " +
+      "toxina, con +3.",
+    quitarJugador: "Quitar",
+    detalle: [
+      "Solo si estás envenenado, enfermo o intoxicado: casilla «Segunda salvación con Antipatógeno» (+3) " +
+        "en la salvación de Fortaleza. Se gasta al tirarla.",
+      "Revierte un nivel de gravedad. Uno cada 8 horas.",
+    ],
+  }),
   {
     id: ESTADO_BAJO_ULTRA_ID,
     label: "Bajo Ultra Estimulante",

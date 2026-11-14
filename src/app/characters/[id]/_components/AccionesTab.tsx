@@ -1342,6 +1342,8 @@ export function AccionesTab({
     if (montada.costeFatiga > 0) onPagarFatiga?.(montada.costeFatiga, false);
     // Casillas "una vez por escena" (A4a): se gastan aquí, al tirar, no al marcarlas.
     if (montada.usosEscena.length > 0) onGastarUsosEscena?.(montada.usosEscena);
+    // Estados que la tirada gasta (la segunda salvación del Antipatógeno): los quita el servidor.
+    for (const estadoId of montada.estadosGastados) onEstadoDePoder?.({ tipo: "quitar", estadoId }, (m) => anotarPropio(tirada.id, m));
     // Límite de una acción de dote (1 por escena, por aliado, por turno): se gasta al tirar.
     if (tirada.usoLimitado) {
       const aliado = estadoCondiciones[ID_ALIADO_DOTE];

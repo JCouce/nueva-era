@@ -422,8 +422,9 @@ export const FARMACOS: Consumible[] = [
     coste: 50,
     aplicacion: { base: "estandar", conArmadura: "compleja" },
     modificadores: [],
-    // R9 (2026-10-24): la segunda salvación con +3, casilla en la salvación de Fortaleza
-    // mientras quede una dosis (casillasDeFarmacos, rules/farmacos.ts).
+    // R9 (2026-10-24): la segunda salvación con +3, casilla en la salvación de Fortaleza. Oportunidad
+    // puntual (fármacos como estados, 2026-11-14): «Usar» pone el estado «Antipatógeno», la casilla
+    // solo sale con él y tirarla lo gasta (casillasDeFarmacos, rules/farmacos.ts).
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],
