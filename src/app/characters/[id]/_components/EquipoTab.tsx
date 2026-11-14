@@ -204,7 +204,7 @@ function SelectorArmaIncorporada({
       <p className="font-sans text-prosa-sm text-soft">
         {armas.length === 0
           ? "Equipa un arma de una mano (de cuerpo a cuerpo o de fuego) para incorporarla."
-          : "Sus ataques y su bloqueo van siempre con el brazo. Desenfundado gratis, no te la pueden desarmar y cuenta para la carga. La tirada de «Incorporar arma» está en Acciones."}
+          : "Sus ataques y su bloqueo van siempre con el brazo. Desenfundado gratis, no te la pueden desarmar con maniobras y cuenta para la carga. La tirada de «Incorporar arma» está en Acciones."}
       </p>
     </div>
   );

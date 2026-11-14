@@ -2377,8 +2377,9 @@ sobreesfuerzo.
     descarta.
   - **Efectos:** las filas del arma incorporada (golpe o disparo y su "Bloquear con X") van
     **siempre** con la Fuerza y la Agilidad del brazo, sin casilla, y su nota dice
-    "Incorporada en el Brazo Biónico: desenfundado gratis, no te la pueden desarmar, cuenta para
-    la carga". Desenfundado, desarme y carga son **solo texto**. Lanzarla, sin cambios.
+    "Incorporada en el Brazo Biónico: desenfundado gratis, no te la pueden desarmar con
+    maniobras, cuenta para la carga" (sync Drive 2026-11-14: solo inmune al desarme por
+    maniobras). Desenfundado, desarme y carga son **solo texto**. Lanzarla, sin cambios.
   - **Fuera:** lanzar o arrojar con el brazo, las granadas, la carga como número, el sabotaje y
     la extracción.
 - *En la app (A7, inmunidades; usuario, 2026-10-22):* `rules/inmunidades.ts`, con los datos en el

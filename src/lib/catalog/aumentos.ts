@@ -1649,7 +1649,8 @@ export const IMPLANTES: Implante[] = [
         coste: 8000,
         detalle: [
           "El personaje reemplaza un brazo por uno biónico básico. Según el nivel esta tiene su propia puntuación de fuerza y agilidad pero siempre basada en los atributos del usuario pues es una pieza personalizada que se ajusta a sus necesidades. Estos valores se aplicarán cuando el personaje emplee una acción usando esta extremidad, la prótesis de primer nivel es más bien sustitutoria, por lo que iguala la fuerza y agilidad del usuario (contabilizando posibles aumentos).",
-          "Se puede incorporar un arma en su interior siempre que su uso sea a una mano, mientras esté incorporada, su desenfundado es gratuito y no puede ser desarmado. Para incorporar este arma, es preciso una acción extendida de 10 minutos y realizar una tirada de perspicacia + biónica dificultad 8 con el instrumental adecuado. Para desprendese del arma es preciso la misma acción, pero si esta quiere ser extraída de un cuerpo sin respetar su salud, se realiza como el resto de implantes cuando son saqueados.",
+          "Se puede incorporar un arma en su interior siempre que su uso sea a una mano, mientras esté incorporada, su desenfundado es gratuito y no puede ser desarmado por maniobras. Para incorporar este arma, es preciso una acción extendida de 10 minutos y realizar una tirada de perspicacia + biónica dificultad 8 con el instrumental adecuado. Para desprendese del arma es preciso la misma acción, pero si esta quiere ser extraída de un cuerpo sin respetar su salud, se realiza como el resto de implantes cuando son saqueados.",
+          "Por el gasto de dos puntos de fatiga el personaje puede realizar una prueba que utilice el brazo en exclusiva con ventaja, esta habilidad solo podrá emplearse una vez por descanso largo. Esta opción se mantiene para los siguientes niveles del brazo biónico.",
         ],
         modificadores: [],
         condiciones: [casillaVentajaBrazo("Una vez por descanso largo.")],
@@ -1687,6 +1688,7 @@ export const IMPLANTES: Implante[] = [
         detalle: [
           "La fuerza del brazo es un punto superior a la del usuario salvo en caso de que la fuerza del usuario sea de 5 o más, en tales circunstancias el aumento de fuerza del brazo biónico no se contabiliza y se iguala a la del usuario. Su agilidad es idéntica a la del usuario.",
           "El brazo biónico de segundo nivel tiene un blindaje de 3 puntos que no se apila con armaduras ni con otros aumentos (se aplica el mayor), pero permite utilizar el brazo como arma para bloquear. Además, el brazo biónico causa daño letal en sus ataques de pelea, y aumenta en 1 el daño de sus golpes y la dificultad de aturdimiento por crítico.",
+          "Por el gasto de dos puntos de fatiga el personaje puede realizar una prueba que utilice el brazo en exclusiva con ventaja, esta habilidad se podrá hacer una vez tras descanso largo y de nuevo por cada descanso corto.",
         ],
         modificadores: [],
         condiciones: [casillaVentajaBrazo("Una vez tras un descanso largo y de nuevo por cada descanso corto.")],
@@ -1709,6 +1711,7 @@ export const IMPLANTES: Implante[] = [
         coste: 32000,
         detalle: [
           "El usario puede escoger entre un modelo fuerte o ágil:",
+          "En cualquiera de los dos modos, por el gasto de dos puntos de fatiga el personaje puede realizar una prueba que utilice el brazo en exclusiva con ventaja, esta habilidad se podrá hacer una vez por escena de combate.",
         ],
         variantes: [
           {
@@ -1738,7 +1741,8 @@ export const IMPLANTES: Implante[] = [
         rareza: "Muy Extraño",
         coste: 64000,
         detalle: [
-          "Tres modelos a elegir:",
+          "El brazo biónico de nivel 4 viene con tres modelos disponibles:",
+          "En cualquiera de los modos, por el gasto de dos puntos de fatiga el personaje puede realizar una prueba que utilice el brazo en exclusiva con ventaja, sin tener límite de uso esta cualidad.",
         ],
         variantes: [
           {
