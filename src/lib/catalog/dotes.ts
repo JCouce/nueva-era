@@ -6848,6 +6848,47 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_poliglota",
+    "label": "Políglota",
+    "grupo": "cultura",
+    "coste": 2,
+    "requisitos": [
+      {
+        "tipo": "especialidad",
+        "habilidad": "cultura",
+        "id": "linguistica",
+        "min": 1
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "Por cada punto en la especialidad de lingüística ganas dos idiomas en lugar de 1.",
+    "efectos": [
+      {
+        "tipo": "texto",
+        "lugar": "ficha",
+        "texto": "Cada punto de Lingüística te da dos idiomas conocidos en vez de uno.",
+        "condicion": null,
+        "porque": "area_sin_construir",
+        "borrador": 0
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "ninguna"
+        },
+        "mecanismo": null,
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_vigilancia_tactica",
     "label": "Vigilancia Táctica",
     "grupo": "exploracion",
@@ -9449,9 +9490,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   232 efectos (222 en el borrador)
+//   233 efectos (223 en el borrador)
 //   construidos: 127
-//   texto: 105
+//   texto: 106
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

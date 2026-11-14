@@ -176,3 +176,14 @@ describe("Lanzamiento Doble", () => {
     assert.equal(casilla(fila(sin, "lanzar_granada_")), undefined);
   });
 });
+
+describe("Políglota", () => {
+  test("texto de la tarjeta, sin tocar ninguna tirada: la app no lleva idiomas", () => {
+    const d = DOTES.find((x) => x.id === "dote_poliglota")!;
+    assert.deepEqual([d.coste, d.grupo, d.requisitos], [2, "cultura", [{ tipo: "especialidad", habilidad: "cultura", id: "linguistica", min: 1 }]]);
+    assert.deepEqual(d.efectos.map((e) => e.tipo === "texto" && e.lugar), ["ficha"]);
+    assert.deepEqual(d.motor.map((m) => [m.tipo, m.afecta.modo]), [["texto", "ninguna"]]);
+    const f = resolver(ficha([{ id: "dote_poliglota" }]));
+    assert.equal(f.textosTirada.some((x) => x.fuente === "Políglota"), false);
+  });
+});

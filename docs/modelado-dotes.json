@@ -6360,6 +6360,34 @@
       "candidataUX": null
     },
     {
+      "id": "dote_poliglota",
+      "label": "Políglota",
+      "grupo": "cultura",
+      "coste": 2,
+      "requisitos": [
+        {
+          "tipo": "especialidad",
+          "habilidad": "cultura",
+          "id": "linguistica",
+          "min": 1
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "Cada punto de Lingüística te da dos idiomas conocidos en vez de uno.",
+          "condicion": null,
+          "porque": "area_sin_construir"
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_vigilancia_tactica",
       "label": "Vigilancia Táctica",
       "grupo": "exploracion",
