@@ -39,6 +39,7 @@ import {
   type EstadoFicha,
   ajustarRecurso,
   dispararPulso,
+  consumibleConCantidad,
   comprarRecarga,
   municionRegularDePieza,
   ajustarMaterial,
@@ -52,7 +53,6 @@ import {
   MUNICION_GRANADA,
   ajustarFarmaco,
   comprarFarmaco,
-  FARMACOS,
   comprarMunicionEspecial,
   ajustarMunicionEspecial,
   municionEspecialPorId,
@@ -1233,7 +1233,7 @@ export async function comprarFarmacoAction(
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
 
-  const farmaco = FARMACOS.find((f) => f.id === catalogoId);
+  const farmaco = consumibleConCantidad(catalogoId);
   if (!farmaco) return { ok: false, error: "Fármaco inválido" };
 
   if (!ctx.aprobada && !ctx.esMaster) {

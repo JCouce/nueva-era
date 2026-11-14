@@ -570,3 +570,59 @@ export const FARMACOS: Consumible[] = [
     ],
   },
 ];
+
+// Nutrición (sync Drive 2026-11-14, «Medicina, Farmacia y Nutrición»). Se compran con cantidad,
+// en el mismo pool que los fármacos (sheet.farmacos, por catalogoId), pero sin acción: no hay
+// «Comer» (usuario, 2026-11-14); comer se narra y la fatiga se ajusta a mano, con la cantidad
+// de cada comida (DESCANSO.comida, catalog/descanso.ts).
+const MOTOR_NUTRICION: MotorMetadata[] = [
+  { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
+];
+
+export const NUTRICION: Consumible[] = [
+  {
+    familia: "consumible",
+    id: "nutricion_racion_viaje",
+    label: "Ración de Viaje",
+    resumen: "Bloque deshidratado de larga conservación: una comida.",
+    descripcion:
+      "Bloque alimentario deshidratado de larga conservación que aporta los nutrientes y las " +
+      "calorías necesarias para aguantar la jornada. La ración es la cantidad estándar para cada comida.",
+    detalle: ["Una ración es una comida."],
+    pesoKg: null,
+    rareza: "Común",
+    coste: 4,
+    modificadores: [],
+    motor: MOTOR_NUTRICION,
+  },
+  {
+    familia: "consumible",
+    id: "nutricion_gel",
+    label: "Gel Nutricional",
+    resumen: "Pasta hipercalórica en tubo: una ración que se toma en plena acción.",
+    descripcion:
+      "Pasta hipercalórica de absorción inmediata empaquetada en un tubo exprés para chutar energía " +
+      "en mitad de la acción.",
+    detalle: ["Equivale a una ración, pero se puede tomar como acción compleja."],
+    pesoKg: null,
+    rareza: "Común",
+    coste: 15,
+    modificadores: [],
+    motor: MOTOR_NUTRICION,
+  },
+  {
+    familia: "consumible",
+    id: "nutricion_super_alimentos",
+    label: "Súper Alimentos",
+    resumen: "Compuesto sintético que acelera la recuperación: +1 a la fatiga de la comida.",
+    descripcion:
+      "Compuesto nutricional sintético de vanguardia enriquecido con electrolitos y moduladores " +
+      "metabólicos para acelerar la recuperación física.",
+    detalle: ["Aumenta en 1 la fatiga recuperada al ingerirlos."],
+    pesoKg: null,
+    rareza: "Poco Habitual",
+    coste: 50,
+    modificadores: [],
+    motor: MOTOR_NUTRICION,
+  },
+];

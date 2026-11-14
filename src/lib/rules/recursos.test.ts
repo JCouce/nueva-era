@@ -1,6 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { defaultSheet } from "./sheet";
+import { defaultSheet, parseSheet } from "./sheet";
+import { accionesDeFarmacos, accionesDirectasDeFarmacos } from "./farmacos";
 import { equipar } from "./equipo";
 import {
   capacidadDePieza,
@@ -571,5 +572,33 @@ describe("armamento pesado: munición propia (S95)", () => {
     const res = comprarRecarga(s, "h2")!;
     assert.equal(res.coste, 250);
     assert.deepEqual(recursoDe(res.sheet, "h2"), { instanciaId: "h2", actual: 1, max: 1 });
+  });
+});
+
+// Nutrición (sync Drive 2026-11-14): consumibles con cantidad en el pool de los fármacos, sin
+// acción «Comer» (usuario).
+describe("Nutrición: Ración de Viaje, Gel Nutricional y Súper Alimentos", () => {
+  test("se compran al precio del documento y suman cantidad", () => {
+    let s = defaultSheet();
+    const precios: Record<string, number> = { nutricion_racion_viaje: 4, nutricion_gel: 15, nutricion_super_alimentos: 50 };
+    for (const [id, coste] of Object.entries(precios)) {
+      const res = comprarFarmaco(s, id)!;
+      assert.equal(res.coste, coste, id);
+      s = res.sheet;
+    }
+    s = comprarFarmaco(s, "nutricion_racion_viaje")!.sheet;
+    assert.equal(s.farmacos.nutricion_racion_viaje, 2);
+    assert.equal(s.farmacos.nutricion_gel, 1);
+  });
+
+  test("la cantidad sobrevive a leer la ficha", () => {
+    const s = comprarFarmaco(defaultSheet(), "nutricion_gel")!.sheet;
+    assert.equal(parseSheet(JSON.parse(JSON.stringify(s))).farmacos.nutricion_gel, 1);
+  });
+
+  test("sin acción de comer: no generan filas «Usar»", () => {
+    const s = comprarFarmaco(defaultSheet(), "nutricion_super_alimentos")!.sheet;
+    assert.equal(accionesDeFarmacos(s, [], true).filter((a) => a.id.includes("nutricion")).length, 0);
+    assert.equal(accionesDirectasDeFarmacos(s, [], true).filter((a) => a.id.includes("nutricion")).length, 0);
   });
 });

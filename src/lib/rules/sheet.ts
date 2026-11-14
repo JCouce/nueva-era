@@ -40,7 +40,7 @@ import { reconciliarVidaAlLeer } from "./vitalidad";
 import { danioSchema, danioVacio, leerDanio } from "./danio";
 import { MAX_USOS_ESCENA, normalizarUsosEscena } from "./usosEscena";
 import { MUNICION_GRANADA, MUNICION_ESPECIAL } from "../catalog/municion";
-import { FARMACOS } from "../catalog/medicina";
+import { FARMACOS, NUTRICION } from "../catalog/medicina";
 import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./prioridad";
 import { DISCIPLINA_IDS, type DisciplinaId } from "../catalog/psionica";
 import { normalizarOpciones } from "../catalog/especies";
@@ -326,10 +326,10 @@ export function parseSheet(raw: unknown): Sheet {
   }
 
   // Mismo criterio exacto que granadas: solo se conserva un id real de
-  // FARMACOS con cantidad > 0.
+  // FARMACOS (o de NUTRICION, que comparte el pool) con cantidad > 0.
   const rFarmacos = (r.farmacos ?? {}) as Record<string, unknown>;
   const farmacos: Farmacos = {};
-  for (const f of FARMACOS) {
+  for (const f of [...FARMACOS, ...NUTRICION]) {
     const cantidad = clampInt(rFarmacos[f.id], 0, 999999, 0);
     if (cantidad > 0) farmacos[f.id] = cantidad;
   }

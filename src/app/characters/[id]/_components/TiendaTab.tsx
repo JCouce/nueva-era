@@ -13,6 +13,7 @@ import {
   ARMAS_MELEE_KERZUL,
   VALIJA_TACTICA_MEDICA,
   FARMACOS,
+  NUTRICION,
   VALIJA_TACTICA_FABRICACION,
   RADAR,
   DISFRAZ_HOLOGRAFICO,
@@ -115,7 +116,7 @@ const CATEGORIAS = [
     cantidad: MEJORAS_ARMA.length + MEJORAS_MUNICION_ESPECIAL.length,
   },
   { id: "municion", titulo: "Munición", cantidad: MUNICION_ESPECIAL.length },
-  { id: "medicina", titulo: "Medicina", cantidad: 1 + FARMACOS.length },
+  { id: "medicina", titulo: "Medicina", cantidad: 1 + FARMACOS.length + NUTRICION.length },
   { id: "herramientas", titulo: "Herramientas", cantidad: HERRAMIENTAS_CON_NIVEL.length },
   { id: "aumentos", titulo: "Aumentos", cantidad: AUMENTOS.length },
 ] as const;
@@ -1388,6 +1389,32 @@ export function TiendaTab({
               {`// Fármacos · ${FARMACOS.length}`}
             </p>
             {FARMACOS.map((p) => (
+              <Acordeon
+                key={p.id}
+                titulo={p.label}
+                resumen={p.resumen}
+                etiqueta={
+                  <div className="flex flex-col items-end gap-1">
+                    <BadgeRareza rareza={p.rareza} />
+                    <Precio coste={p.coste} />
+                  </div>
+                }
+              >
+                <DetalleConsumible p={p} />
+                <AccionComprarConCantidad
+                  pieza={p}
+                  cantidad={sheet.farmacos[p.id] ?? 0}
+                  creditos={creditosEfectivos}
+                  topeRareza={topeRareza}
+                  onComprar={onComprarFarmaco}
+                />
+              </Acordeon>
+            ))}
+            {/* Nutrición (sync Drive 2026-11-14): mismo pool con cantidad que los fármacos. */}
+            <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+              {`// Nutrición · ${NUTRICION.length}`}
+            </p>
+            {NUTRICION.map((p) => (
               <Acordeon
                 key={p.id}
                 titulo={p.label}

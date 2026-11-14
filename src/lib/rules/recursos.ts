@@ -34,7 +34,7 @@ import {
   type MunicionRegular,
 } from "../catalog/municion";
 import { PREFIJO_MEJORA_MUNICION } from "../catalog/mejorasArma";
-import { FARMACOS } from "../catalog/medicina";
+import { FARMACOS, NUTRICION } from "../catalog/medicina";
 import type { PiezaEquipada } from "./equipo";
 import { sinMejorasNoAdmitidas } from "./compatibilidadArma";
 import type { Sheet } from "./sheet";
@@ -179,11 +179,17 @@ export function sumarFarmaco(sheet: Sheet, catalogoId: string, cantidad = 1): Sh
   };
 }
 
-// "Comprar" 1 unidad al precio real de catálogo de ESE fármaco — mismo
+// Lo que se guarda con cantidad en sheet.farmacos: los fármacos y la comida (Nutrición, sync
+// Drive 2026-11-14, que comparte el pool sin tener acción «Usar»). null si no es ninguno.
+export function consumibleConCantidad(catalogoId: string): Consumible | null {
+  return [...FARMACOS, ...NUTRICION].find((f) => f.id === catalogoId) ?? null;
+}
+
+// "Comprar" 1 unidad al precio real de catálogo de ESE fármaco (o comida) — mismo
 // criterio que comprarGranada: el servidor recalcula el precio, nunca confía
-// en el cliente. null si el catalogoId no es un fármaco real.
+// en el cliente. null si el catalogoId no es un fármaco ni una comida real.
 export function comprarFarmaco(sheet: Sheet, catalogoId: string): { sheet: Sheet; coste: number } | null {
-  const farmaco = FARMACOS.find((f) => f.id === catalogoId);
+  const farmaco = consumibleConCantidad(catalogoId);
   if (!farmaco) return null;
   return { sheet: sumarFarmaco(sheet, catalogoId), coste: farmaco.coste };
 }

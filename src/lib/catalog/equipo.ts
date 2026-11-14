@@ -40,7 +40,7 @@ import type { RebajaTipoAccion } from "../rules/tipoAccion";
 import type { AfectaShock, AlShock } from "../rules/shock";
 import type { TipoDanio } from "./tiposDanio";
 import { ARMAS_MELEE, type ArmaMelee } from "./armasMelee";
-import { VALIJA_TACTICA_MEDICA, FARMACOS } from "./medicina";
+import { VALIJA_TACTICA_MEDICA, FARMACOS, NUTRICION } from "./medicina";
 import {
   VALIJA_TACTICA_FABRICACION,
   RADAR,
@@ -325,6 +325,7 @@ export const EQUIPO: Equipo[] = [
   ...ARMAS_MELEE,
   VALIJA_TACTICA_MEDICA,
   ...FARMACOS,
+  ...NUTRICION,
   VALIJA_TACTICA_FABRICACION,
   RADAR,
   DISFRAZ_HOLOGRAFICO,

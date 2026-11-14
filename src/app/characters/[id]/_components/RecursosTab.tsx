@@ -11,6 +11,7 @@ import {
   armasHabilitadasPara,
   motivoPiezaApagada,
   FARMACOS,
+  NUTRICION,
   type FichaResuelta,
   type RecursoInstancia,
   type MaterialTier,
@@ -105,6 +106,8 @@ export function RecursosTab({
   // Mismo criterio que granadas (docs/prompt-gasto-recursos.md, Fase 2):
   // comprar vive en Tienda, aquí solo lo que ya se posee.
   const farmacosEnStock = FARMACOS.filter((f) => (sheet.farmacos[f.id] ?? 0) > 0);
+  // Nutrición: mismo pool (sheet.farmacos); solo sale si llevas algo.
+  const comidaEnStock = NUTRICION.filter((f) => (sheet.farmacos[f.id] ?? 0) > 0);
   // Munición especial: comprar vive en Tienda (categoría Munición). A
   // diferencia de granadas, sale también a 0 si alguna arma tiene instalada
   // la mejora de ese tipo — si no, instalar la mejora no deja rastro aquí.
@@ -259,6 +262,23 @@ export function RecursosTab({
             {"//SYSTEM · fármacos"}
           </p>
           {farmacosEnStock.map((f) => (
+            <GranadaCard
+              key={f.id}
+              titulo={f.label}
+              descripcion={f.resumen}
+              cantidad={sheet.farmacos[f.id] ?? 0}
+              onAjustar={(delta) => onAjustarFarmaco(f.id, delta)}
+            />
+          ))}
+        </>
+      )}
+
+      {comidaEnStock.length > 0 && (
+        <>
+          <p className="mt-2 border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
+            {"//SYSTEM · nutrición"}
+          </p>
+          {comidaEnStock.map((f) => (
             <GranadaCard
               key={f.id}
               titulo={f.label}
