@@ -43,7 +43,7 @@ describe("catálogo de especialidades", () => {
       atletismo: 8,
       biociencia: 5,
       combate_distancia: 9,
-      combate_melee: 6,
+      combate_melee: 7,
       cultura: 4,
       interpretacion: 0,
       sigilo: 2,
@@ -55,7 +55,7 @@ describe("catálogo de especialidades", () => {
   });
 
   test("especialidades de arma: las de Combate Melee y Combate a Distancia", () => {
-    assert.equal(ESPECIALIDADES_ARMA.length, 15);
+    assert.equal(ESPECIALIDADES_ARMA.length, 16);
     assert.ok(ESPECIALIDADES_ARMA.every((e) => e.habilidad === "combate_melee" || e.habilidad === "combate_distancia"));
   });
 
@@ -158,6 +158,32 @@ describe("ataque con arma: en especialidad sola, sin selector", () => {
     assert.equal(m.habilidad?.valor, 2);
     assert.equal(m.enEspecialidad, false);
     assert.equal(m.especialidadArma?.tiene, false);
+  });
+
+  test("Armas Mecánicas (sync Drive 2026-11-14): especialidad de Combate Melee, y la Hoja Dentada ataca con ella", () => {
+    assert.ok(especialidadesDe("combate_melee").some((e) => e.id === "armas_mecanicas" && e.label === "Armas Mecánicas"));
+    const conHoja = (especialidades: EspecialidadId[]): Sheet => {
+      const s = defaultSheet();
+      return equipar(
+        { ...s, habilidades: { ...s.habilidades, combate_melee: { valor: 4, especialidades } } },
+        { instanciaId: "h", catalogoId: "mecanica_hoja_dentada" },
+      );
+    };
+    const montarHoja = (s: Sheet) => {
+      const t = accionesDeAtaque(s, modificadoresActivos(s), permisosDeDotes(s)).find((x) => x.id === "ataque_melee_h")!;
+      return montarTirada({ ficha: s, modificadores: modificadoresActivos(s) }, t, eleccionSinTocar(t));
+    };
+    const con = montarHoja(conHoja(["armas_mecanicas"]));
+    assert.deepEqual(con.especialidadArma, { id: "armas_mecanicas", label: "Armas Mecánicas", tiene: true });
+    assert.equal(con.habilidad?.valor, 4);
+    // Con Espadas y Dagas (la que tomaba prestada), ya no: la mitad.
+    const prestada = montarHoja(conHoja(["espadas_y_dagas"]));
+    assert.equal(prestada.especialidadArma?.id, "armas_mecanicas");
+    assert.equal(prestada.especialidadArma?.tiene, false);
+    assert.equal(prestada.habilidad?.valor, 2);
+    for (const id of ["mecanica_hoja_dentada", "mecanica_guantelete_piston", "mecanica_sierra_circular", "mecanica_martillo_piston", "mecanica_ariete_percusivo"]) {
+      assert.equal(ESPECIALIDAD_ARMA[id], "armas_mecanicas", id);
+    }
   });
 
   test("lanzar una granada usa Lanzamiento (Atletismo)", () => {

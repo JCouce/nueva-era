@@ -40,6 +40,7 @@ export const ESPECIALIDADES = [
   { id: "espadas_y_dagas", label: "Espadas y Dagas", habilidad: "combate_melee" },
   { id: "flagelos", label: "Flagelos", habilidad: "combate_melee" },
   { id: "pelea", label: "Pelea", habilidad: "combate_melee" },
+  { id: "armas_mecanicas", label: "Armas Mecánicas", habilidad: "combate_melee" }, // sync Drive 2026-11-14
   // Combate a Distancia (foto de Drive 2026-10-23: sustituye a Armas Elásticas y Armas de
   // Fuego Cortas/Largas; las fichas viejas, migración v21 → v22).
   { id: "armas_arrojadizas", label: "Armas Arrojadizas", habilidad: "combate_distancia" },

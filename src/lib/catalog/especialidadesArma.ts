@@ -55,13 +55,13 @@ export const ESPECIALIDAD_ARMA: Readonly<Record<string, EspecialidadId>> = {
   flagelo_mangual: "flagelos",
   flagelo_cadena_armada: "flagelos",
 
-  // ── Armas Mecánicas: la fuente no las encaja en ninguna especialidad ──
-  // Lectura por forma de uso, confirmada por el usuario (S44).
-  mecanica_hoja_dentada: "espadas_y_dagas", // hoja a una mano
-  mecanica_guantelete_piston: "pelea", // golpe con el puño
-  mecanica_sierra_circular: "espadas_y_dagas", // hoja motorizada a dos manos
-  mecanica_martillo_piston: "armas_de_asta", // como el Martillo Enastado
-  mecanica_ariete_percusivo: "armas_de_asta", // a dos manos, con alcance
+  // ── Armas Mecánicas: especialidad propia desde el sync Drive 2026-11-14 (usuario, 2026-11-14;
+  // antes, la prestada por forma de uso, S44) ──
+  mecanica_hoja_dentada: "armas_mecanicas",
+  mecanica_guantelete_piston: "armas_mecanicas",
+  mecanica_sierra_circular: "armas_mecanicas",
+  mecanica_martillo_piston: "armas_mecanicas",
+  mecanica_ariete_percusivo: "armas_mecanicas",
 
   // ── Kerzul: la misma especialidad que su arma básica ──
   kerzul_punal: "espadas_y_dagas",
