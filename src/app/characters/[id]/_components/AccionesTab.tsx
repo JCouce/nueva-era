@@ -1737,7 +1737,10 @@ export function AccionesTab({
   ];
 
   // Lo del árbol también como filas sueltas, sin pestaña propia: solo para ★ y la cabina.
-  const titulosArbol = ["Ataques", "Acciones", "Movimiento", "Herramientas", "Fármacos", "Dotes", "Aumentos"];
+  // Cualquier grupo que traiga el árbol entra (Defensa e Iniciativa se quedaban fuera y su
+  // estrella no salía en ★); los conocidos, en este orden.
+  const ordenArbol = ["Ataques", "Defensa", "Iniciativa", "Acciones", "Movimiento", "Herramientas", "Fármacos", "Dotes", "Aumentos"];
+  const titulosArbol = [...ordenArbol, ...new Set(arbolConDado.map((x) => x.titulo).filter((t) => !ordenArbol.includes(t)))];
   const arbolSuelto: Seccion[] = [
     ...titulosArbol.map(
       (titulo): Seccion => ({
