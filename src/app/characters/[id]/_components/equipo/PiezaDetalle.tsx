@@ -138,6 +138,7 @@ export function DetalleArmadura({ p, blindaje }: { p: Armadura; blindaje?: Blind
           label="Tope mov. aérea"
           value={p.topeMovilidadAerea === null ? "No admite" : `Nivel ${p.topeMovilidadAerea}`}
         />
+        <Stat label="Peso" value={`${p.pesoKg.toLocaleString("es-ES")} kg`} />
       </dl>
       {blindaje && blindaje.perdido > 0 && (
         <p className="mt-2 font-mono text-[11px] text-danger">

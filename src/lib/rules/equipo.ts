@@ -678,8 +678,8 @@ export function topeRarezaDeCompra(
 }
 
 // Peso de una pieza equipada, para Carga Transportable (docs/sistema.md
-// §5.5). Arma, armaMelee, consumible y armaPesada tienen `pesoKg` en el
-// catálogo — armaduras, herramienta y las familias instalables no traen
+// §5.5). Arma, armaMelee, consumible, armaPesada y armadura (sync Drive 2026-11-14) tienen
+// `pesoKg` en el catálogo — herramienta y las familias instalables no traen
 // columna de Peso en EQUIP, así que devuelven 0: no es que pesen cero, es
 // que el documento no lo dice (salvo las mejoras de arma con `pesoKg`, abajo). "granada" se queda en esta rama por
 // completitud de tipos, aunque en la práctica ninguna PiezaEquipada la lleva
@@ -692,6 +692,7 @@ export function pesoDePieza(pieza: PiezaEquipada): number {
     cat.familia === "armaMelee" ||
     cat.familia === "consumible" ||
     cat.familia === "armaPesada" ||
+    cat.familia === "armadura" ||
     cat.familia === "granada"
   ) {
     if (cat.familia === "armaMelee") return pesoArmaModificada(cat, pieza.modificaciones ?? []) ?? 0;

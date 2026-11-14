@@ -143,7 +143,7 @@ export function RailFicha({
           <Dato k="Salto horizontal" v={`${mov.saltoHorizontal} cm`} />
           <Dato k="Salto vertical" v={`${mov.saltoVertical} cm`} />
           <Dato
-            k="Carga (armas)"
+            k="Carga (equipo)"
             v={`${pesoArmas} / ${ficha.cargaMaxima} kg`}
             tono={pesoArmas > ficha.cargaMaxima ? "text-danger" : undefined}
           />

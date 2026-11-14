@@ -342,6 +342,12 @@ vez de calcular el peso exacto siempre.
 > encima del límite, doble, cuádruple) y la Proeza de Fuerza **no** están mecanizados
 > todavía — son mecánica de tirada/estado, fase aparte.
 >
+> **Armaduras con peso (sync Drive 2026-11-14):** la tabla de armaduras trae ya columna de
+> Peso (Ropa Reforzada 2, Traje Ultra Ligero 1, Ropa Inteligente 2, Ligera 7, Intermedia 14,
+> Pesada 28, Ultra Ligero Avanzado 1,5, Ligera Avanzada 5,5, Intermedia Avanzada 11, Pesada
+> Avanzada 22 kg). `pesoKg` en `catalog/armaduras.ts`; `pesoDePieza` las suma a la carga.
+> Lo que sigue abajo vale para los módulos instalables.
+>
 > **Hueco de datos, no del motor:** `EQUIP` no trae columna de Peso para armaduras ni
 > para ningún módulo instalable (subsistemas, mejoras estándar, mejoras de arma,
 > movimiento) — solo armas de fuego y prácticamente toda arma melee tienen kg.

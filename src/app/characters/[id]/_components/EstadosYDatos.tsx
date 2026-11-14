@@ -120,7 +120,7 @@ export function DatosCard({ ficha }: { ficha: FichaResuelta }) {
         <Dato label="Alerta" valor={ficha.alerta} tono="text-accent" nota={notas.alerta} />
         {/* Carga transportable (sistema.md §5.5): solo el dato, sin penalizadores todavía. */}
         <Dato
-          label="Carga (armas)"
+          label="Carga (equipo)"
           valor={pesoArmas}
           unidad={`/ ${limiteCarga} kg`}
           tono={pesoArmas > limiteCarga ? "text-danger" : tono(notas.carga)}

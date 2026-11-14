@@ -792,8 +792,10 @@ describe("pesoDePieza", () => {
     assert.equal(pesoDePieza({ instanciaId: "p1", catalogoId: "pelea_punetazo" }), 0);
   });
 
-  test("una armadura pesa 0: el catálogo no tiene columna de Peso para ellas", () => {
-    assert.equal(pesoDePieza({ instanciaId: "a1", catalogoId: "armadura_ligera" }), 0);
+  // Sync Drive 2026-11-14: la tabla de armaduras trae columna de Peso.
+  test("una armadura pesa lo de su tabla (sync Drive 2026-11-14)", () => {
+    assert.equal(pesoDePieza({ instanciaId: "a1", catalogoId: "armadura_ligera" }), 7);
+    assert.equal(pesoDePieza({ instanciaId: "a2", catalogoId: "ultra_ligero_avanzado" }), 1.5);
   });
 
   test("pieza que no existe en el catálogo pesa 0", () => {
@@ -812,10 +814,28 @@ describe("pesoEquipado", () => {
     assert.equal(pesoEquipado(s), 0.5 + 1);
   });
 
-  test("una armadura equipada no suma nada, el resto sigue contando", () => {
+  test("la armadura puesta entra en la carga con el resto (sync Drive 2026-11-14)", () => {
     let s = equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "armadura_ligera" });
     s = equipar(s, { instanciaId: "p1", catalogoId: "pistola_mosquito" });
-    assert.equal(pesoEquipado(s), 0.5);
+    assert.equal(pesoEquipado(s), 7 + 0.5);
+  });
+
+  test("pesos de las 10 armaduras, como la tabla (sync Drive 2026-11-14)", () => {
+    const pesos: Record<string, number> = {
+      ropa_reforzada: 2,
+      traje_ultra_ligero: 1,
+      ropa_inteligente: 2,
+      armadura_ligera: 7,
+      armadura_intermedia: 14,
+      armadura_pesada: 28,
+      ultra_ligero_avanzado: 1.5,
+      armadura_ligera_avanzada: 5.5,
+      armadura_intermedia_avanzada: 11,
+      armadura_pesada_avanzada: 22,
+    };
+    for (const [id, kg] of Object.entries(pesos)) {
+      assert.equal(pesoEquipado(equipar(defaultSheet(), { instanciaId: "a", catalogoId: id })), kg, id);
+    }
   });
 
   // S96: «El bípode aumenta la carga del arma en 5 kg» (nivel 2: «no suma peso adicional»); el

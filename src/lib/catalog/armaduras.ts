@@ -17,6 +17,9 @@ export type Armadura = {
   topeMovilidadAerea: number | null;
   rareza: Rareza;
   coste: number;
+  // Columna Peso de la tabla de armaduras (sync Drive 2026-11-14). Entra en la carga
+  // (pesoDePieza, rules/equipo.ts).
+  pesoKg: number;
   modificadores: Modificador[];
   // Bonos a salvaciones solo contra unas amenazas (selector «Contra…», aumentosTiradas.ts),
   // de la armadura que cuenta (salvacionesDeEquipo, rules/equipo.ts). 2026-10-24.
@@ -61,6 +64,7 @@ export const ARMADURAS: Armadura[] = [
     topeMovilidadAerea: null,
     rareza: "Común",
     coste: 100,
+    pesoKg: 2,
     modificadores: [],
     motor: [
       // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
@@ -92,6 +96,7 @@ export const ARMADURAS: Armadura[] = [
     topeMovilidadAerea: null,
     rareza: "Común",
     coste: 4000,
+    pesoKg: 1,
     modificadores: [],
     salvaciones: [CONGELACION_Y_LLAMARADA],
     motor: [
@@ -129,6 +134,7 @@ export const ARMADURAS: Armadura[] = [
     topeMovilidadAerea: null,
     rareza: "Poco Habitual",
     coste: 5000,
+    pesoKg: 2,
     modificadores: [],
     salvaciones: [CONGELACION_Y_LLAMARADA],
     motor: [
@@ -169,6 +175,7 @@ export const ARMADURAS: Armadura[] = [
     topeMovilidadAerea: 2,
     rareza: "Común",
     coste: 6000,
+    pesoKg: 7,
     modificadores: [],
     salvaciones: [CONGELACION_Y_LLAMARADA],
     desarmado: { bonoDanio: 1 },
@@ -212,6 +219,7 @@ export const ARMADURAS: Armadura[] = [
     topeMovilidadAerea: 3,
     rareza: "Poco Habitual",
     coste: 12000,
+    pesoKg: 14,
     modificadores: [],
     salvaciones: [CONGELACION_Y_LLAMARADA],
     desarmado: { bonoDanio: 1 },
@@ -258,6 +266,7 @@ export const ARMADURAS: Armadura[] = [
     topeMovilidadAerea: 4,
     rareza: "Extraño",
     coste: 20000,
+    pesoKg: 28,
     modificadores: [],
     salvaciones: [CONGELACION_Y_LLAMARADA],
     desarmado: { bonoDanio: 2 },
@@ -296,6 +305,7 @@ export const ARMADURAS: Armadura[] = [
     topeMovilidadAerea: 1,
     rareza: "Muy Extraño",
     coste: 100000,
+    pesoKg: 1.5,
     modificadores: [],
     motor: [
       // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
@@ -324,6 +334,7 @@ export const ARMADURAS: Armadura[] = [
     topeMovilidadAerea: 3,
     rareza: "Muy Extraño",
     coste: 105000,
+    pesoKg: 5.5,
     modificadores: [],
     motor: [
       // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
@@ -352,6 +363,7 @@ export const ARMADURAS: Armadura[] = [
     topeMovilidadAerea: 4,
     rareza: "Muy Extraño",
     coste: 120000,
+    pesoKg: 11,
     modificadores: [],
     motor: [
       // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
@@ -380,6 +392,7 @@ export const ARMADURAS: Armadura[] = [
     topeMovilidadAerea: 4,
     rareza: "Muy Extraño",
     coste: 200000,
+    pesoKg: 22,
     modificadores: [],
     motor: [
       // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: blindaje
