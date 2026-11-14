@@ -15,7 +15,9 @@ import {
   modificadoresDeAumentos,
   ajusteCosteConAumentos,
   aumentosConRequisitoRoto,
+  aumentosIncompatibles,
   comprarAumento,
+  incompatiblesCon,
   devolucionAumento,
   etiquetaEleccionAumento,
   planCompraAumento,
@@ -244,6 +246,58 @@ describe("implantes: cualquier nivel directo y subir paga la diferencia", () => 
     const subido = compra(con, { catalogoId: BRAZO, nivel: 4, eleccion: "agil" });
     assert.equal(subido.equipo[0].nivel, 4);
     assert.equal(subido.equipo[0].eleccion, "agil");
+  });
+});
+
+// E4 (sync Drive 2026-11-14): la pareja se declara en el Ojo y se lee en los dos sentidos.
+describe("incompatibilidades: Ojo Biónico ↔ Optimización Foveo-Sensorial", () => {
+  test("se leen en los dos sentidos aunque solo la declare el Ojo", () => {
+    assert.deepEqual(incompatiblesCon(OJO), [FOVEO]);
+    assert.deepEqual(incompatiblesCon(FOVEO), [OJO]);
+    assert.deepEqual(incompatiblesCon(MIELINIZACION), []);
+  });
+
+  test("con Foveo, el Ojo no se compra (ni por el NPC, libre)", () => {
+    const s = compra(defaultSheet(), { catalogoId: FOVEO });
+    const motivo = "Incompatible con Optimización Foveo-Sensorial.";
+    assert.deepEqual(planCompraAumento(s, { catalogoId: OJO, nivel: 1 }), { ok: false, motivo });
+    assert.deepEqual(comprarAumento(s, { catalogoId: OJO, nivel: 1 }, ctx()), { ok: false, error: motivo });
+    assert.deepEqual(comprarAumento(s, { catalogoId: OJO, nivel: 1 }, { libre: true, instanciaId: "npc" }), { ok: false, error: motivo });
+  });
+
+  test("con el Ojo, Foveo no se compra", () => {
+    const s = compra(defaultSheet(), { catalogoId: OJO, nivel: 2 });
+    assert.deepEqual(planCompraAumento(s, { catalogoId: FOVEO }), { ok: false, motivo: "Incompatible con Ojo Biónico." });
+  });
+
+  test("sin el otro, cada uno se compra", () => {
+    assert.equal(planCompraAumento(defaultSheet(), { catalogoId: OJO, nivel: 1 }).ok, true);
+    assert.equal(planCompraAumento(defaultSheet(), { catalogoId: FOVEO }).ok, true);
+    // Quitar el incompatible desbloquea la compra.
+    const s = compra(defaultSheet(), { catalogoId: FOVEO });
+    assert.equal(planCompraAumento(desequipar(s, s.equipo[0].instanciaId), { catalogoId: OJO, nivel: 1 }).ok, true);
+  });
+
+  test("ficha que ya tiene los dos: aviso en ambos, nada se apaga ni se bloquea", () => {
+    const s: Sheet = {
+      ...defaultSheet(),
+      equipo: [
+        { instanciaId: "f", catalogoId: FOVEO },
+        { instanciaId: "o", catalogoId: OJO, nivel: 1 },
+      ],
+    };
+    assert.deepEqual(aumentosIncompatibles(s), [
+      { instanciaId: "f", con: ["Ojo Biónico"] },
+      { instanciaId: "o", con: ["Optimización Foveo-Sensorial"] },
+    ]);
+    // Los dos siguen dando efectos (Foveo, su +1 a Percepción).
+    const fuentes = new Set(modificadoresDeAumentos(s).map((m) => m.fuente));
+    assert.ok(fuentes.has("Optimización Foveo-Sensorial"));
+    assert.ok(fuentes.has("Ojo Biónico 1"));
+    assert.equal(valoresRequisitoDeFicha(s).atributos.percepcion, valoresRequisitoDeFicha(defaultSheet()).atributos.percepcion + 1);
+    // Y el resto de compras sigue abierto.
+    assert.equal(planCompraAumento(s, { catalogoId: MIELINIZACION }).ok, true);
+    assert.deepEqual(aumentosIncompatibles(compra(defaultSheet(), { catalogoId: FOVEO })), []);
   });
 });
 

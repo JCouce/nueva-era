@@ -11,7 +11,7 @@
 // la bolsa y el resto a créditos (devolucionAumento); aprobada la ficha, nada.
 import { z } from "zod";
 import { equipoPorId } from "../catalog/equipo";
-import type { Aumento, Implante, NivelImplante, OperacionGenetica, ReduccionPenalizadorAumento } from "../catalog/aumentos";
+import { AUMENTOS, type Aumento, type Implante, type NivelImplante, type OperacionGenetica, type ReduccionPenalizadorAumento } from "../catalog/aumentos";
 import { acumulaPorClave, claveModificador, costeDePieza, nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import type { FuenteConNombre } from "./sobreesfuerzo";
 import { HABILIDADES, type HabilidadId } from "./habilidades";
@@ -84,6 +84,37 @@ export function aumentosConRequisitoRoto(sheet: Pick<Sheet, "equipo">): AumentoR
   });
 }
 
+// ── Incompatibilidades (E4, sync Drive 2026-11-14) ───────────────────────
+
+// Ids de los aumentos incompatibles con `catalogoId`, en los dos sentidos: lo que declara él y
+// los que lo declaran a él (cada pareja se escribe en un solo lado del catálogo).
+export function incompatiblesCon(catalogoId: string): string[] {
+  const propios = aumentoPorId(catalogoId)?.incompatibleCon ?? [];
+  const ajenos = AUMENTOS.filter((a) => a.incompatibleCon?.includes(catalogoId)).map((a) => a.id);
+  return [...new Set([...propios, ...ajenos])].filter((id) => id !== catalogoId);
+}
+
+// Labels de lo equipado que es incompatible con `catalogoId`.
+export function incompatiblesEquipados(sheet: Pick<Sheet, "equipo">, catalogoId: string): string[] {
+  const ids = incompatiblesCon(catalogoId);
+  return [...new Set(sheet.equipo.filter((p) => ids.includes(p.catalogoId)).map((p) => p.catalogoId))].map(
+    (id) => aumentoPorId(id)?.label ?? id,
+  );
+}
+
+export type AumentoIncompatible = { instanciaId: string; con: string[] };
+
+// Aumentos equipados junto a otro incompatible (fichas de antes de E4, o compradas a mano por
+// el máster): solo aviso, como el requisito roto; no se quita ni se apaga nada (usuario,
+// 2026-11-14).
+export function aumentosIncompatibles(sheet: Pick<Sheet, "equipo">): AumentoIncompatible[] {
+  return sheet.equipo.flatMap((p) => {
+    if (!esPiezaAumento(p)) return [];
+    const con = incompatiblesEquipados(sheet, p.catalogoId);
+    return con.length ? [{ instanciaId: p.instanciaId, con }] : [];
+  });
+}
+
 // ── Elección (sentido de Introgresión, modelo del Brazo) ──────────────────
 
 export function nivelDeImplante(imp: Implante, nivel: number): NivelImplante | null {
@@ -130,6 +161,9 @@ export function planCompraAumento(
 ): PlanCompraAumento {
   const cat = aumentoPorId(compra.catalogoId);
   if (!cat) return { ok: false, motivo: "No es un aumento del catálogo." };
+  // También al subir de nivel una pieza que ya convive con su incompatible: es comprar.
+  const incompatibles = incompatiblesEquipados(sheet, cat.id);
+  if (incompatibles.length) return { ok: false, motivo: `Incompatible con ${incompatibles.join(", ")}.` };
   return cat.familia === "operacionGenetica" ? planOperacion(sheet, cat, compra) : planImplante(sheet, cat, compra, atributos);
 }
 

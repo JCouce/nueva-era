@@ -83,6 +83,16 @@ describe("integridad del catálogo de aumentos", () => {
     }
   });
 
+  // E4: cada pareja, en un solo lado (rules/aumentos.ts la lee en los dos).
+  test("incompatibleCon apunta a otros aumentos y cada pareja se declara una vez", () => {
+    for (const a of AUMENTOS) {
+      for (const id of a.incompatibleCon ?? []) {
+        assert.ok(AUMENTOS.some((b) => b.id === id && b.id !== a.id), `${a.id} → ${id}`);
+        assert.ok(!AUMENTOS.find((b) => b.id === id)?.incompatibleCon?.includes(a.id), `${a.id} ↔ ${id} repetida`);
+      }
+    }
+  });
+
   test("las rarezas son las del equipo y los niveles van de 1 a N", () => {
     for (const op of OPERACIONES_GENETICAS) assert.ok(RAREZA_ORDEN.includes(op.rareza), op.id);
     for (const imp of IMPLANTES) {

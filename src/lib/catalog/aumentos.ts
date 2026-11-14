@@ -107,6 +107,8 @@ export type OperacionGenetica = {
   coste: number;
   // Ids de otras operaciones; hacen falta todas (§11.1).
   requisitos: string[];
+  // E4: como Implante.incompatibleCon.
+  incompatibleCon?: string[];
   eleccion: EleccionAumento | null;
   // Solo Introgresión: se vuelve a comprar con otra elección, nunca la misma.
   repetible: boolean;
@@ -184,6 +186,9 @@ export type Implante = {
   shock: AfectaShock;
   // null: el documento no dice si se puede extraer (pregunta 20).
   extraible: boolean | null;
+  // E4 (sync Drive 2026-11-14): ids de aumentos que no pueden convivir con este. Se declara en un
+  // solo lado y se lee en los dos (incompatiblesCon, rules/aumentos.ts).
+  incompatibleCon?: string[];
   niveles: NivelImplante[];
 };
 
@@ -1806,10 +1811,11 @@ export const IMPLANTES: Implante[] = [
     label: "Ojo Biónico",
     resumen: "Bonos a percepción visual y a distancia, visión nocturna y térmica, rayos X y, en niveles altos, inmunidad a la ceguera.",
     descripcion: "El Ojo Biónico reemplaza el globo ocular orgánico por un complejo ensamblaje optoelectrónico integrado directamente en el nervio óptico y el córtex visual. Utiliza microcristales de enfoque activo, sensores de espectro variable y un coprocesador gráfico dedicado que procesa la información en tiempo real, eliminando el temblor natural de la pupila biológica, filtrando destellos cegadores y superponiendo una interfaz de datos táctica directamente sobre el campo de visión del usuario. Incompatible con aumentos genéticos de la visión como la Optimización Foveo-Sensorial al sustituir el tejido orgánico por prótesis cibernéticas.",
-    // Sync Drive 2026-11-14: la incompatibilidad con Foveo es texto; el bloqueo al comprar, en E4.
     sabotaje: true,
     shock: "cuerpo",
     extraible: null,
+    // Sync Drive 2026-11-14 (E4): no se compra con Foveo, ni Foveo con él.
+    incompatibleCon: ["aum_optimizacion_foveo_sensorial"],
     niveles: [
       {
         nivel: 1,
