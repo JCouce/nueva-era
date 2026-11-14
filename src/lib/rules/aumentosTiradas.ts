@@ -107,8 +107,8 @@ export type EfectosTiradaAumento = {
   armaduraNatural?: ArmaduraNaturalAumento;
   // Ventaja sin casilla en las tiradas de ese alcance (Red Frontoparietal: Iniciativa).
   ventajasFijas?: { alcance: AlcanceModificador }[];
-  // Bono según la opción elegida en otra condición de la tirada (Foveo: +1 con el selector
-  // "Apuntado" en cualquier opción menos "No"). La fuente la pone bonosTramoDeAumentos.
+  // Bono según la opción elegida en otra condición de la tirada. La fuente la pone
+  // bonosTramoDeAumentos. (Foveo lo usaba con «Apuntado» hasta el sync Drive 2026-11-14.)
   bonosTramo?: { alcance: AlcanceModificador; bono: Omit<BonoPorTramo, "fuente"> }[];
   // Las casillas de esta pieza no salen si esta otra operación funciona (Prefrontal con
   // Conectividad Callosa, que es su progresión: usuario, 2026-10-22).

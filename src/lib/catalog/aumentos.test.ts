@@ -95,6 +95,14 @@ describe("integridad del catálogo de aumentos", () => {
     }
   });
 
+  // Lo que el modelado no trae y es un bono permanente a una tirada, uno a uno.
+  const TIRADA_FUERA_DEL_MODELADO: Record<string, unknown[]> = {
+    // Sync Drive 2026-11-14: +1 a todo ataque a distancia, sin la condición de apuntar.
+    aum_optimizacion_foveo_sensorial: [
+      { tipo: "tirada", alcance: { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" }, valor: 1 },
+    ],
+  };
+
   test("A1: los modificadores de las operaciones son los +1 y la vida del modelado", () => {
     for (const op of OPERACIONES_GENETICAS) {
       const j = MODELADO.find((a) => a.id === op.id)!;
@@ -105,7 +113,7 @@ describe("integridad del catálogo de aumentos", () => {
             ? [{ tipo: "multiplicadorVida", valor: e.multiplicaFortaleza }]
             : [],
       );
-      assert.deepEqual(op.modificadores, esperados, op.id);
+      assert.deepEqual(op.modificadores, [...esperados, ...(TIRADA_FUERA_DEL_MODELADO[op.id] ?? [])], op.id);
       const coste = (j.efectos ?? []).find((e) => e.tipo === "coste_habilidad");
       assert.deepEqual(
         op.rebajaCosteHabilidad ?? null,

@@ -360,7 +360,7 @@ export function notasCondiciones(condiciones: CondicionTirada[], estado: EstadoC
 // bonosTramoAplicables, que es lo que suma y pinta montarTirada.
 //
 // `condicion`: la condición de opción cuya opción elegida mira el bono, si no es "tramo" (el
-// selector "Apuntado" de los ataques a distancia: Foveo +1 con cualquier opción menos "No").
+// selector "Apuntado" de los ataques a distancia).
 // `porTramo` va entonces por id de opción de esa condición.
 export type BonoPorTramo = {
   fuente: string;

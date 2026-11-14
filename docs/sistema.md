@@ -466,7 +466,8 @@ Exploración, el 2026-10-26):
   restando a mano).
 - Dotes: *Velocista* (S80), *Gran Puntería* (S79), *Puntería Relámpago* y su *Mejorada* y
   *Precisión Imperturbable* (textos en la nota de Apuntar), *Cazador Cazado* y *Vigilancia
-  Táctica* (S83). *Foveo-Sensorial* va con el selector (S82).
+  Táctica* (S83). *Foveo-Sensorial* ya no va con el selector: +1 a todo ataque a distancia
+  (sync Drive 2026-11-14; S82 tumbado).
 - **Rastreo**: Perspicacia + Exploración (Supervivencia). Dificultad según lo evidente del
   rastro, la superficie y el tiempo transcurrido. Selector **«Marcha»** (S97), condiciones y
   ritmo en uno: Normal · mitad de carrera 0, Normal · velocidad total −3, Adversa · un tercio 0,
@@ -2075,9 +2076,9 @@ sobreesfuerzo.
   - **Mielinización:** casilla "Ahorro de fatiga" en las pruebas mentales: −1 al gasto de
     fatiga de la tirada (casillas de pago y, en un poder, el coste del poder), mínimo 0
     (usuario, 2026-10-22). "Una vez por escena" va en la nota hasta A4.
-  - **Foveo:** +1 en los ataques con Combate a Distancia cuando el selector «Apuntado» no
-    está en "No" (S82; desde 2026-10-23, que existe la acción Apuntar). Antes era una casilla
-    "Tras Apuntar" suelta.
+  - **Foveo:** +1 en **todo** ataque con Combate a Distancia, apunte o no `[FIRME ·
+    docs/fuente/aumentos.md, sync Drive 2026-11-14]` (la fuente quita «por puntería»).
+    ~~S82: solo con el selector «Apuntado» en Éxito o Crítico.~~
   - **Proyección** ("Con lenguaje") y **Matriz de Red** ("Repetir tras fallar"): ventaja en
     cualquier tirada de Actitud, con su nota (una vez por escena, hasta A4).
   - **Red Frontoparietal:** ventaja sin casilla en las tres de Iniciativa; la acción combinada
@@ -3187,7 +3188,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S79 | ***Gran Puntería*: el éxito al apuntar es crítico, sin casilla** (crítico con 0 éxitos en la fila Apuntar), y el texto "la cobertura baja 2 niveles" solo sale con **crítico natural** (6 éxitos o más). En el selector «Apuntado» del ataque, con la dote, "Éxito" lleva la nota de omitir 1 nivel de cobertura y "Crítico" la de **2 niveles en total** (salvo cobertura total), **no 3** (el 1 del crítico de Apuntar no se suma al 2 de la dote). El bono sigue siendo +1. | "Al apuntar" = la tirada de Apuntar (§9.5). Que el éxito convertido también omita 1 nivel y el "2 en total" son lectura nuestra, aprobada por el usuario (2026-10-23); preguntas de Gran Puntería en `docs/modelado-dotes.md` (Combate a Distancia), pendientes de Murillo. |
 | S80 | ***Velocista* en Carrera, siempre activo y sin casilla: fracaso → éxito y éxito → crítico, en un solo salto.** El fracaso que pasa a éxito queda con margen 0 y **no** llega a crítico; el fracaso crítico no cambia. "Al correr como acción estándar o compleja" es toda tirada de Carrera. | El texto dice "considera el fracaso como éxito y el éxito como éxito crítico"; encadenarlos convertiría todo fracaso en crítico. Decisión del usuario (2026-10-23). |
 | S81 | **Selector «Apuntado» en todos los ataques con Combate a Distancia**, para cualquier ficha (lo que salió en la acción Apuntar previa: No · Éxito · Crítico). La app no comprueba que se apuntara de verdad ni que el ataque sea antes del final del próximo turno: lo marca el jugador. | La regla de Apuntar (fuente/habilidades.md) da el bono al siguiente ataque; la app no lleva registro de acciones por turno. Decisión del usuario (2026-10-23). |
-| S82 | ***Foveo-Sensorial* "por puntería" = el selector «Apuntado» en Éxito o Crítico**: +1 al ataque a distancia (además del +1 de Apuntar), como bono por opción, sin casilla propia. | Antes era la casilla "Tras Apuntar" porque no existía la acción (§11.3). Decisión del usuario (2026-10-23). |
+| S82 | ~~***Foveo-Sensorial* "por puntería" = el selector «Apuntado» en Éxito o Crítico**: +1 al ataque a distancia (además del +1 de Apuntar), como bono por opción, sin casilla propia.~~ **Tumbado (sync Drive 2026-11-14)**: la fuente quita «por puntería»; +1 a todo ataque a distancia. | Antes era la casilla "Tras Apuntar" porque no existía la acción (§11.3). Decisión del usuario (2026-10-23). |
 | S83 | ***Cazador Cazado* y *Vigilancia Táctica*: casilla en la fila** (como Levitar: «Con Manipulación (Cazador Cazado)» en Discernir mentiras; «Con Táctica (Vigilancia Táctica)» en Resistir distracción) que cambia habilidad y especialidad; la tirada va entera si la ficha tiene esa especialidad y a la mitad si no. El aplicado (Perspicacia) no cambia. | La prosa da el par entero; las dos tiradas fijas van con Empatía, que es lo que sustituyen. |
 | S84 | **Tirada libre (T-007): aplica lo que casa por aplicado/habilidad (alcances `todas`, `aplicado`, `habilidad`), sin casillas ni extras de dote o aumento, y sin especialidad.** Botón "Libre" en la barra de encima de las pestañas de Acciones (antes fila al final de Básicas): el jugador elige en el modal un aplicado y una habilidad (o ninguna) y tira 1d12 + aplicado + habilidad. Entran los modificadores de tirada de alcance `todas`, `aplicado` y `habilidad`, y `anulaPenalizadores`; no los de `tiradaId` de otra acción, `grupo`, `grupoHabilidad`, `familiaArma` ni `modo` (grupo propio `Libre`). Sin casillas, ventajas, textos, bonos por tramo, descuentos ni crítico fijo de dote o aumento. La habilidad cuenta entera, como en Buscar (regla general de §3: no nombra especialidad). | Usuario, 2026-10-23: es para lo que el máster pide en mesa y la app no tiene como fila; ninguna acción con nombre, así que no le toca nada que apunte a una. |
 | S85 | **Contra Fuego, con Mejora Ignífuga (nivel 1) instalada en la armadura que cuenta, solo cuenta el blindaje de esa armadura**: no suman la armadura natural (de especie o de aumentos), el Escudo Deflector, el blindaje reactivo (Densificar) ni el brazo biónico, cuyas casillas siguen bloqueadas contra Fuego. Ignífuga instalada en otra armadura que no es la que cuenta no hace nada. | Lectura literal de "la puntuación total de blindaje de su armadura" (`catalog/mejorasEstandar.ts`), pendiente de confirmar con Murillo. Usuario, 2026-10-23. |

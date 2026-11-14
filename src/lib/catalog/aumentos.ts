@@ -120,7 +120,8 @@ export type OperacionGenetica = {
   activo?: ActivoAumento;
   // A7: ids de estados del catálogo a los que es inmune mientras funciona (rules/inmunidades.ts).
   inmuneA?: string[];
-  // Solo efectos permanentes (A1: +1 a atributos básicos y multiplicadorVida).
+  // Solo efectos permanentes (A1: +1 a atributos básicos y multiplicadorVida; Foveo, +1 a los
+  // ataques a distancia desde el sync Drive 2026-11-14).
   modificadores: Modificador[];
   motor: MotorMetadata[];
 } & EfectosTiradaAumento;
@@ -418,29 +419,26 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     familia: "operacionGenetica",
     id: "aum_optimizacion_foveo_sensorial",
     label: "Optimización Foveo-Sensorial",
-    resumen: "+1 Percepción. +1 a los ataques a distancia tras apuntar y −1 a la cobertura visual.",
+    resumen: "+1 Percepción. +1 a los ataques a distancia y −1 a la cobertura visual.",
     detalle: [
       "El personaje aumenta en 1 su puntuación en el atributo de Percepción.",
-      "Además gana un bonificador de +1 en tiradas de ataque a distancia por puntería. También reduce en 1 los penalizadores por cobertura visual al realizar ataques a distancia o pruebas de percepción visual.",
+      "Además, gana un bonificador de +1 en tiradas de ataque a distancia, y reduce en 1 los penalizadores por cobertura visual al realizar ataques a distancia o pruebas de percepción visual.",
     ],
     rareza: "Poco Habitual",
     coste: 30000,
     requisitos: [],
     eleccion: null,
     repetible: false,
-    modificadores: [{ tipo: "atributo", id: "percepcion", valor: 1 }],
-    // "Por puntería": +1 en el ataque a distancia con el selector "Apuntado" en Éxito o Crítico
-    // (la acción Apuntar previa salió bien; acciones.ts, condicionApuntado).
-    bonosTramo: [
-      {
-        alcance: { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" },
-        bono: { condicion: "apuntado", porTramo: { exito: 1, critico: 1 } },
-      },
+    // +1 en todo ataque a distancia (sync Drive 2026-11-14: fuera el «por puntería», que lo
+    // ataba al selector «Apuntado», S82).
+    modificadores: [
+      { tipo: "atributo", id: "percepcion", valor: 1 },
+      { tipo: "tirada", alcance: { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" }, valor: 1 },
     ],
     casillas: [...casillasCobertura("aum_foveo", 1, false)],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
-      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "bono_tramo", estado: "construido" },
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
     ],

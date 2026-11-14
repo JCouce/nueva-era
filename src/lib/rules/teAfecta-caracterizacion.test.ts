@@ -108,7 +108,7 @@ const dotes = (): Sheet => ({
 });
 
 // Aumentos: casillas por escena (Mielinización, Matriz de Red, Proyección), ventaja fija (Red
-// Frontoparietal), bono por tramo con «Apuntado» (Foveo), Brazo Biónico (extremidad), Ojo
+// Frontoparietal), +1 a distancia (Foveo), Brazo Biónico (extremidad), Ojo
 // Biónico; con un fusil para que lleguen a un ataque. Una casilla por escena ya gastada.
 const aumentos = (): Sheet => {
   let s = base();
@@ -292,7 +292,7 @@ const ESPERADO: Record<string, Record<string, string[]>> = {
     "social+liderazgo": ["Mielinización Central", "Proyección Neuro-Expresiva", "Matriz de Red Predeterminada", "Prefrontal Aumentada"],
     "social+manipulacion": ["Mielinización Central", "Proyección Neuro-Expresiva", "Matriz de Red Predeterminada", "Prefrontal Aumentada"],
     "social+negociacion": ["Mielinización Central", "Proyección Neuro-Expresiva", "Matriz de Red Predeterminada", "Prefrontal Aumentada"],
-    "ataque_fuego_fa": ["Ojo Biónico", "Optimización Foveo-Sensorial"],
+    "ataque_fuego_fa": ["Optimización Foveo-Sensorial", "Ojo Biónico"],
   },
   axadren: {
     // + Visión infrarroja: nota en Buscar / percibir en vez de la acción «Activar visión» (D3 del triaje 2026-10-28).

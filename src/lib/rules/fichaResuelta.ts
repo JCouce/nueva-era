@@ -258,7 +258,7 @@ export type FichaResuelta = {
   // tampoco el NPC. `descuentos` (D2c-1): contadores que cuentan de menos (Reflejos Felinos).
   // `grados` y `alternativas` (tiradas fijas): cambios de grado sin casilla (Velocista, Gran
   // Puntería) y otra habilidad con casilla en la fila (Cazador Cazado, Vigilancia Táctica).
-  // En `bonosTramo` van también los de los aumentos (Foveo con el selector "Apuntado").
+  // En `bonosTramo` van también los de los aumentos (`EfectosTiradaAumento.bonosTramo`).
   extrasDotes: {
     bonosTramo: BonoTramoDeDote[];
     criticos: CriticoDeDote[];
