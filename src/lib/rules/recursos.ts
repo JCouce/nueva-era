@@ -325,7 +325,22 @@ export function recargaDePieza(
   pieza: PiezaEquipada,
   recurso?: Pick<RecursoInstancia, "actual" | "max">,
 ): Recarga | null {
-  const cap = capacidadDePieza(pieza);
+  return recargaConCapacidad(pieza, capacidadDePieza(pieza), recurso);
+}
+
+// La de una entrada concreta de sheet.recursos, también la segunda de una pieza (la batería de la
+// Malla Plasmática). null si la entrada no es de ninguna pieza equipada o no se recarga.
+export function recargaDeRecurso(sheet: Pick<Sheet, "equipo">, recurso: RecursoInstancia): { pieza: PiezaEquipada; recarga: Recarga } | null {
+  const de = recursoDePieza(sheet, recurso.instanciaId);
+  const recarga = de && recargaConCapacidad(de.pieza, de, recurso);
+  return de && recarga ? { pieza: de.pieza, recarga } : null;
+}
+
+function recargaConCapacidad(
+  pieza: PiezaEquipada,
+  cap: { max: number; tipo: TipoRecarga } | null,
+  recurso?: Pick<RecursoInstancia, "actual" | "max">,
+): Recarga | null {
   if (!cap || SIN_RECARGA.includes(cap.tipo)) return null;
   if (cap.tipo === "tope") return { etiqueta: "Batería", precio: PRECIO_BATERIA_PORTATIL, municion: null, proyectiles: cap.max };
   const municion = municionRegularDePieza(pieza);
@@ -349,12 +364,9 @@ export function capacidadDePieza(pieza: PiezaEquipada): { max: number; tipo: Tip
   if (cat.familia === "armaPesada" && cat.tipoMunicion) return { max: cat.cargador, tipo: "stock" };
   // Malla Plasmática ANTES que el chequeo genérico de célula de abajo: la
   // pieza tiene las dos cosas (célula de batería para activarse Y colchón de
-  // puntos de golpe), pero sheet.recursos solo guarda UN recurso por
-  // instancia (una fila por instanciaId) — no hay compuesto instancia+tipo
-  // todavía. Se prioriza el colchón (lo que pidió el usuario, 2026-09-27:
-  // "darle su propio espacio como recurso") sobre la batería de activación,
-  // que se queda sin trackear en RECURSOS hasta que exista multi-recurso por
-  // instancia — ver docs/tareas.md.
+  // puntos de golpe). El colchón es SU recurso (la entrada con su instanciaId,
+  // como desde 2026-09-27); la batería va en una segunda entrada con clave
+  // derivada (claveBateria, recursosDePieza más abajo; usuario 2026-11-14).
   if (cat.familia === "subsistema" && cat.id === "malla_plasmatica") {
     const nivelInfo = cat.niveles.find((n) => n.nivel === pieza.nivel);
     if (nivelInfo?.colchon) return { max: nivelInfo.colchon, tipo: "colchon" };
@@ -380,6 +392,43 @@ export function esReparable(pieza: PiezaEquipada): boolean {
   return cap !== null && SE_REPARA.includes(cap.tipo);
 }
 
+// Malla Plasmática, batería de activación (usuario 2026-11-14): segunda entrada de sheet.recursos
+// para la misma pieza, con la clave `<instanciaId>:bateria` (las instancias son UUID: caben de
+// sobra en los 60 del esquema). Sin migración: una ficha vieja no la tiene y reconciliarRecursos
+// (también al leer, parseSheet) se la pone llena. El colchón sigue en la entrada de siempre.
+const SUFIJO_BATERIA = ":bateria";
+
+export function claveBateria(instanciaId: string): string {
+  return `${instanciaId}${SUFIJO_BATERIA}`;
+}
+
+// Todas las entradas de sheet.recursos que lleva una pieza: la suya (capacidadDePieza) y, en la
+// Malla Plasmática, además la batería ("tope", recarga con batería portátil como cualquier célula).
+type RecursoDeUnaPieza = { clave: string; max: number; tipo: TipoRecarga };
+
+function recursosDeUnaPieza(pieza: PiezaEquipada): RecursoDeUnaPieza[] {
+  const cap = capacidadDePieza(pieza);
+  const propios = cap ? [{ clave: pieza.instanciaId, ...cap }] : [];
+  const cat = equipoPorId(pieza.catalogoId);
+  if (cat?.familia === "subsistema" && cat.id === "malla_plasmatica" && cat.celula) {
+    propios.push({ clave: claveBateria(pieza.instanciaId), max: cat.celula.cargas, tipo: "tope" });
+  }
+  return propios;
+}
+
+// La pieza equipada de una entrada de sheet.recursos y la capacidad de ESA entrada (la batería
+// de la Malla es "tope", su colchón "colchon"). null si la entrada no es de ninguna pieza.
+export function recursoDePieza(
+  sheet: Pick<Sheet, "equipo">,
+  clave: string,
+): { pieza: PiezaEquipada; max: number; tipo: TipoRecarga } | null {
+  for (const pieza of sheet.equipo) {
+    const cap = recursosDeUnaPieza(pieza).find((r) => r.clave === clave);
+    if (cap) return { pieza, max: cap.max, tipo: cap.tipo };
+  }
+  return null;
+}
+
 // Reconcilia sheet.recursos con sheet.equipo: añade una entrada a tope por
 // cada pieza equipada que aporte recurso y todavía no la tuviera, y quita
 // las que ya no están equipadas. Nunca toca `actual` ni `max` de una entrada
@@ -392,10 +441,10 @@ export function reconciliarRecursos(sheet: Sheet): Sheet {
   const existentes = new Map(sheet.recursos.map((r) => [r.instanciaId, r]));
   const recursos: RecursoInstancia[] = [];
   for (const pieza of sheet.equipo) {
-    const cap = capacidadDePieza(pieza);
-    if (!cap) continue;
-    const previo = existentes.get(pieza.instanciaId);
-    recursos.push(previo ?? { instanciaId: pieza.instanciaId, actual: cap.max, max: cap.max });
+    for (const cap of recursosDeUnaPieza(pieza)) {
+      const previo = existentes.get(cap.clave);
+      recursos.push(previo ?? { instanciaId: cap.clave, actual: cap.max, max: cap.max });
+    }
   }
   const sinCambios =
     recursos.length === sheet.recursos.length && recursos.every((r, i) => r === sheet.recursos[i]);
@@ -442,10 +491,11 @@ export function comprarRecarga(
   sheet: Sheet,
   instanciaId: string,
 ): { sheet: Sheet; coste: number } | null {
-  const pieza = sheet.equipo.find((p) => p.instanciaId === instanciaId);
+  const de = recursoDePieza(sheet, instanciaId);
   const recurso = recursoDe(sheet, instanciaId);
-  if (!pieza || !recurso) return null;
-  const cap = capacidadDePieza(pieza);
+  if (!de || !recurso) return null;
+  const { pieza } = de;
+  const cap = { max: de.max, tipo: de.tipo };
   // "durabilidad" no se recarga con créditos, se repara con Materiales — ver
   // repararPieza() más abajo. "colchon" no se recarga de ningún modo
   // automatizado, se ajusta a mano (ver TipoRecarga más arriba). "blindaje", como la durabilidad.
@@ -457,14 +507,14 @@ export function comprarRecarga(
   const nuevo: RecursoInstancia = compraCargadorDeMas
     ? { ...recurso, actual: recurso.max + cap.max, max: recurso.max + cap.max }
     : { ...recurso, actual: recurso.max };
-  const coste = recargaDePieza(pieza, recurso)?.precio ?? PRECIO_BATERIA_PORTATIL;
+  const coste = recargaConCapacidad(pieza, cap, recurso)?.precio ?? PRECIO_BATERIA_PORTATIL;
 
   return {
     sheet: {
       ...sheet,
       recursos: sheet.recursos.map((r) => (r.instanciaId === instanciaId ? nuevo : r)),
       // Recargar el Proyector de Pulso empieza carga nueva: el contador de disparos vuelve a 0.
-      equipo: pieza.disparosPulso ? sheet.equipo.map((p) => (p === pieza ? sinContadorPulso(p) : p)) : sheet.equipo,
+      equipo: pieza.disparosPulso && pieza.instanciaId === instanciaId ? sheet.equipo.map((p) => (p === pieza ? sinContadorPulso(p) : p)) : sheet.equipo,
     },
     coste,
   };

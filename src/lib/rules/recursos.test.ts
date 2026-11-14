@@ -24,6 +24,8 @@ import {
   comprarFarmaco,
   PRECIO_BATERIA_PORTATIL,
   recargaDePieza,
+  recargaDeRecurso,
+  claveBateria,
 } from "./recursos";
 import { MUNICION_REGULAR } from "../catalog/municion";
 
@@ -600,5 +602,53 @@ describe("Nutrición: Ración de Viaje, Gel Nutricional y Súper Alimentos", () 
     const s = comprarFarmaco(defaultSheet(), "nutricion_super_alimentos")!.sheet;
     assert.equal(accionesDeFarmacos(s, [], true).filter((a) => a.id.includes("nutricion")).length, 0);
     assert.equal(accionesDirectasDeFarmacos(s, [], true).filter((a) => a.id.includes("nutricion")).length, 0);
+  });
+});
+
+// Malla Plasmática, batería de activación como segundo recurso (usuario 2026-11-14): entrada aparte
+// con clave derivada; el colchón sigue siendo el recurso de la instancia, tal cual.
+describe("Malla Plasmática: batería como segundo recurso", () => {
+  const conMalla = (nivel = 1) =>
+    equipar(equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "armadura_pesada" }), {
+      instanciaId: "mp1",
+      catalogoId: "malla_plasmatica",
+      nivel,
+      instaladoEnId: "a1",
+    });
+
+  test("equipar la Malla pone el colchón en su entrada y la batería 10/10 aparte", () => {
+    const s = conMalla(2);
+    assert.deepEqual(recursoDe(s, "mp1"), { instanciaId: "mp1", actual: 12, max: 12 });
+    assert.deepEqual(recursoDe(s, claveBateria("mp1")), { instanciaId: "mp1:bateria", actual: 10, max: 10 });
+  });
+
+  test("una ficha vieja sin batería la lee llena y no toca el colchón guardado", () => {
+    const s = conMalla(1);
+    const vieja = { ...s, recursos: [...s.recursos.filter((r) => r.instanciaId === "a1"), { instanciaId: "mp1", actual: 3, max: 10 }] };
+    const leida = parseSheet(JSON.parse(JSON.stringify(vieja)));
+    assert.deepEqual(recursoDe(leida, "mp1"), { instanciaId: "mp1", actual: 3, max: 10 });
+    assert.deepEqual(recursoDe(leida, claveBateria("mp1")), { instanciaId: "mp1:bateria", actual: 10, max: 10 });
+  });
+
+  test("la batería se ajusta con +/- y se recarga al máximo por 150 cr; el colchón sigue sin recarga", () => {
+    let s = ajustarRecurso(conMalla(), claveBateria("mp1"), -7);
+    assert.equal(recursoDe(s, claveBateria("mp1"))?.actual, 3);
+    assert.equal(recursoDe(s, "mp1")?.actual, 10);
+    const res = comprarRecarga(s, claveBateria("mp1"));
+    assert.ok(res);
+    assert.equal(res.coste, PRECIO_BATERIA_PORTATIL);
+    s = res.sheet;
+    assert.deepEqual(recursoDe(s, claveBateria("mp1")), { instanciaId: "mp1:bateria", actual: 10, max: 10 });
+    assert.equal(comprarRecarga(s, "mp1"), null);
+    const recarga = recargaDeRecurso(s, recursoDe(s, claveBateria("mp1"))!);
+    assert.equal(recarga?.pieza.instanciaId, "mp1");
+    assert.equal(recarga?.recarga.etiqueta, "Batería");
+    assert.equal(recargaDeRecurso(s, recursoDe(s, "mp1")!), null);
+  });
+
+  test("desequipar la Malla quita las dos entradas", () => {
+    const s = conMalla();
+    const sin = reconciliarRecursos({ ...s, equipo: s.equipo.filter((p) => p.instanciaId === "a1") });
+    assert.deepEqual(sin.recursos.map((r) => r.instanciaId), ["a1"]);
   });
 });

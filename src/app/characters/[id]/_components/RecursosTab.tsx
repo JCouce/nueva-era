@@ -1,7 +1,7 @@
 import {
   equipoPorId,
   capacidadDePieza,
-  recargaDePieza,
+  recargaDeRecurso,
   MATERIAL_TIERS,
   catalogoDeMaterial,
   precioMaterial,
@@ -119,13 +119,14 @@ export function RecursosTab({
   // (pool de personaje, más abajo), munición/batería y durabilidad se
   // separan aquí porque son conceptos distintos aunque compartan el mismo
   // array (sheet.recursos) por debajo.
+  // La batería de la Malla Plasmática es una segunda entrada de la misma pieza (claveBateria):
+  // recargaDeRecurso la casa con su pieza, y su barra se llama «<pieza> · Batería».
   const recursosMunicionBateria = sheet.recursos.flatMap((recurso) => {
-    const pieza = sheet.equipo.find((p) => p.instanciaId === recurso.instanciaId);
-    const cat = pieza ? equipoPorId(pieza.catalogoId) : null;
-    if (!pieza || !cat) return [];
-    const recarga = recargaDePieza(pieza, recurso);
-    if (!recarga) return [];
-    return [{ recurso, cat, recarga }];
+    const de = recargaDeRecurso(sheet, recurso);
+    const cat = de ? equipoPorId(de.pieza.catalogoId) : null;
+    if (!de || !cat) return [];
+    const titulo = recurso.instanciaId === de.pieza.instanciaId ? cat.label : `${cat.label} · Batería`;
+    return [{ recurso, titulo, piezaId: de.pieza.instanciaId, recarga: de.recarga }];
   });
 
   // Durabilidad (hoy solo Escudos): el −/+ manual vive aquí, igual que
@@ -306,14 +307,14 @@ export function RecursosTab({
           <p className="mt-2 border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
             {"//SYSTEM · equipo · munición y batería"}
           </p>
-          {recursosMunicionBateria.map(({ recurso, cat, recarga }) => {
+          {recursosMunicionBateria.map(({ recurso, titulo, piezaId, recarga }) => {
             const { precio, etiqueta: etiquetaRecarga } = recarga;
             const sinFondos = creditos !== undefined && precio > creditos;
 
             return (
               <RecursoCard
                 key={recurso.instanciaId}
-                titulo={cat.label}
+                titulo={titulo}
                 subtitulo={
                   recarga.municion
                     ? `${recarga.municion.label} · ${recarga.municion.coste} cr./${recarga.municion.unidadCompra}`
@@ -323,7 +324,7 @@ export function RecursosTab({
                 etiquetaRecarga={etiquetaRecarga}
                 precio={creditos !== undefined ? precio : null}
                 sinFondos={sinFondos}
-                apagada={motivoPiezaApagada(ficha, recurso.instanciaId)}
+                apagada={motivoPiezaApagada(ficha, piezaId)}
                 onAjustar={(delta) => onAjustar(recurso.instanciaId, delta)}
                 onRecargar={() => onRecargar(recurso.instanciaId)}
               />
