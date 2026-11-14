@@ -7291,9 +7291,9 @@ export const DOTES: readonly DoteCatalogo[] = [
     "efectos": [
       {
         "tipo": "bono",
-        "alcance": "defensa",
+        "alcance": "maniobra_vuelo",
         "valor": 2,
-        "condicion": "Esquivando en vuelo con la propulsión aérea (reduce 2 la dificultad de maniobra)",
+        "condicion": null,
         "borrador": 0
       }
     ],
@@ -7341,9 +7341,9 @@ export const DOTES: readonly DoteCatalogo[] = [
     "efectos": [
       {
         "tipo": "bono",
-        "alcance": "defensa",
+        "alcance": "maniobra_vuelo",
         "valor": 3,
-        "condicion": "Esquivando en vuelo con la propulsión aérea (reduce 3 la dificultad de maniobra)",
+        "condicion": null,
         "borrador": 0
       },
       {

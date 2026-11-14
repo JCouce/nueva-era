@@ -28,6 +28,8 @@
 //               criticoFijo). No se encadenan: el fracaso que pasa a éxito no llega a crítico.
 //   alternativas (tiradas fijas) otra habilidad/especialidad con casilla en la fila (Cazador
 //               Cazado, Vigilancia Táctica): Accion.habilidadAlternativa, como Levitar.
+//   compensaManiobra  lo que anula de la dificultad de maniobra en la esquiva en vuelo (Piloto y
+//               As de Exoarmadura; vale la mejor). Lo topa conEsquivaEnVuelo (movimiento.ts).
 //
 // Casillas de D2d: los efectos de una dote con el mismo destino y la misma condición van a UNA
 // casilla, que junta lo que hace cada uno (condiciones.ts, toggle): bono (con el valor según la
@@ -133,6 +135,10 @@ export type DescuentoDeDote = { alcance: AlcanceModificador; contador: string; u
 // Cambio de grado fijo, sin casilla (tiradas fijas): fracaso → éxito y/o crítico con `margen`.
 export type GradoFijoDeDote = { alcance: AlcanceModificador; fuente: string; subeGrado?: true; margen?: number; origen?: OrigenAporte };
 
+// Cuánto anula una dote de la dificultad de maniobra en la esquiva en vuelo (hasta `valor`, nunca
+// por encima del penalizador: conEsquivaEnVuelo).
+export type CompensaManiobra = { valor: number; fuente: string; origen?: OrigenAporte };
+
 // Otra habilidad y especialidad con la casilla de la fila (Cazador Cazado: Manipulación en
 // Discernir mentiras). `aplicado`: el de la dote; solo vale si es el de la tirada.
 export type AlternativaDeDote = {
@@ -157,6 +163,7 @@ export type EfectosDeDotes = {
   descuentos: DescuentoDeDote[];
   grados: GradoFijoDeDote[];
   alternativas: AlternativaDeDote[];
+  compensaManiobra: CompensaManiobra | null;
   // Lo que abaratan de una acción de otra fila (T5c, rules/tipoAccion.ts): Recarga Relámpago.
   rebajasTipoAccion: RebajaConFuente[];
   // Lo que hacen con el sobreesfuerzo psiónico (T6a, rules/sobreesfuerzo.ts): Potencia, Maestría
@@ -175,6 +182,7 @@ export const SIN_EFECTOS_DE_DOTES: EfectosDeDotes = {
   descuentos: [],
   grados: [],
   alternativas: [],
+  compensaManiobra: null,
   rebajasTipoAccion: [],
   sobreesfuerzo: SIN_DOTES_SOBREESFUERZO,
 };
@@ -331,6 +339,7 @@ export function efectosDeDotes(
   const descuentos: DescuentoDeDote[] = [];
   const grados: GradoFijoDeDote[] = [];
   const alternativas: AlternativaDeDote[] = [];
+  let compensaManiobra: CompensaManiobra | null = null;
   const rebajasTipoAccion: RebajaConFuente[] = [];
   let sobreesfuerzo: SobreesfuerzoDeDotes = SIN_DOTES_SOBREESFUERZO;
   const familias = new Set<FamiliaArma>();
@@ -504,6 +513,11 @@ export function efectosDeDotes(
         if (c) conDanio(c, { ajuste: e.valor as number });
         return;
       }
+      if (e.tipo === "bono" && DESTINOS_DOTES[e.alcance]?.tipo === "maniobraVuelo") {
+        if (typeof e.valor === "number" && (!compensaManiobra || e.valor > compensaManiobra.valor))
+          compensaManiobra = { valor: e.valor, fuente, origen };
+        return;
+      }
       if (e.tipo === "bono") {
         const destino = DESTINOS_DOTES[e.alcance];
         const resuelto = valorDeBono(e.valor, ficha);
@@ -642,6 +656,7 @@ export function efectosDeDotes(
     descuentos,
     grados,
     alternativas,
+    compensaManiobra,
     rebajasTipoAccion,
     sobreesfuerzo,
   };

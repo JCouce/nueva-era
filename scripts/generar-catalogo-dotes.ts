@@ -1151,6 +1151,8 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
       // Sobre una acción sin dado (Resistir daño, do-02): solo textos, a sus notas.
       (e.tipo === "texto" && destino?.tipo === "sinDado" && !e.grados) ||
       (e.tipo === "bono" && destino?.tipo === "tirada") ||
+      // Lo que anula de la maniobra en la esquiva en vuelo (Piloto y As de Exoarmadura), sin casilla.
+      (e.tipo === "bono" && destino?.tipo === "maniobraVuelo" && typeof e.valor === "number" && e.condicion === null) ||
       // Sobre una acción de dote (D2c-1): bono con casilla (Finta repetida) y textos a su nota.
       (e.tipo === "bono" && destino?.tipo === "accionDote" && typeof e.valor === "number" && typeof e.condicion === "string") ||
       (e.tipo === "texto" && destino?.tipo === "accionDote" && !e.grados) ||
@@ -1246,6 +1248,9 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
       return { tipo: narrativo ? "narrativo" : "texto", afecta, mecanismo: "nota_fija", ...estado };
     }
     case "bono": {
+      // Va con la casilla «En vuelo» de la esquiva: la marca el jugador (conEsquivaEnVuelo).
+      if (destino?.tipo === "maniobraVuelo")
+        return { tipo: "numerico", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "eleccion_jugador", ...estado };
       const tramo = e.tramo as string | undefined;
       // Opción de un selector de la tirada sin casilla propia (Rastreo al Paso en «Marcha»):
       // bono por opción, como el de distancia; con casilla (Bioma Predilecto), la marca el jugador.

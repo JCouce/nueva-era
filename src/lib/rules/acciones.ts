@@ -134,6 +134,9 @@ export type Accion = {
     especialidad?: EspecialidadId;
     etiqueta: string;
     ajuste?: { valor: number; fuente: string };
+    // Lo que una dote anula de `ajuste`, ya topado para no dejar bono positivo (esquiva en vuelo:
+    // Piloto y As de Exoarmadura).
+    compensacion?: { valor: number; fuente: string; origen?: OrigenAporte };
     // Lo que el crítico da de más al usarla (esquiva en vuelo: una reacción para moverte).
     efectoCritico?: string;
     origen?: OrigenAporte;
@@ -1142,7 +1145,7 @@ export function usarHabilidadAlternativa(t: Accion): Accion | null {
     label: `${t.label} (${nombre})`,
     especialidadesAccion: alt.especialidad ? [alt.especialidad] : undefined,
     especialidadAElegir: undefined,
-    ...(alt.ajuste && { ajustesFijos: [...(t.ajustesFijos ?? []), alt.ajuste] }),
+    ...(alt.ajuste && { ajustesFijos: [...(t.ajustesFijos ?? []), alt.ajuste, ...(alt.compensacion ? [alt.compensacion] : [])] }),
     ...(alt.efectoCritico && { efectoCritico: [t.efectoCritico, alt.efectoCritico].filter(Boolean).join(" ") }),
   });
 }

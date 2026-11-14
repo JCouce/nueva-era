@@ -7,6 +7,7 @@ import { defaultSheet, type Sheet } from "./sheet";
 import { ACCIONES, usarHabilidadAlternativa, type Accion } from "./acciones";
 import { equipar } from "./equipo";
 import { conEsquivaEnVuelo } from "./movimiento";
+import { fijarEleccionDeNivel } from "./eleccionNivel";
 import { resolverGolpe } from "./resistirDanio";
 import { HABILIDADES } from "./habilidades";
 import { resolverFicha, conExtrasDeFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
@@ -139,30 +140,54 @@ describe("Finta de Manos", () => {
   });
 });
 
+// Solo anulan la dificultad de maniobra de la esquiva en vuelo, sin dejar bono positivo (usuario,
+// 2026-11-14): van con la casilla «En vuelo» de la esquiva y se topan en la maniobrabilidad.
+function conPropulsion(dotes: DoteComprada[], nivel: number, eleccion?: string): Sheet {
+  const s = equipar(equipar(ficha(dotes), { instanciaId: "a1", catalogoId: "armadura_pesada" }), {
+    instanciaId: "m1",
+    catalogoId: "movilidad_aerea",
+    nivel,
+    instaladoEnId: "a1",
+  });
+  if (eleccion === undefined) return s;
+  const r = fijarEleccionDeNivel(s, "m1", eleccion);
+  assert.ok(r.ok);
+  return r.sheet;
+}
+const esquivaEnVuelo = (s: Sheet) => {
+  const f = resolver(s);
+  return { f, t: usarHabilidadAlternativa(conEsquivaEnVuelo(s, fija(f, "defensa"), f.compensaManiobraVuelo))! };
+};
+const sinCompensar = (s: Sheet) => {
+  const f = resolver(s);
+  return { f, t: usarHabilidadAlternativa(conEsquivaEnVuelo(s, fija(f, "defensa")))! };
+};
+
 describe("Piloto de Exoarmadura", () => {
-  test("casilla en la esquiva: +2 esquivando en vuelo con la propulsión (compensa la dificultad de maniobra)", () => {
-    const f = resolver(ficha([{ id: "dote_piloto_de_exoarmadura" }]));
-    const t = fija(f, "defensa");
-    const [c] = casillasDe(t, "dote_piloto_de_exoarmadura");
-    assert.match(c.etiqueta, /Esquivando en vuelo con la propulsión aérea/);
-    assert.equal(total(f, t, [c.id]) - total(f, t), 2);
+  const piloto = { id: "dote_piloto_de_exoarmadura" };
+
+  test("en vuelo con Propulsión Aérea 1 (−3): anula 2 y la maniobra queda en −1", () => {
+    const { f, t } = esquivaEnVuelo(conPropulsion([piloto], 1));
+    assert.deepEqual(t.ajustesFijos?.map((a) => [a.valor, a.fuente]), [
+      [-3, "Maniobrabilidad (Propulsión Aérea)"],
+      [2, "Piloto de Exoarmadura"],
+    ]);
+    const base = sinCompensar(conPropulsion([], 1));
+    assert.equal(montarTirada(f, t, eleccionSinTocar(t)).total - montarTirada(base.f, base.t, eleccionSinTocar(base.t)).total, 2);
   });
 
-  test("en vuelo con Propulsión Aérea 1 (−3): la casilla sale también ahí y deja la maniobra en −1", () => {
-    let s = ficha([{ id: "dote_piloto_de_exoarmadura" }]);
-    s = equipar(equipar(s, { instanciaId: "a1", catalogoId: "armadura_pesada" }), { instanciaId: "m1", catalogoId: "movilidad_aerea", nivel: 1, instaladoEnId: "a1" });
-    const f = resolver(s);
-    const enVuelo = usarHabilidadAlternativa(conEsquivaEnVuelo(s, fija(f, "defensa")))!;
-    const [c] = casillasDe(enVuelo, "dote_piloto_de_exoarmadura");
-    // La maniobrabilidad (−3) sigue en la esquiva en vuelo; la casilla le quita 2.
-    assert.deepEqual(enVuelo.ajustesFijos, [{ valor: -3, fuente: "Maniobrabilidad (Propulsión Aérea)" }]);
-    assert.equal(total(f, enVuelo, [c.id]) - total(f, enVuelo), 2);
+  test("sin vuelo no hay nada que anular: ni casilla ni bono en la esquiva en tierra", () => {
+    const f = resolver(ficha([piloto]));
+    const t = fija(f, "defensa");
+    assert.deepEqual(casillasDe(t, "dote_piloto_de_exoarmadura"), []);
+    assert.equal(total(f, t), total(resolver(ficha([])), fija(resolver(ficha([])), "defensa")));
+    assert.equal(conEsquivaEnVuelo(ficha([piloto]), t, f.compensaManiobraVuelo), t);
   });
 
   test("sin Exoarmadura, nada", () => {
-    const s = ficha([{ id: "dote_piloto_de_exoarmadura" }]);
-    const sin = resolver({ ...s, habilidades: { ...s.habilidades, pilotaje: { valor: 4, especialidades: ["aereo"] } } });
-    assert.deepEqual(casillasDe(fija(sin, "defensa"), "dote_piloto_de_exoarmadura"), []);
+    const s = conPropulsion([piloto], 1);
+    const sin = { ...s, habilidades: { ...s.habilidades, pilotaje: { valor: 4, especialidades: ["aereo" as const] } } };
+    assert.equal(resolver(sin).compensaManiobraVuelo, null);
   });
 });
 
@@ -170,17 +195,25 @@ describe("As de Exoarmadura", () => {
   const piloto = { id: "dote_piloto_de_exoarmadura" };
   const as = { id: "dote_as_de_exoarmadura" };
 
-  test("con Piloto, vale la mejor: una sola casilla, +3", () => {
-    const f = resolver(ficha([piloto, as]));
-    const t = fija(f, "defensa");
-    assert.deepEqual(casillasDe(t, "dote_piloto_de_exoarmadura"), []);
-    const [c] = casillasDe(t, "dote_as_de_exoarmadura");
-    assert.match(c.etiqueta, /reduce 3 la dificultad de maniobra/);
-    assert.equal(total(f, t, [c.id]) - total(f, t), 3);
+  test("con Piloto, vale la mejor: anula 3 de los −3 y la maniobra queda en 0", () => {
+    const { t } = esquivaEnVuelo(conPropulsion([piloto, as], 1));
+    assert.deepEqual(t.ajustesFijos?.map((a) => a.valor), [-3, 3]);
+    assert.match(t.label, /Exoarmadura/);
+  });
+
+  test("tope: con la Progresión de Maniobrabilidad (−2) solo anula 2, sin bono positivo", () => {
+    const { t } = esquivaEnVuelo(conPropulsion([piloto, as], 3, "maniobrabilidad"));
+    assert.deepEqual(t.ajustesFijos?.map((a) => [a.valor, a.fuente]), [
+      [-2, "Maniobrabilidad (Propulsión Aérea)"],
+      [2, "As de Exoarmadura"],
+    ]);
+    const s = conPropulsion([piloto, as], 3, "maniobrabilidad");
+    const f = resolver(s);
+    assert.equal(conEsquivaEnVuelo(s, fija(f, "defensa"), f.compensaManiobraVuelo).habilidadAlternativa?.etiqueta, "En vuelo: Exoarmadura, 0");
   });
 
   test("pide Piloto de Exoarmadura: sin ella, no hace nada", () => {
-    assert.deepEqual(casillasDe(fija(resolver(ficha([as])), "defensa"), "dote_as_de_exoarmadura"), []);
+    assert.equal(resolver(conPropulsion([as], 1)).compensaManiobraVuelo, null);
   });
 
   test("el −1 a los ataques en vuelo no se aplica en la app: la anulación va en la tarjeta", () => {

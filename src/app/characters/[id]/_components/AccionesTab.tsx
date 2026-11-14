@@ -1581,7 +1581,7 @@ export function AccionesTab({
   // especialidad o algo que les enganche: si no, conExtrasDeFicha las deja ocultas.
   const fijas = ACCIONES.map(conExtras)
     .filter(esVisible)
-    .map((t) => conPsionicaEnTiradaFija(niveles, conEsquivaEnVuelo(sheet, conEsquivaLevitando(niveles, t))));
+    .map((t) => conPsionicaEnTiradaFija(niveles, conEsquivaEnVuelo(sheet, conEsquivaLevitando(niveles, t), ficha.compensaManiobraVuelo)));
 
   // Lo que tira con dado, por dónde va: Básicas (defensa, iniciativa, salvaciones y lo que no
   // tenga habilidad) o el árbol. Las dotes en otro grupo (Traicionero en Iniciativa), igual.

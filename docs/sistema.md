@@ -1089,11 +1089,13 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
     enfrentada a Perspicacia + Exploración; éxito, siguiente ataque con arma sutil contra un
     enemigo sorprendido; crítico, desprevenido (texto del resultado). Repetible sin penalizador.
     Su requisito «Combate Melee» no lleva número: Combate Melee 1 (`TODO(revisar)`).
-  - *Piloto de Exoarmadura* / *As de Exoarmadura*: casilla +2 / +3 en la esquiva «esquivando en
-    vuelo con la propulsión aérea», que compensa la dificultad de maniobra de la esquiva en vuelo;
-    As sustituye a Piloto (vale la mejor) y la pide. La anulación del −1 a los ataques en vuelo,
-    en la tarjeta (ese −1 tampoco lo aplica la app, S94). `TODO(revisar)`: no se topa con la
-    maniobrabilidad (Progresión de Maniobrabilidad −2 + As +3 = +1 de más).
+  - *Piloto de Exoarmadura* / *As de Exoarmadura*: anulan hasta 2 / 3 de la dificultad de
+    maniobra de la esquiva en vuelo, sin dejar bono positivo (usuario, 2026-11-14): van con la
+    casilla «En vuelo» de la esquiva, como una línea más del desglose topada en la maniobrabilidad
+    de la pieza (Propulsión Aérea 1, −3: Piloto la deja en −1 y As en 0; con la Progresión de
+    Maniobrabilidad, −2, As anula 2). En tierra no hacen nada. As sustituye a Piloto (vale la
+    mejor) y la pide. La anulación del −1 a los ataques en vuelo, en la tarjeta (ese −1 tampoco lo
+    aplica la app, S94).
   - *Salto Servoasistido*: texto en Saltar (bono de Fuerza del exoesqueleto doble para el salto) y
     en Resistir daño (2 m menos de caída). `TODO(revisar)`: S10 ya cuenta doble ese bono en las
     fórmulas de movimiento, salto incluido.

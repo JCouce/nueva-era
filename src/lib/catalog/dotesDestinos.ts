@@ -50,6 +50,10 @@ export type DestinoDote =
   | { tipo: "accionDote" }
   | { tipo: "poder"; id: string }
   | { tipo: "sinDado"; id: string }
+  // Lo que una dote anula de la dificultad de maniobra en la esquiva en vuelo (Piloto y As de
+  // Exoarmadura): bono sin casilla que conEsquivaEnVuelo (rules/movimiento.ts) topa en la
+  // maniobrabilidad de la pieza.
+  | { tipo: "maniobraVuelo" }
   | { tipo: "tanda"; tanda: TandaDote; motivo: string };
 
 const tirada = (id: string): DestinoDote => ({ tipo: "tirada", alcance: { tipo: "tiradaId", id }, textos: [id] });
@@ -60,11 +64,11 @@ const familia = (f: FamiliaArma): DestinoDote => ({ tipo: "tirada", alcance: { t
 
 export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // ── Tiradas fijas (ACCIONES) ──
-  // Esquiva. Piloto y As de Exoarmadura (E6): casilla «Esquivando en vuelo» que reduce la
-  // dificultad de maniobra (+2 / +3), aparte de la casilla «En vuelo» de la pieza.
-  // TODO(revisar): no se topa con la maniobrabilidad: con la Progresión de Maniobrabilidad del
-  // nivel 3 (−2), el +3 de As deja +1 de más.
   defensa: tirada("defensa"),
+  // Piloto y As de Exoarmadura (E6): anulan hasta 2 / 3 de la dificultad de maniobra de la esquiva
+  // en vuelo, sin dejar bono positivo (usuario, 2026-11-14). Va en la casilla «En vuelo» de la
+  // esquiva, con la maniobrabilidad de la pieza (conEsquivaEnVuelo).
+  maniobra_vuelo: { tipo: "maniobraVuelo" },
   // «Saltar, levantarse». Salto Servoasistido (E6): texto.
   // TODO(revisar): S10 ya cuenta doble el bono del exoesqueleto en las fórmulas de movimiento
   // (salto incluido, derivados.ts); ¿la dote lo vuelve a duplicar o S10 no debería contar el salto?

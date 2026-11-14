@@ -16,6 +16,7 @@ import type { CondicionTirada } from "./condiciones";
 import { origenDePieza } from "./origen";
 import { velocidadConUmbrales, type MovimientoPorUmbral } from "./estados";
 import { eleccionDePieza, nivelConEleccion } from "./eleccionNivel";
+import type { CompensaManiobra } from "./dotesEfectos";
 
 export const ID_MANIOBRA_COMPLEJA = "maniobra_compleja";
 
@@ -93,20 +94,27 @@ function tiradaDeVolar(
 // de la fila, como "Levitando" (la app no sabe si vuelas). Si la esquiva ya trae otra habilidad
 // (Levitar), gana el vuelo: es la que cambia el número (S101). El crítico da una reacción para
 // desplazarte una casilla, «al igual que la esquiva en tierra»: texto (el tablero no es de la app).
-export function conEsquivaEnVuelo(sheet: Sheet, t: Accion): Accion {
+// `compensa` (FichaResuelta.compensaManiobraVuelo): Piloto y As de Exoarmadura anulan hasta 2 / 3
+// de esa maniobrabilidad, nunca más de lo que resta (usuario, 2026-11-14).
+export function conEsquivaEnVuelo(sheet: Sheet, t: Accion, compensa: CompensaManiobra | null = null): Accion {
   if (t.id !== "defensa") return t;
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
     if (cat?.familia !== "movimiento" || cat.id !== "movilidad_aerea") continue;
     const valor = nivelConEleccion(pieza, cat)?.maniobrabilidad;
     if (valor === undefined) continue;
+    const anula = compensa ? Math.min(compensa.valor, Math.max(0, -valor)) : 0;
     return {
       ...t,
       habilidadAlternativa: {
         habilidad: "pilotaje",
         especialidad: "exoarmadura",
-        etiqueta: `En vuelo: Exoarmadura, ${String(valor).replace("-", "−")}`,
+        etiqueta: `En vuelo: Exoarmadura, ${String(valor + anula).replace("-", "−")}`,
         ajuste: { valor, fuente: `Maniobrabilidad (${cat.label})` },
+        ...(compensa &&
+          anula > 0 && {
+            compensacion: { valor: anula, fuente: compensa.fuente, ...(compensa.origen && { origen: compensa.origen }) },
+          }),
         efectoCritico: "En vuelo: puedes gastar una reacción para desplazarte una casilla.",
         origen: origenDePieza("equipo", cat, pieza.instanciaId),
       },

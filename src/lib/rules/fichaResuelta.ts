@@ -72,6 +72,7 @@ import {
   dotesActivas,
   efectosDeDotes,
   type AlternativaDeDote,
+  type CompensaManiobra,
   type BonoTramoDeDote,
   type CriticoDeDote,
   type DescuentoDeDote,
@@ -220,6 +221,9 @@ export type FichaResuelta = {
   movimiento: ReturnType<typeof movimiento>;
   // "Volar" (Movilidad Aérea, movimiento.ts) con los metros ya a media velocidad si toca (td-26).
   accionesMovimiento: Accion[];
+  // Lo que las dotes anulan de la dificultad de maniobra en la esquiva en vuelo (Piloto y As de
+  // Exoarmadura): se lo pasa la pantalla a conEsquivaEnVuelo, que lo topa en la maniobrabilidad.
+  compensaManiobraVuelo: CompensaManiobra | null;
   // T4 (rules/sigilo.ts): «Esconder arma» si hay algo que esconder; la ocultación que lleva
   // (camuflaje activo y pasivo), que se suma por sentido al Sigilo al pintarlo; y las casillas que
   // salen ya marcadas por un estado puesto (Camuflaje: «Tengo cobertura» en la esquiva, eq-26).
@@ -511,6 +515,7 @@ export function resolverFicha(
     ajusteUmbrales,
     movimiento: { ...mov, carrera: velocidad(mov.carrera) },
     accionesMovimiento: accionesDeMovimiento(sheet, porUmbral),
+    compensaManiobraVuelo: dotes.compensaManiobra,
     accionesOcultacion: ((e) => (e ? [e] : []))(accionEsconderArma(sheet)),
     ocultacion: ocultacionDeFicha(enUso, conEfecto),
     casillasMarcadas: [...new Set(conEfecto.flatMap((e) => estadoPorId(e.estadoId)?.marcaCasillas ?? []))],
