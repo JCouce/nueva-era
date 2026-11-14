@@ -8,23 +8,27 @@
 // salen del mismo código (combate.ts, tiradaDeArmaFuego). Dos diferencias, en el motor:
 //   - Daño del Arco "1/2 Fue + 8": `danioFuerza: "mitad"`, resuelto con la Fuerza efectiva.
 //   - "La munición de las armas impulsoras puede llevar mejoras de munición especial sin que
-//     el arma necesite estar adaptada": el selector de munición sale con el stock de munición
-//     especial de la ficha, sin adaptador instalado (combate.ts, municionesDeArma).
+//     el arma necesite estar adaptada": `municionEspecialSinAdaptar`. El selector de munición
+//     sale con el stock de munición especial de la ficha, sin adaptador instalado (combate.ts,
+//     municionesDeArma), y la Tienda deja comprarla (armasHabilitadasPara, recursos.ts).
+//   - Munición propia (td-01, usuario 2026-11-14): flechas el Arco y virotes la Ballesta, al
+//     precio de la Calibre Estándar (catalog/municion.ts), sin mezclarse con las balas.
+//   - Mejoras (td-03, usuario 2026-11-14): solo miras, Puntero Láser y Linterna
+//     (`mejorasPermitidas`). Fuera Silenciador (ya son silenciosas), Sistema de Retroceso y
+//     adaptadores de munición (no les hacen falta). Una ya instalada que no se admite se queda,
+//     sin aportar nada (mejorasNoAdmitidas, rules/equipo.ts).
 //
 // Características generales del bloque, iguales para las dos: empleo a dos manos (`empleo`),
 // desenfundado como acción estándar y recarga especial (la de cada arma va en `recarga`). Las dos
 // salen como líneas del ataque (T5c, rules/tipoAccion.ts).
 //
-// TODO(revisar): la fuente no trae munición propia (flechas, virotes) ni su precio; "Munición
-// Calibre Estándar" es "para todas las armas de fuego y ametralladoras". Hasta que Murillo la
-// dé, usan el recurso genérico de balas y su cargador de la Tienda (recursos.ts).
 // TODO(revisar): los tramos de distancia (+4/+2/0/−2) son los de "Armas de Fuego" en la fuente;
 // se aplican igual a estas porque traen corta/media/larga, sin regla propia.
-// TODO(revisar): qué mejoras de arma admiten (columna "Mejoras": 2 y 3). Hoy entran las de
-// compatibilidad "todas" y las que solo excluyen Plasma (Puntero Láser, Linterna, Silenciador,
-// Sistema de Retroceso, adaptadores de munición), aunque alguna no tenga sentido en un arco.
 import type { ArmaFuego } from "./armasFuego";
 import { enCritico, hemorragiaDado } from "./efectosArma";
+
+// td-03: las miras (la Telescópica), el Puntero Láser y la Linterna.
+const MEJORAS_IMPULSORAS = ["mira_telescopica", "puntero_laser", "linterna"] as const;
 
 const DESCRIPCION_COMUN =
   "Empleo a dos manos. Desenfundar es acción estándar. Su munición admite munición especial " +
@@ -44,7 +48,10 @@ export const ARMAS_IMPULSORAS: ArmaFuego[] = [
     modos: [{ etiqueta: "Simple", dificultad: -2, danio: 8, danioFuerza: "mitad", categoriaDanio: "Letal" }],
     alcance: { corta: 30, media: 120, larga: 260 },
     municion: 1,
+    tipoMunicion: "flechas",
+    municionEspecialSinAdaptar: true,
     mejorasAdmitidas: 2,
+    mejorasPermitidas: MEJORAS_IMPULSORAS,
     especial: "Crítico de Hemorragia (1d6 turnos) · Silencioso",
     recarga: ["simple", "reaccion"],
     pesoKg: 1.8,
@@ -72,7 +79,10 @@ export const ARMAS_IMPULSORAS: ArmaFuego[] = [
     modos: [{ etiqueta: "Simple", dificultad: -2, danio: 10, categoriaDanio: "Letal" }],
     alcance: { corta: 40, media: 100, larga: 400 },
     municion: 6,
+    tipoMunicion: "virotes",
+    municionEspecialSinAdaptar: true,
     mejorasAdmitidas: 3,
+    mejorasPermitidas: MEJORAS_IMPULSORAS,
     especial: "Crítico de Hemorragia (1d6 turnos) · Silencioso",
     recarga: ["estandar"],
     pesoKg: 3.2,

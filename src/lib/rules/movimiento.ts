@@ -12,6 +12,7 @@ import type { Accion } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
 import { origenDePieza } from "./origen";
 import { velocidadConUmbrales, type MovimientoPorUmbral } from "./estados";
+import { eleccionDePieza, nivelConEleccion } from "./eleccionNivel";
 
 const SIN_UMBRALES: Pick<MovimientoPorUmbral, "mediaVelocidad"> = { mediaVelocidad: [] };
 
@@ -21,8 +22,10 @@ function tiradaDeVolar(
   umbrales: Pick<MovimientoPorUmbral, "mediaVelocidad">,
 ): Accion | null {
   if (cat.id !== "movilidad_aerea") return null;
-  const nivelInfo = cat.niveles.find((n) => n.nivel === pieza.nivel);
+  // Con la Progresión elegida (eq-36) ya puesta; sin elegir, la tabla y el aviso en la nota.
+  const nivelInfo = nivelConEleccion(pieza, cat);
   if (!nivelInfo?.velocidadM) return null;
+  const sinElegir = eleccionDePieza(pieza)?.aviso ?? null;
   // La media velocidad de Malherido/Exhausto (§7, S26), con la misma cuenta que el vuelo de
   // Personaje → Estado (FichaResuelta.vuelo): velocidadConUmbrales. La nota lo dice en la tirada.
   const velocidadBase = velocidadConUmbrales(nivelInfo.velocidadM, umbrales);
@@ -30,7 +33,7 @@ function tiradaDeVolar(
     velocidadBase !== nivelInfo.velocidadM
       ? `Media velocidad (${umbrales.mediaVelocidad.join(" y ")}): ${velocidadBase} m en vez de ${nivelInfo.velocidadM} m.`
       : null;
-  const nota = [nivelInfo.notaTirada, notaMedia].filter(Boolean).join(" ") || undefined;
+  const nota = [nivelInfo.notaTirada, sinElegir, notaMedia].filter(Boolean).join(" ") || undefined;
 
   const condiciones: CondicionTirada[] = [
     {
@@ -79,7 +82,7 @@ export function conEsquivaEnVuelo(sheet: Sheet, t: Accion): Accion {
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
     if (cat?.familia !== "movimiento" || cat.id !== "movilidad_aerea") continue;
-    const valor = cat.niveles.find((n) => n.nivel === pieza.nivel)?.maniobrabilidad;
+    const valor = nivelConEleccion(pieza, cat)?.maniobrabilidad;
     if (valor === undefined) continue;
     return {
       ...t,

@@ -13,6 +13,8 @@
 //   modificadores.ts  cómo especies, dotes, aumentos, equipo y estados alteran números
 //   migraciones.ts    qué pasa con las fichas cuando cambia el formato
 //   equipo.ts         qué lleva puesto un personaje: validación de ranuras y sus modificadores
+//   compatibilidadArma.ts  qué mejoras admite cada arma y la instalada que ya no admite: se queda sin aportar (td-03)
+//   eleccionNivel.ts  elección que abre un nivel de una pieza (Movilidad Aérea 3: Velocidad o Maniobrabilidad, eq-36)
 //   armasModificadas.ts  Electrificante/Térmica/Plasma/Nanofilamento sobre un arma melee: tramo, coste, rareza, golpe (S87)
 //   recursos.ts        cargas de batería/munición gastadas y recargadas en partida (fase 6b)
 //   condiciones.ts    controles de un modal de tirada: toggle, opción, contador
@@ -77,6 +79,8 @@ export * from "./montaje";
 export * from "./modificadores";
 export * from "./migraciones";
 export * from "./equipo";
+export * from "./compatibilidadArma";
+export * from "./eleccionNivel";
 export * from "./armasModificadas";
 export * from "./recursos";
 export * from "./condiciones";

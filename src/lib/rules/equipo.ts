@@ -20,13 +20,14 @@ import {
   type Armadura,
   type Equipo,
   type MaterialPieza,
-  type MejoraDeArma,
   type Rareza,
 } from "../catalog/equipo";
 import type { ExcepcionRareza } from "../catalog/especies";
 import { MUNICION_GRANADA } from "../catalog/municion";
 import type { EstadoFicha } from "./revision";
 import { ID_BUSQUEDA_MIRA } from "../catalog/mejorasArma";
+import { compatibleConArma } from "./compatibilidadArma";
+import { conEleccionValida } from "./eleccionNivel";
 import { PELEA } from "../catalog/armasMelee";
 import { alcanzaA, alcanzaAlgunAplicado, type ContextoAccion, type FamiliaArma, type GrupoAccion, type Modificador, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
@@ -182,16 +183,6 @@ export function mejorasArmaInstaladas(sheet: Sheet, armaInstanciaId: string): nu
   }, 0);
 }
 
-// La compatibilidad de una mejora de arma tiene dos formas en EQUIP: por
-// tipo de arma ("solo fusiles de asalto") o por categoría de daño ("las
-// armas de plasma no pueden instalarla").
-function compatibleConArma(mejora: MejoraDeArma, arma: ArmaFuego): boolean {
-  const c = mejora.compatibilidad;
-  if (c.tipo === "todas") return true;
-  if (c.tipo === "porTipoArma") return c.tiposPermitidos.includes(arma.tipo);
-  return !arma.modos.some((m) => c.categoriasExcluidas.includes(m.categoriaDanio));
-}
-
 // Ya hay una pieza de este mismo catálogo instalada en ese host. No tiene
 // sentido llevar dos Camuflajes en la misma armadura o dos Miras en la
 // misma arma: para subir de nivel se quita la vieja y se pone la nueva.
@@ -313,7 +304,9 @@ export function equipar(sheet: Sheet, pieza: PiezaEquipada): Sheet {
   if (cat.familia === "operacionGenetica" || cat.familia === "implante") return sheet;
   // Armas Modificadas: solo sobre un arma melee que las admita, en orden fijo (S87).
   if (!modificacionesValidas(pieza)) return sheet;
-  const nueva = pieza.modificaciones ? { ...pieza, modificaciones: normalizarModificaciones(pieza.modificaciones) } : pieza;
+  // La elección de un nivel (Movilidad Aérea 3, eq-36), solo si es opción de la pieza.
+  const valida = conEleccionValida(pieza);
+  const nueva = valida.modificaciones ? { ...valida, modificaciones: normalizarModificaciones(valida.modificaciones) } : valida;
 
   // herramienta, consumible y armaPesada se equipan directo, como una
   // armadura — no están en esta lista a propósito, caen en la rama de abajo

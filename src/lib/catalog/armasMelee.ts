@@ -65,8 +65,8 @@ export type ArmaMelee = {
   // Daño contundente (D2d, filtro de arma de Golpe Fatigante: "daño contundente o arma a dos
   // manos"). La fuente no trae tipo de daño por arma: se marca por lo que dice su resumen o
   // descripción (maza, martillo, porra, impacto) más los golpes a mano vacía (§9.5: puñetazo y
-  // patada son contundentes) y los escudos. TODO(revisar): Mangual y Cadena Armada (flagelos;
-  // equipamiento.md separa "contundentes" de "flexibles") quedan fuera.
+  // patada son contundentes), los escudos y los dos flagelos, Mangual y Cadena Armada (td-04,
+  // usuario 2026-11-14: golpean con masa, no con filo, aunque la fuente los llame «flexibles»).
   contundente?: true;
   // Arma de filo (dagas, espadas, lanzas, hachas…): la única que admite Nanofilamento
   // (S87). Lista del usuario, 2026-10-23; las mecánicas (Hoja Dentada, Sierra Circular…)
@@ -782,6 +782,7 @@ export const FLAGELOS: ArmaMelee[] = [
     resumen: "Arma flexible pesada; en modo estándar ignora parte de la cobertura, pero penaliza al bloqueo.",
     descripcion: "Arma flexible a una mano, pesada.",
     empleo: "una mano",
+    contundente: true,
     modos: [
       { etiqueta: "Simple", dificultad: -2, formulaDanio: "Fue+4", categoriaDanio: "Letal" },
       { etiqueta: "Estándar", dificultad: -2, formulaDanio: "Fue+6", categoriaDanio: "Letal", ignoraCobertura: 2 },
@@ -823,6 +824,7 @@ export const FLAGELOS: ArmaMelee[] = [
     resumen: "Arma flexible a dos manos con alcance extra, apta para Sutil.",
     descripcion: "Arma flexible a dos manos, con alcance.",
     empleo: "dos manos",
+    contundente: true,
     sutil: true,
     alcance: 4,
     modos: [

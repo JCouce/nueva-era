@@ -22,6 +22,7 @@ import type { AmenazaId, EfectoSalvacion } from "./aumentosTiradas";
 import { nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import { estadosConEfecto, type EstadoActivo } from "./estados";
 import { inmunidadesDe } from "./inmunidades";
+import { sinMejorasNoAdmitidas } from "./compatibilidadArma";
 import type { ModificadorConFuente } from "./modificadores";
 import type { OrigenAporte } from "./origen";
 import type { Sheet } from "./sheet";
@@ -104,13 +105,15 @@ export const SIN_AFECTACION: AfectacionDePiezas = { inutilizadas: new Map(), pen
 // estado (piezasDeEstado).
 type Toque = { estadoId: string; estadoLabel: string; grado: string; piezas: NonNullable<GradoEstado["piezas"]>; tocadas: { pieza: PiezaEquipada; cat: Equipo }[] };
 
+// Las mejoras que su arma no admite (td-03) no funcionan: el Shock no tiene nada que tocarles.
 function toques(sheet: Pick<Sheet, "equipo">, estados: readonly EstadoActivo[]): Toque[] {
   const conEfecto = estadosConEfecto([...estados], inmunidadesDe(sheet));
+  const util = sinMejorasNoAdmitidas(sheet);
   return conEfecto.flatMap((e) => {
     const estado = estadoPorId(e.estadoId);
     const grado = estado?.grados.find((g) => g.id === e.gradoId);
     if (!estado?.afectaPiezas || !grado?.piezas) return [];
-    const tocadas = sheet.equipo.flatMap((pieza) => {
+    const tocadas = util.equipo.flatMap((pieza) => {
       const cat = equipoPorId(pieza.catalogoId);
       return cat && shockDePieza(cat, pieza.nivel) === estado.afectaPiezas ? [{ pieza, cat }] : [];
     });
@@ -178,9 +181,11 @@ export function piezasDeEstado(sheet: Pick<Sheet, "equipo">, estados: readonly E
 
 // La ficha con la que se calcula lo que aportan las piezas (FichaResuelta.fichaSinApagadas): sin
 // las apagadas (vuelo, exoesqueleto, absorción, activables, inmunidades… no pasan por un aporte
-// con origen) y la de regla `comoNivel` leída con ese nivel (Inyector 2 bajo Shock: rebajas,
-// modificadores y todo lo demás del nivel 1).
-export function piezasEnUso<S extends Pick<Sheet, "equipo">>(sheet: S, afectacion: Pick<AfectacionDePiezas, "inutilizadas"> & Partial<Pick<AfectacionDePiezas, "conReglaPropia">>): S {
+// con origen), sin las mejoras que su arma no admite (td-03, sinMejorasNoAdmitidas) y la de
+// regla `comoNivel` leída con ese nivel (Inyector 2 bajo Shock: rebajas, modificadores y todo lo
+// demás del nivel 1).
+export function piezasEnUso<S extends Pick<Sheet, "equipo">>(ficha: S, afectacion: Pick<AfectacionDePiezas, "inutilizadas"> & Partial<Pick<AfectacionDePiezas, "conReglaPropia">>): S {
+  const sheet = sinMejorasNoAdmitidas(ficha);
   const propias = afectacion.conReglaPropia;
   if (afectacion.inutilizadas.size === 0 && !propias?.size) return sheet;
   const equipo = sheet.equipo.flatMap((p): PiezaEquipada[] => {

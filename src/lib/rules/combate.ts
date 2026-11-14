@@ -16,7 +16,7 @@ import { ESPADAS_Y_DAGAS, NOTA_ESCUDO_SUBSISTEMAS, PELEA, type ArmaMelee } from 
 import { DESENFUNDADO_Y_RECARGA_PESADO, type ArmaPesada } from "../catalog/armamentoPesado";
 import { DESENFUNDADO_POR_TIPO, RECARGA_POR_TIPO } from "../catalog/armasFuego";
 import type { TipoAccionBase } from "./tipoAccion";
-import type { Subsistema } from "../catalog/subsistemas";
+import { ID_MODO_ADICIONAL, type Subsistema } from "../catalog/subsistemas";
 import {
   MUNICION_GRANADA,
   ALCANCE_ARROJADA,
@@ -37,6 +37,7 @@ import type { TextoEnTirada } from "./especie";
 import { conTextosDeFicha } from "./textosTirada";
 import { textoCortoDeEfecto, type EfectoArma, type EfectoEnTirada } from "./efectosArma";
 import { escudoRoto, gastoDelModo, MOTIVO_ESCUDO_ROTO, recursoDe } from "./recursos";
+import { sinMejorasNoAdmitidas } from "./compatibilidadArma";
 import { bloqueadaPor, conHabilitacion, esVisible, habilitacionDeFamilia } from "./habilitacion";
 import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type AccionDirecta } from "./acciones";
 import { RUIDO_DISPARO, modosDeOcultacion, textoSigiloAlAtacar, type SigiloAlAtacar } from "./sigilo";
@@ -355,11 +356,11 @@ function condicionModo(
 // el daño y el gasto, no la dificultad.
 //
 // Armas impulsoras (Arco, Ballesta): "su munición puede llevar mejoras de munición especial
-// sin que el arma necesite estar adaptada" (docs/fuente/equipamiento.md) → sin adaptador,
-// los tipos de los que la ficha tenga stock.
+// sin que el arma necesite estar adaptada" (docs/fuente/equipamiento.md,
+// `municionEspecialSinAdaptar`) → sin adaptador, los tipos de los que la ficha tenga stock.
 function municionesDeArma(sheet: Sheet, arma: ArmaFuego, instanciaId: string): NonNullable<Accion["municionesEspeciales"]> {
   const tipos =
-    arma.tipo === "arma_impulsora"
+    arma.municionEspecialSinAdaptar
       ? MUNICION_ESPECIAL.filter((m) => (sheet.municionEspecial[m.id] ?? 0) > 0)
       : sheet.equipo.flatMap((p) => {
           if (p.instaladoEnId !== instanciaId || !p.catalogoId.startsWith(PREFIJO_MEJORA_MUNICION)) return [];
@@ -1083,10 +1084,10 @@ function tiradaLanzarArmaMelee(
 // casos") solo por coincidencia con la regla general de Sutil, no porque siga
 // perteneciendo al par Combate a Distancia/Tecnociencia.
 //
-// Los 3 "modo adicional" (envenenamiento/ceguera+fuego/disrupción de campo) se quedan como
-// texto (crítico en `efectoCritico`, el resto en la nota) y el -5 al sigilo como aviso en
-// `efectos` (S96) — ver docs/sistema.md pregunta 13 y el MotorMetadata de cada nivel en
-// catalog/subsistemas.ts.
+// Los 3 "modo adicional" (Flux Radiactivo, Fotones Coherentes, Disrupción de Campo; niveles
+// 2-4) se eligen libremente al tirar (Murillo, pregunta 13): selector «Modo adicional» en el
+// disparo y en el Aguijón (eq-23, T9), con lo que hace cada uno como dato del catálogo
+// (`NivelModulo.modoAdicional`, `Subsistema.efectosObjetivo`). El −5 al sigilo, `delataAlAtacar`.
 const GASTO_MODO_PULSO: Record<string, number> = {
   pulso: 1,
   pulso_cargado: 4,
@@ -1105,33 +1106,36 @@ const DESCRIPCION_MODO_PULSO: Record<string, string> = {
   barrido: "El haz se abre en abanico y arrasa un área entera de un plumazo, a costa de perder precisión.",
 };
 
-// TODO(revisar): los efectos del Proyector de Pulso (Shock por modo, Hemorragia de crítico y sus
-// variantes por nivel) siguen como texto en la nota y en `efectoCritico`, sin el aviso de T3a: el
-// encargo de T3a no lo incluía (no es un arma del catálogo de armas) y sus dificultades dependen
-// del nivel y del modo. Pasarlos a `efectosObjetivo` es el mismo mecanismo (soloEn.modo).
-// Los 3 "modo adicional" (nivel 2-4) son del SUBSISTEMA entero, no solo de los 3 modos a
-// distancia — Aguijón también los desbloquea (2026-09-24). Lo que cambian del crítico va al
-// `efectoCritico` de la tirada, como en las armas melee y de fuego (S96); lo que no es crítico
-// (daño a Fuego, Shock +1) se queda en la nota.
-function criticoProyectorPulso(nivel: number, base: string): string {
-  return [
-    base,
-    nivel >= 2 ? `Nivel 2 (Flux Radiactivo), a elección: Envenenamiento por Radiación (dificultad ${8 + nivel}) en vez de Hemorragia` : null,
-    nivel >= 3 ? `Nivel 3 (Fotones Coherentes), a elección: Ceguera (dificultad ${8 + nivel}) en vez de Hemorragia` : null,
-    nivel >= 4
-      ? "Nivel 4 (Disrupción de Campo), a elección: destruye 1 punto de blindaje o armadura del objetivo (sin blindaje, Hemorragia normal)"
-      : null,
-  ]
-    .filter((v): v is string => v !== null)
-    .join(" · ");
+// Lo que el ataque del Proyector le hace al objetivo (eq-23): los `efectosObjetivo` de la pieza,
+// con las dificultades «N + Nivel» ya con el nivel instalado. Cada uno salta con su modo de ataque
+// (`soloEn.modo`, por la etiqueta del modo) y su modo adicional (`soloEn.opcion` / `salvoEn`).
+function efectosDelProyector(pieza: PiezaEquipada): EfectoEnTirada[] {
+  const cat = equipoPorId(pieza.catalogoId);
+  if (cat?.familia !== "subsistema") return [];
+  const nivel = pieza.nivel ?? 1;
+  const conNivel = (e: EfectoArma): EfectoArma =>
+    (e.tipo === "salvacion" && typeof e.dificultad === "number" ? { ...e, dificultad: e.dificultad + nivel } : e);
+  return efectosConFuente(cat.efectosObjetivo?.map(conNivel), cat.label, origenDePieza("equipo", cat, pieza.instanciaId));
 }
 
-function variantesModoDesbloqueadas(nivel: number): string[] {
-  return [
-    nivel >= 2 ? "Nivel 2: modo Flux Radiactivo, a elección (cambia el crítico)." : null,
-    nivel >= 3 ? "Nivel 3: modo Fotones Coherentes, a elección: el daño pasa a Fuego con Llamarada (misma salvación que el Shock)." : null,
-    nivel >= 4 ? "Nivel 4: modo Disrupción de Campo, a elección: el Shock sube +1 de dificultad." : null,
-  ].filter((v): v is string => v !== null);
+// El selector «Modo adicional» (eq-23): «Ninguno» y los modos que abren los niveles instalados
+// (`NivelModulo.modoAdicional`, S9). Lo que cambia del daño va en la opción (`danio`); los efectos,
+// en efectosDelProyector. null si el nivel no abre ninguno.
+function condicionModoAdicional(pieza: PiezaEquipada): CondicionTirada | null {
+  const cat = equipoPorId(pieza.catalogoId);
+  if (cat?.familia !== "subsistema") return null;
+  const modos = nivelesHasta(cat.niveles, pieza.nivel ?? 1).flatMap((n) => (n.modoAdicional ? [n.modoAdicional] : []));
+  if (modos.length === 0) return null;
+  return {
+    id: ID_MODO_ADICIONAL,
+    tipo: "opcion",
+    etiqueta: "Modo adicional",
+    opciones: [
+      { id: "ninguno", etiqueta: "Ninguno", valor: 0, sinValor: true },
+      ...modos.map((m) => ({ id: m.id, etiqueta: m.label, valor: 0, sinValor: true as const, nota: m.nota, ...(m.danio && { danio: m.danio }) })),
+    ],
+    porDefecto: "ninguno",
+  };
 }
 
 // "El uso de cualquier modo de ataque impone un penalizador temporal de -5 al sigilo (en
@@ -1201,13 +1205,15 @@ function tiradaDeProyectorPulso(
 
   const tramos = (a: ArmaFuego["alcance"]) => `corto ${a.corta} m, medio ${a.media} m, largo ${a.larga} m`;
 
+  // Los efectos sobre el objetivo (Shock, Hemorragia y los del modo adicional) van como dato y
+  // salen en el resultado; aquí, el alcance y la esquiva del Barrido (la tirada de los del área).
   const nota = [
     "Daño grave.",
-    `Pulso: alcance ${tramos(alcancePulso("pulso", nivel))} · Efecto Shock (${4 + nivel}).`,
-    `Pulso Cargado: alcance ${tramos(alcancePulso("pulso_cargado", nivel))} · Efecto Shock (${6 + nivel}).`,
-    `Barrido: área 6x6, alcance ${tramos(alcancePulso("barrido", nivel))} · Efecto Esquiva (${7 + nivel}) y Shock (${7 + nivel}).`,
-    ...variantesModoDesbloqueadas(nivel),
+    `Pulso: alcance ${tramos(alcancePulso("pulso", nivel))}.`,
+    `Pulso Cargado: alcance ${tramos(alcancePulso("pulso_cargado", nivel))}.`,
+    `Barrido: área 6x6, alcance ${tramos(alcancePulso("barrido", nivel))} · los del área esquivan a ${7 + nivel}; sin crítico.`,
   ].join(" · ");
+  const modoAdicional = condicionModoAdicional(pieza);
 
   const etiquetaHabilidad = habilidad === "combate_distancia" ? "Combate a Distancia" : "Tecnociencia";
 
@@ -1225,17 +1231,18 @@ function tiradaDeProyectorPulso(
     // empleo de dote (Desenfundado Rápido) no lo alcanza. Confirmado por el usuario.
     familiaArma: "ataque_fuego",
     nota,
-    // El Barrido no trae crítico en la tabla; la tirada es una sola para los tres modos.
-    efectoCritico: criticoProyectorPulso(nivel, "Hemorragia (Pulso y Pulso Cargado; el Barrido no tiene crítico)"),
+    efectosObjetivo: efectosDelProyector(pieza),
     ...conSigilo(sigiloProyectorPulso(sheet, pieza, RUIDO_DISPARO)),
     recursoInstanciaId: pieza.instanciaId,
     recursoUnidad: "cargas",
-    condiciones: [condicionTramoPulso(nivel), modo],
+    condiciones: [condicionTramoPulso(nivel), modo, ...(modoAdicional ? [modoAdicional] : [])],
+    // Con su etiqueta de la tabla: por ella salta cada efecto (soloEn.modo).
     ataque: {
       modos: [
-        { id: "pulso", danio: 7 + nivel, formulaDanio: null, categoriaDanio: "Grave", gasto: GASTO_MODO_PULSO.pulso },
+        { id: "pulso", etiqueta: "Pulso", danio: 7 + nivel, formulaDanio: null, categoriaDanio: "Grave", gasto: GASTO_MODO_PULSO.pulso },
         {
           id: "pulso_cargado",
+          etiqueta: "Pulso Cargado",
           danio: 10 + nivel,
           formulaDanio: null,
           categoriaDanio: "Grave",
@@ -1243,6 +1250,7 @@ function tiradaDeProyectorPulso(
         },
         {
           id: "barrido",
+          etiqueta: "Barrido",
           danio: 9 + nivel,
           formulaDanio: null,
           categoriaDanio: "Grave",
@@ -1264,6 +1272,7 @@ function tiradaDeProyectorPulso(
 // Se dejó como estaba (decisión del usuario: "con la dote, como hoy").
 function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: PiezaEquipada, sutil: boolean): Accion {
   const nivel = pieza.nivel ?? 1;
+  const modoAdicional = condicionModoAdicional(pieza);
   return {
     id: `ataque_proyector_pulso_aguijon_${pieza.instanciaId}`,
     label: "Golpear con Proyector de Pulso (Aguijón)",
@@ -1272,19 +1281,21 @@ function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: P
     habilidad: "combate_melee",
     especialidadArma: ESPECIALIDAD_ATAQUE_ESPECIAL.proyector_pulso_aguijon,
     familiaArma: "ataque_melee", // sin empleo, como el disparo
+    // «Duración: Nivel» de la tabla, tal cual. TODO(revisar): no dice de qué es la duración.
     nota: [
       "Repliega el emisor a un pincho corto de energía y lo descarga a bocajarro, casi sin gesto — Sutil.",
-      `Duración ${nivel} turno(s) · Efecto Shock (${4 + nivel}).`,
-      ...variantesModoDesbloqueadas(nivel),
+      `Duración ${nivel} turno(s).`,
     ].join(" · "),
-    efectoCritico: criticoProyectorPulso(nivel, "Hemorragia"),
+    efectosObjetivo: efectosDelProyector(pieza),
     ...conSigilo(sigiloProyectorPulso(sheet, pieza, null)),
     recursoInstanciaId: pieza.instanciaId,
     recursoUnidad: "cargas",
+    ...(modoAdicional && { condiciones: [modoAdicional] }),
     ataque: {
       modos: [
         {
           id: "0",
+          etiqueta: "Aguijón",
           danio: atributoEfectivo(sheet, "fuerza", mods) + 4 + nivel,
           formulaDanio: `Fue+${4 + nivel}`,
           categoriaDanio: "Grave",
@@ -1522,7 +1533,9 @@ function accionesDeGranadas(sheet: Sheet): Accion[] {
 // solo sale si una dote activa la habilita (§9.2: oculta sin ella, habilitacionDeFamilia; las
 // ocultas no se devuelven, ni a la pantalla ni al servidor), y el estilo Sutil solo
 // con Combate Sutil. Obligatorio a propósito: sin él no hay forma de saber qué se ve.
-export function accionesDeAtaque(sheet: Sheet, mods: ModificadorConFuente[], permisos: PermisosDeDotes): Accion[] {
+// Las mejoras que su arma no admite (td-03) no aportan nada: se calcula sin ellas.
+export function accionesDeAtaque(ficha: Sheet, mods: ModificadorConFuente[], permisos: PermisosDeDotes): Accion[] {
+  const sheet = sinMejorasNoAdmitidas(ficha);
   const tiradas: Accion[] = [];
   const brazo = brazoBionico(sheet);
   for (const pieza of sheet.equipo) {

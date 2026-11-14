@@ -6,7 +6,7 @@ import { equipar } from "./equipo";
 import { ajustarRecurso, ajustarGranada, ajustarMunicionEspecial, reconciliarRecursos } from "./recursos";
 import { accionesDeAtaque as accionesDeAtaqueCon, accionesDirectasDeAtaque, generaAccionPropia, ID_MODO_CAMUFLAJE, MOTIVO_SIN_CARGAS, NOTA_MALLA_ANULA_CAMUFLAJE } from "./combate";
 import { restaDeSigilo } from "./sigilo";
-import { efectosQueSaltan, type EfectoEnTirada } from "./efectosArma";
+import { efectosQueSaltan, efectosSobreObjetivo, type EfectoEnTirada } from "./efectosArma";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
 import { MUNICION_GRANADA } from "../catalog/municion";
@@ -1352,32 +1352,76 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
     assert.equal(tramo.porDefecto, "media");
   });
 
-  // S96: el crítico va en efectoCritico (sale solo con crítico, como en las armas melee y de
-  // fuego), no en la nota.
-  test("con nivel 1 el crítico es Hemorragia en efectoCritico, sin variantes, y la nota no lo repite", () => {
-    const fila = accionesDeAtaque(conProyectorPulso(1)).find((t) => t.label.includes("Combate a Distancia"))!;
-    assert.equal(fila.efectoCritico, "Hemorragia (Pulso y Pulso Cargado; el Barrido no tiene crítico)");
-    assert.doesNotMatch(fila.nota ?? "", /Nivel 2|Nivel 3|Nivel 4|Hemorragia/);
+  // eq-23 (T9): los efectos sobre el objetivo dejan de ser texto (antes `efectoCritico` y la nota,
+  // S96) y van como dato (`efectosObjetivo` de la pieza), con el selector «Modo adicional». Los
+  // tres tests de S96 que miraban el texto del crítico se sustituyen por estos.
+  const disparoPulso = (nivel: number) => accionesDeAtaque(conProyectorPulso(nivel)).find((t) => t.label.includes("Combate a Distancia"))!;
+  const aguijonPulso = (nivel: number) =>
+    accionesDeAtaque(conProyectorPulso(nivel)).find((t) => t.label === "Golpear con Proyector de Pulso (Aguijón)")!;
+  const saltanPulso = (t: Accion, modo: string, modoAdicional: string | null, critico: boolean) =>
+    efectosQueSaltan(t, { modo, ...(modoAdicional && { modo_adicional: modoAdicional }) }, { exito: true, critico, dificultad: 7 }).map(resumenEfecto);
+
+  test("nivel 1: sin selector de modo adicional; Shock por modo (+ nivel) y Hemorragia de crítico, nada en efectoCritico", () => {
+    const t = disparoPulso(1);
+    assert.equal(t.condiciones?.some((c) => c.id === "modo_adicional"), false);
+    assert.equal(t.efectoCritico, undefined);
+    assert.deepEqual(saltanPulso(t, "pulso", null, false), ["shock (5)"]);
+    assert.deepEqual(saltanPulso(t, "pulso_cargado", null, true), ["shock (7)", "hemorragia"]);
+    // El Barrido no trae crítico.
+    assert.deepEqual(saltanPulso(t, "barrido", null, true), ["shock (8)"]);
+    assert.doesNotMatch(t.nota ?? "", /Hemorragia|Nivel 2/);
   });
 
-  test("con nivel 4 el efectoCritico lista las tres variantes; la nota, lo que no es crítico", () => {
-    const fila = accionesDeAtaque(conProyectorPulso(4)).find((t) => t.label.includes("Combate a Distancia"))!;
-    assert.match(fila.efectoCritico ?? "", /^Hemorragia/);
-    assert.match(fila.efectoCritico ?? "", /Envenenamiento por Radiación \(dificultad 12\)/);
-    assert.match(fila.efectoCritico ?? "", /Ceguera \(dificultad 12\)/);
-    assert.match(fila.efectoCritico ?? "", /destruye 1 punto de blindaje/);
-    assert.match(fila.nota ?? "", /Fuego con Llamarada/);
-    assert.match(fila.nota ?? "", /Nivel 4: .*el Shock sube \+1/);
-    assert.doesNotMatch(fila.nota ?? "", /Envenenamiento|Ceguera/);
+  test("el selector «Modo adicional» ofrece los modos que da el nivel (2: Flux; 4: los tres)", () => {
+    const opciones = (nivel: number) => {
+      const c = disparoPulso(nivel).condiciones?.find((x) => x.id === "modo_adicional");
+      assert.ok(c && c.tipo === "opcion");
+      assert.equal(c.porDefecto, "ninguno");
+      return c.opciones.map((o) => o.id);
+    };
+    assert.deepEqual(opciones(2), ["ninguno", "flux"]);
+    assert.deepEqual(opciones(3), ["ninguno", "flux", "fotones"]);
+    assert.deepEqual(opciones(4), ["ninguno", "flux", "fotones", "disrupcion"]);
+    // También en el Aguijón (los modos son del subsistema entero).
+    assert.ok(aguijonPulso(2).condiciones?.some((c) => c.id === "modo_adicional"));
   });
 
-  test("Aguijón también: crítico Hemorragia con las variantes desbloqueadas (mismo subsistema)", () => {
-    const fila = accionesDeAtaque(conProyectorPulso(4)).find(
-      (t) => t.label === "Golpear con Proyector de Pulso (Aguijón)",
-    )!;
-    assert.match(fila.efectoCritico ?? "", /^Hemorragia · Nivel 2 .*Envenenamiento por Radiación \(dificultad 12\)/);
-    assert.match(fila.efectoCritico ?? "", /Ceguera \(dificultad 12\)/);
-    assert.doesNotMatch(fila.nota ?? "", /Hemorragia/);
+  test("Flux Radiactivo: el crítico es Envenenamiento por Radiación (8 + nivel) en vez de Hemorragia", () => {
+    const t = disparoPulso(4);
+    assert.deepEqual(saltanPulso(t, "pulso", "flux", true), ["shock (8)", "envenenamiento (12)"]);
+    assert.deepEqual(saltanPulso(t, "pulso", "ninguno", true), ["shock (8)", "hemorragia"]);
+    const radiacion = t.efectosObjetivo?.find((e) => e.tipo === "salvacion" && e.estadoId === "envenenamiento");
+    assert.ok(radiacion?.tipo === "salvacion" && radiacion.tabla?.fracaso?.estado?.estadoId === "enfermedad");
+  });
+
+  test("Fotones Coherentes: Llamarada con la dificultad del Shock, crítico Ceguera (8 + nivel) y daño a Fuego", () => {
+    const t = disparoPulso(3);
+    assert.deepEqual(saltanPulso(t, "pulso", "fotones", false), ["shock (7)", "llamarada (7)"]);
+    assert.deepEqual(saltanPulso(t, "barrido", "fotones", false), ["shock (10)", "llamarada (10)"]);
+    assert.deepEqual(saltanPulso(t, "pulso", "fotones", true), ["shock (7)", "llamarada (7)", "ceguera (11)"]);
+    const ficha = resolverFicha(conProyectorPulso(3), { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+    const montada = montarTirada(ficha, t, { ...SIN_ELECCION, estadoCondiciones: { tramo: "media", modo: "pulso", modo_adicional: "fotones" } });
+    assert.deepEqual(montada.danio.categoria, { a: "Fuego", fuente: "Fotones Coherentes" });
+    const sin = montarTirada(ficha, t, { ...SIN_ELECCION, estadoCondiciones: { tramo: "media", modo: "pulso", modo_adicional: "ninguno" } });
+    assert.equal(sin.danio.categoria, null);
+  });
+
+  test("Disrupción de Campo: Shock +1 y crítico que destruye blindaje, en el Aguijón también", () => {
+    const t = disparoPulso(4);
+    assert.deepEqual(saltanPulso(t, "pulso_cargado", "disrupcion", false), ["shock (11)"]);
+    assert.deepEqual(saltanPulso(t, "pulso_cargado", "disrupcion", true), [
+      "shock (11)",
+      "Destruye 1 punto de blindaje o armadura del objetivo (si no tiene blindaje, Hemorragia normal)",
+    ]);
+    assert.deepEqual(saltanPulso(aguijonPulso(4), "0", "disrupcion", false), ["shock (9)"]);
+    assert.deepEqual(saltanPulso(aguijonPulso(4), "0", "ninguno", true), ["shock (8)", "hemorragia"]);
+  });
+
+  test("el aviso del resultado da los rangos desde tu propio total (dificultad conocida)", () => {
+    const avisos = efectosSobreObjetivo(disparoPulso(2), { modo: "pulso", modo_adicional: "flux" }, { exito: true, critico: true, dificultad: 7 }, () => 1);
+    const radiacion = avisos.find((a) => a.estadoId === "envenenamiento")!;
+    assert.equal(radiacion.salvacion?.dificultad, 10);
+    assert.deepEqual(radiacion.grados.map((g) => g.rango), ["4 o menos", "5 a 9", "10 a 15", "16 o más"]);
   });
 
   // T4: el −5 pasa de aviso a dato (`delataAlAtacar`) que la app resta de tu Sigilo; el aviso

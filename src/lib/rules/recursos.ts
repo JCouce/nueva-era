@@ -36,6 +36,7 @@ import {
 import { PREFIJO_MEJORA_MUNICION } from "../catalog/mejorasArma";
 import { FARMACOS } from "../catalog/medicina";
 import type { PiezaEquipada } from "./equipo";
+import { sinMejorasNoAdmitidas } from "./compatibilidadArma";
 import type { Sheet } from "./sheet";
 
 // Materiales (docs/tareas.md, tarea 8, "Fabricar y Reparar" — 2026-09-25):
@@ -212,13 +213,20 @@ export function defaultMunicionEspecial(): MunicionEspecialStock {
   return {};
 }
 
-// Armas equipadas que llevan la mejora "Adaptador: munición <tipo>".
-export function armasHabilitadasPara(sheet: Sheet, municionId: string): PiezaEquipada[] {
+// Armas equipadas que pueden disparar esa munición especial: las que llevan la mejora
+// "Adaptador: munición <tipo>" (y la admiten, td-03) y las que no lo necesitan
+// (`municionEspecialSinAdaptar`: Arco y Ballesta).
+export function armasHabilitadasPara(ficha: Sheet, municionId: string): PiezaEquipada[] {
+  const sheet = sinMejorasNoAdmitidas(ficha);
   const mejoraId = `${PREFIJO_MEJORA_MUNICION}${municionId}`;
   const hosts = new Set(
     sheet.equipo.filter((p) => p.catalogoId === mejoraId && p.instaladoEnId).map((p) => p.instaladoEnId),
   );
-  return sheet.equipo.filter((p) => hosts.has(p.instanciaId));
+  return sheet.equipo.filter((p) => {
+    if (hosts.has(p.instanciaId)) return true;
+    const cat = equipoPorId(p.catalogoId);
+    return cat?.familia === "arma" && cat.municionEspecialSinAdaptar === true;
+  });
 }
 
 // Un lote al precio real de catálogo. null si el id no es una munición

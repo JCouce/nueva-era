@@ -246,6 +246,15 @@ describe("D2d: casillas que tocan el daño", () => {
     assert.equal(resolverDanio(0, 0, "Letal", m.danio).total, 0);
   });
 
+  // td-04 (usuario 2026-11-14): Mangual y Cadena Armada son contundentes.
+  test("Golpe Fatigante vale con el Mangual (una mano) y la Cadena Armada: contundentes (td-04)", () => {
+    const f = resolver(armado(ficha([{ id: "dote_golpe_fatigante" }]), "flagelo_mangual", "flagelo_cadena_armada", "flagelo_latigo"));
+    const tiene = (label: string) => casilla(golpe(f, label), (x) => x.danio?.ajuste !== undefined);
+    assert.ok(tiene("Mangual"), "mangual (contundente, una mano)");
+    assert.ok(tiene("Cadena Armada"), "cadena armada");
+    assert.equal(tiene("Látigo"), undefined, "el látigo no: ni contundente ni a dos manos");
+  });
+
   describe("Derribo (maniobra de habilidades.md)", () => {
     const derribo = (dotes: DoteComprada[]) => {
       const f = resolver(armado(ficha(dotes), "espada"));

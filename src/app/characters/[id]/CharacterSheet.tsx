@@ -16,6 +16,7 @@ import {
   comprarAumentoAction,
   desequiparAction,
   fijarArmaIncorporadaAction,
+  fijarEleccionDeNivelAction,
   setPrioridadAction,
   ajustarRecursoAction,
   comprarRecargaAction,
@@ -66,6 +67,7 @@ import {
   type OpcionesFabricar,
   retirarPieza,
   fijarArmaIncorporada,
+  fijarEleccionDeNivel,
   setPrioridad,
   ajustarRecurso,
   ajustarMaterial,
@@ -455,6 +457,14 @@ export function CharacterSheet({
       return res.ok ? res.sheet : s;
     });
     runSave(() => fijarArmaIncorporadaAction(characterId, { brazoInstanciaId, armaInstanciaId }), setSheet);
+  };
+  // La elección de un nivel (Movilidad Aérea 3, eq-36): el servidor la vuelve a validar.
+  const commitEleccionDeNivel = (instanciaId: string, eleccion: string | null) => {
+    setSheet((s) => {
+      const res = fijarEleccionDeNivel(s, instanciaId, eleccion);
+      return res.ok ? res.sheet : s;
+    });
+    runSave(() => fijarEleccionDeNivelAction(characterId, { instanciaId, eleccion }), setSheet);
   };
   const commitAjustarRecurso = (instanciaId: string, delta: number) => {
     setSheet((s) => ajustarRecurso(s, instanciaId, delta));
@@ -976,6 +986,7 @@ export function CharacterSheet({
                 creditos={creditos}
                 onDesequipar={commitDesequipar}
                 onArmaIncorporada={commitArmaIncorporada}
+                onEleccionDeNivel={commitEleccionDeNivel}
                 onConvertirArma={commitConvertirArma}
                 topeRareza={topeRareza}
               />

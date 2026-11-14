@@ -51,6 +51,7 @@ import {
   equiparNpcAction,
   desequiparNpcAction,
   fijarArmaIncorporadaNpcAction,
+  fijarEleccionDeNivelNpcAction,
   ajustarRecursoNpcAction,
   comprarRecargaNpcAction,
   ajustarMaterialNpcAction,
@@ -239,6 +240,12 @@ export function NpcEditor({
   const commitArmaIncorporada = async (brazoInstanciaId: string, armaInstanciaId: string | null) => {
     setStatus("saving");
     const res = await fijarArmaIncorporadaNpcAction(npcId, { brazoInstanciaId, armaInstanciaId });
+    if (res.ok) setSheet(res.sheet);
+    setStatus(res.ok ? "saved" : "error");
+  };
+  const commitEleccionDeNivel = async (instanciaId: string, eleccion: string | null) => {
+    setStatus("saving");
+    const res = await fijarEleccionDeNivelNpcAction(npcId, { instanciaId, eleccion });
     if (res.ok) setSheet(res.sheet);
     setStatus(res.ok ? "saved" : "error");
   };
@@ -516,7 +523,7 @@ export function NpcEditor({
           />
         </div>
       )}
-      {active === "equipo" && <EquipoTab sheet={sheet} onDesequipar={commitDesequipar} onArmaIncorporada={commitArmaIncorporada} onConvertirArma={commitConvertirArma} />}
+      {active === "equipo" && <EquipoTab sheet={sheet} onDesequipar={commitDesequipar} onArmaIncorporada={commitArmaIncorporada} onEleccionDeNivel={commitEleccionDeNivel} onConvertirArma={commitConvertirArma} />}
       {active === "recursos" && (
         <RecursosTab
           ficha={ficha}

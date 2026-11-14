@@ -2,7 +2,7 @@ import type { Modificador } from "../rules/modificadores";
 import type { MotorMetadata } from "../rules/motor";
 import type { Economia } from "../rules/psionica";
 import type { Rareza } from "./equipo";
-import type { MunicionEnergiaId } from "./municion";
+import type { MunicionDeArmaId } from "./municion";
 import { ARMAS_IMPULSORAS } from "./armasImpulsoras";
 import type { EfectoArma } from "../rules/efectosArma";
 import { derriboCercano, enCritico, salva, shockYLlamarada } from "./efectosArma";
@@ -77,8 +77,17 @@ export type ArmaFuego = {
   alcance: { corta: number; media: number; larga: number };
   municion: number;
   // Munición regular con que se recarga (catalog/municion.ts, S95): sin el campo, Calibre
-  // Estándar; las de energía dicen su familia — Láser, Rayo de Partículas o Plasma.
-  tipoMunicion?: MunicionEnergiaId;
+  // Estándar; las de energía dicen su familia — Láser, Rayo de Partículas o Plasma — y las
+  // impulsoras, flechas o virotes (td-01).
+  tipoMunicion?: MunicionDeArmaId;
+  // Las mejoras de arma que admite, por id, si no son las que deje la compatibilidad de cada
+  // mejora (td-03: Arco y Ballesta, solo miras, Puntero Láser y Linterna). Con él, manda esta
+  // lista (compatibleConArma, rules/equipo.ts).
+  mejorasPermitidas?: readonly string[];
+  // Su munición admite munición especial sin adaptador (impulsoras: «puede llevar mejoras de
+  // munición especial sin que el arma necesite estar adaptada»): el selector del disparo sale
+  // con el stock de la ficha y la Tienda la deja comprar (municionesDeArma, armasHabilitadasPara).
+  municionEspecialSinAdaptar?: true;
   // Proyectiles por ataque en F. Auto cuando el arma dice el suyo (Sydiasi: "consume 3
   // disparos del cargador por cada ataque"); sin él, la regla general de gastoDelModo.
   gastoFAuto?: number;

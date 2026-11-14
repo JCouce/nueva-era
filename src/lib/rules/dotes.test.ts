@@ -75,6 +75,20 @@ describe("catálogo generado", () => {
     assert.match(motivoNoComprable(s, { id: "dote_olfato_de_investigador" }, creacion(s)) ?? "", /no tiene efecto/);
   });
 
+  // di-24 (usuario 2026-11-14: «Nada todavía: no se puede comprar hasta que tenga efecto»). Una
+  // ficha que ya la tuviera (comprada antes de ocultarla) no rompe: se lee y no hace nada.
+  test("Olfato de Investigador ya comprada: la ficha se lee, cuenta su coste y no aporta nada", () => {
+    let s = conHabilidad(ficha(), "exploracion", 4, ["investigacion"]);
+    s = conAtributos(s, { inteligencia: 2, percepcion: 2 });
+    const sinElla = resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+    const con = { ...s, dotes: normalizarDotes([{ id: "dote_olfato_de_investigador" }]) };
+    const f = resolverFicha(con, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+    assert.deepEqual(f.modificadores, sinElla.modificadores);
+    assert.deepEqual(f.textosTirada, sinElla.textosTirada);
+    assert.equal(puntosDotesGastados(con), 2);
+    assert.equal(parseSheet(JSON.parse(JSON.stringify(con))).dotes.length, 1);
+  });
+
   test("Biónica es especialidad de Biociencia", () => {
     const req = requisitos("dote_artesano_bionico")[0];
     assert.equal(req.tipo === "especialidad" && req.habilidad, "biociencia");

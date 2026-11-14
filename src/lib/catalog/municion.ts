@@ -287,6 +287,14 @@ const SUPERA_TOXINA: Partial<Record<Grado, ResultadoDeTabla>> = {
   critico: { texto: "Sin ningún efecto." },
 };
 
+// Lo que le pasa a quien falla la salvación contra el envenenamiento por radiación (Munición
+// Radiactiva; también el Flux Radiactivo del Proyector de Pulso, eq-23): «Enfermo 2 y recibe un
+// nivel de daño agravado» con fracaso crítico, enfermo 1 con fracaso.
+export const FALLA_RADIACION: Partial<Record<Grado, ResultadoDeTabla>> = {
+  fracasoCritico: { texto: "Enfermo 2 y un nivel de daño grave.", estado: { estadoId: "enfermedad", gradoId: "nivel_2" } },
+  fracaso: { texto: "Enfermo 1.", estado: { estadoId: "enfermedad", gradoId: "nivel_1" } },
+};
+
 // Se compra por lotes: a 4 cr. la bala, de una en una no tiene sentido.
 // Decisión del usuario 2026-09-28; el +/- de Recursos ajusta sueltas.
 export const LOTE_MUNICION_ESPECIAL = 10;
@@ -384,11 +392,7 @@ export const MUNICION_ESPECIAL: MunicionEspecial[] = [
     efectosObjetivo: [
       {
         ...salva("envenenamiento", 7),
-        tabla: {
-          fracasoCritico: { texto: "Enfermo 2 y un nivel de daño grave.", estado: { estadoId: "enfermedad", gradoId: "nivel_2" } },
-          fracaso: { texto: "Enfermo 1.", estado: { estadoId: "enfermedad", gradoId: "nivel_1" } },
-          ...SUPERA_TOXINA,
-        },
+        tabla: { ...FALLA_RADIACION, ...SUPERA_TOXINA },
         nota:
           "Si vuelve a recibir daño de esta munición ya envenenado por radiación, relanza y puede agravarse un nivel. " +
           "Sin superarla de forma crítica, sin tratamiento médico relanza a los 10 turnos (basta un éxito). " +
@@ -442,6 +446,8 @@ export function municionEspecialPorId(id: string): MunicionEspecial | null {
 // compra entero y llena `proyectilesPorUnidad` disparos (el cargador 30 de su tabla).
 export type MunicionRegularId =
   | "calibre_estandar"
+  | "flechas"
+  | "virotes"
   | "bateria_laser"
   | "celula_particulas"
   | "bateria_plasma"
@@ -452,6 +458,8 @@ export type MunicionRegularId =
 
 // Las tres familias de energía de las armas de fuego (Láser, Rayo de Partículas, Plasma).
 export type MunicionEnergiaId = Extract<MunicionRegularId, "bateria_laser" | "celula_particulas" | "bateria_plasma">;
+// La que puede declarar un ArmaFuego: la de energía o la de las impulsoras (td-01).
+export type MunicionDeArmaId = MunicionEnergiaId | Extract<MunicionRegularId, "flechas" | "virotes">;
 
 export type MunicionRegular = {
   id: MunicionRegularId;
@@ -474,6 +482,29 @@ export const MUNICION_REGULAR: Record<MunicionRegularId, MunicionRegular> = {
     proyectilesPorUnidad: 1,
     etiquetaRecarga: "Cargador",
     unidadRecurso: "balas",
+  },
+  // Flechas (Arco Táctico) y virotes (Ballesta): la fuente no las trae; mismo precio y rareza que
+  // la Calibre Estándar y mismas reglas de gasto, cada una con su nombre (td-01, usuario
+  // 2026-11-14). Un recurso aparte por arma, como cualquier munición regular.
+  flechas: {
+    id: "flechas",
+    label: "Flechas",
+    rareza: "Común",
+    coste: 2,
+    unidadCompra: "flecha",
+    proyectilesPorUnidad: 1,
+    etiquetaRecarga: "Flechas",
+    unidadRecurso: "flechas",
+  },
+  virotes: {
+    id: "virotes",
+    label: "Virotes",
+    rareza: "Común",
+    coste: 2,
+    unidadCompra: "virote",
+    proyectilesPorUnidad: 1,
+    etiquetaRecarga: "Virotes",
+    unidadRecurso: "virotes",
   },
   bateria_laser: {
     id: "bateria_laser",

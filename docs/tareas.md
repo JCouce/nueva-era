@@ -1266,7 +1266,26 @@ Tandas, en orden:
   la fila de XP y créditos de `/master/fichas` (`ResourceRow`, `Stepper`) y sus acciones
   (`adjustXpAction`, `adjustCreditosAction`); quedan las de la Mesa. Sin migración. Quedan
   `TODO(revisar)`: la línea de descanso no mira los rasgos que cambian las cifras (Riux, Siervo).
-- [ ] **T9 Catálogo y tienda**: td-01, td-03, td-04, di-24, eq-23, eq-34, eq-36, eq-37.
+- [x] **T9 Catálogo y tienda**: td-01, td-03, td-04, di-24, eq-23, eq-34, eq-36, eq-37 (decisiones
+  del usuario 2026-11-14) *(2026-11-14)*. td-01: munición regular «Flechas» (Arco) y «Virotes»
+  (Ballesta) al precio de la Calibre Estándar (`MUNICION_REGULAR`, `tipoMunicion`), con su nombre en
+  Tienda y Recursos y el aviso; recurso por instancia, sin migración. td-03: `ArmaFuego.mejorasPermitidas`
+  (Mira, Puntero, Linterna) y `municionEspecialSinAdaptar` (la Tienda deja comprar munición especial
+  con arco o ballesta, `armasHabilitadasPara`); la mejora instalada que ya no se admite se queda,
+  marcada en Equipo y sin aportar nada: un solo sitio, `rules/compatibilidadArma.ts`
+  (`mejorasNoAdmitidas`; la quitan `piezasEnUso`, `accionesDeAtaque` y el Shock). Fuera el
+  `TODO(revisar)` de munición y mejoras de `armasImpulsoras.ts`. td-04: `contundente` en Mangual y
+  Cadena Armada. di-24: ya no se podía comprar (`visible: false`); test de ficha que la tenga. eq-23:
+  selector «Modo adicional» en el disparo y el Aguijón del Proyector (`NivelModulo.modoAdicional`,
+  opción con `danio`, `OpcionCondicion.danio` en `montarTirada`) y todos sus efectos como dato
+  (`Subsistema.efectosObjetivo`, «N + Nivel» al montar; `EfectoArma.soloEn.opcion` y `salvoEn`); fuera
+  `efectoCritico` y los modos de la nota (sustituye a S96; tres tests de S96 reescritos). eq-36:
+  `NivelModulo.eleccion`/`porEleccion` y `rules/eleccionNivel.ts` (`nivelConEleccion` en Volar, esquiva en
+  vuelo y `vuelo`), selector «Progresión» en Equipo con `fijarEleccionDeNivelAction` (y la del NPC);
+  sin elegir, valores base con aviso. eq-34/eq-37: comprobados con tests (aviso en las 45 armas con
+  cargador) y en el navegador. Ficha de pruebas local `qa-t9`. Quedan `TODO(revisar)`: Barrido sin
+  crítico de modo adicional, grados del Envenenamiento por Radiación (los de la Munición Radiactiva),
+  duración de la Hemorragia del Proyector y de «Duración: Nivel» del Aguijón.
 - [ ] Auditoría por lote al terminar.
 
 ### Pestaña Acciones: pestañas y favoritas ✅ (usuario, 2026-10-23; T-005, T-006 y T-007)

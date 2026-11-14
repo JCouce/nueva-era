@@ -52,6 +52,9 @@ export type OpcionCondicion = {
   // exanguinante; VTM: 6 en congelación). Al elegirla, el modal pone esa dificultad
   // (dificultadTrasCambio); el jugador puede cambiarla después a mano. S94.
   dificultad?: number;
+  // Lo que la opción elegida cambia del daño, como `danio` de una casilla (Proyector de Pulso,
+  // modo adicional Fotones Coherentes: a Fuego, eq-23). Lo junta montarTirada.
+  danio?: EfectoDanioCasilla;
 };
 
 export type CondicionTirada = (

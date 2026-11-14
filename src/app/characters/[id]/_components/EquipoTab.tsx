@@ -18,6 +18,9 @@ import {
   nombreDePieza,
   rarezaPermitida,
   blindajeDeInstancia,
+  motivoNoAdmitida,
+  eleccionDePieza,
+  type EleccionDePieza,
   type ModificacionArmaId,
   type Rareza,
   type PiezaEquipada,
@@ -56,16 +59,60 @@ function BotonQuitar({ onClick }: { onClick: () => void }) {
   );
 }
 
+// La elección de un nivel de la pieza (Movilidad Aérea 3: Velocidad o Maniobrabilidad, eq-36).
+type OnEleccionDeNivel = (instanciaId: string, eleccion: string | null) => void;
+
+function SelectorEleccionDeNivel({
+  pieza,
+  eleccion,
+  onCambiar,
+}: {
+  pieza: PiezaEquipada;
+  eleccion: EleccionDePieza;
+  onCambiar?: OnEleccionDeNivel;
+}) {
+  const id = `eleccion-${pieza.instanciaId}`;
+  return (
+    <div className="mt-2 flex flex-col gap-1 px-1">
+      <label htmlFor={id} className="font-mono text-[10px] uppercase tracking-widest text-muted">
+        {eleccion.etiqueta}
+      </label>
+      {onCambiar ? (
+        <select
+          id={id}
+          value={eleccion.elegida?.id ?? ""}
+          onChange={(e) => onCambiar(pieza.instanciaId, e.target.value || null)}
+          className="w-full border border-border bg-elevated px-2 py-2 font-mono text-[11px] text-foreground outline-none focus:border-accent"
+        >
+          <option value="">Sin elegir</option>
+          {eleccion.opciones.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <p className="font-mono text-[11px] text-foreground">{eleccion.elegida?.label ?? "Sin elegir"}</p>
+      )}
+      <p className={`font-sans text-prosa-sm ${eleccion.aviso ? "text-accent" : "text-soft"}`}>
+        {eleccion.aviso ?? eleccion.elegida?.detalle}
+      </p>
+    </div>
+  );
+}
+
 // Lo instalado dentro de un host (armadura o arma): mismo bloque en los dos
 // casos, solo cambia de qué cuelga.
 function Instalado({
   sheet,
   hostInstanciaId,
   onDesequipar,
+  onEleccionDeNivel,
 }: {
   sheet: Sheet;
   hostInstanciaId: string;
   onDesequipar: (instanciaId: string) => void;
+  onEleccionDeNivel?: OnEleccionDeNivel;
 }) {
   const instalados = sheet.equipo.filter((p) => p.instaladoEnId === hostInstanciaId);
   if (instalados.length === 0) return null;
@@ -83,15 +130,25 @@ function Instalado({
         ) {
           return null; // referencia a algo que ya no está en el catálogo
         }
+        // Mejora que su arma ya no admite (td-03): se queda, sin aportar nada; lo dice el motor.
+        const noAdmitida = motivoNoAdmitida(sheet, inst);
+        const eleccion = eleccionDePieza(inst);
         return (
-          <Acordeon
-            key={inst.instanciaId}
-            titulo={instCat.label}
-            resumen={`Nivel ${inst.nivel} · ${instCat.resumen}`}
-            etiqueta={<BotonQuitar onClick={() => onDesequipar(inst.instanciaId)} />}
-          >
-            <DetalleModulo p={instCat} nivelActual={inst.nivel} />
-          </Acordeon>
+          <div key={inst.instanciaId}>
+            <Acordeon
+              titulo={instCat.label}
+              resumen={`Nivel ${inst.nivel} · ${instCat.resumen}`}
+              etiqueta={<BotonQuitar onClick={() => onDesequipar(inst.instanciaId)} />}
+            >
+              <DetalleModulo p={instCat} nivelActual={inst.nivel} />
+            </Acordeon>
+            {noAdmitida && (
+              <p className="mt-1 px-1 font-mono text-[10px] uppercase tracking-wide text-danger">
+                {noAdmitida}: no aporta nada
+              </p>
+            )}
+            {eleccion && <SelectorEleccionDeNivel pieza={inst} eleccion={eleccion} onCambiar={onEleccionDeNivel} />}
+          </div>
         );
       })}
     </div>
@@ -293,6 +350,7 @@ export function EquipoTab({
   creditos,
   onDesequipar,
   onArmaIncorporada,
+  onEleccionDeNivel,
   onConvertirArma,
   topeRareza = null,
 }: {
@@ -304,6 +362,8 @@ export function EquipoTab({
   onDesequipar: (instanciaId: string) => void;
   // El selector del arma incorporada del Brazo Biónico (A6b); sin él, no sale.
   onArmaIncorporada?: OnArmaIncorporada;
+  // La elección de un nivel de una pieza instalada (eq-36); sin él, se enseña sin poder cambiarla.
+  onEleccionDeNivel?: OnEleccionDeNivel;
   // Convertir un arma melee en arma modificada (S87); sin él, no sale.
   onConvertirArma?: OnConvertirArma;
   // Tope de rareza de creación (letra de Recursos); null sin tope.
@@ -385,7 +445,7 @@ export function EquipoTab({
             <p className="mt-3 font-mono text-[10px] uppercase tracking-widest text-muted">
               Ranuras de subsistema: {usadas}/{cat.ranurasSubsistema}
             </p>
-            <Instalado sheet={sheet} hostInstanciaId={a.instanciaId} onDesequipar={onDesequipar} />
+            <Instalado sheet={sheet} hostInstanciaId={a.instanciaId} onDesequipar={onDesequipar} onEleccionDeNivel={onEleccionDeNivel} />
           </Acordeon>
         );
       })}
@@ -406,7 +466,7 @@ export function EquipoTab({
             <p className="mt-3 font-mono text-[10px] uppercase tracking-widest text-muted">
               Mejoras instaladas: {usadas}/{cat.mejorasAdmitidas}
             </p>
-            <Instalado sheet={sheet} hostInstanciaId={a.instanciaId} onDesequipar={onDesequipar} />
+            <Instalado sheet={sheet} hostInstanciaId={a.instanciaId} onDesequipar={onDesequipar} onEleccionDeNivel={onEleccionDeNivel} />
           </Acordeon>
         );
       })}

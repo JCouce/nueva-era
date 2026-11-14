@@ -54,10 +54,13 @@ export const MEJORAS_ARMA: MejoraDeArma[] = [
     familia: "mejoraArma",
     id: "mira_telescopica",
     label: "Mira Telescópica",
-    resumen: "+1 al ataque a media y larga distancia. Solo fusiles.",
+    resumen: "+1 al ataque a media y larga distancia. Fusiles, arco y ballesta.",
+    // El arco y la ballesta la admiten por su lista (`mejorasPermitidas`, td-03), no por esta
+    // compatibilidad.
     descripcion:
-      "Solo compatible con fusiles de asalto y fusiles de precisión. Los fusiles de precisión " +
-      "ya la llevan integrada de nivel 1: solo admiten nivel 2 o 3, que sustituye a la integrada.",
+      "Solo compatible con fusiles de asalto y fusiles de precisión (y, por decisión de mesa, con el " +
+      "Arco Táctico y la Ballesta). Los fusiles de precisión ya la llevan integrada de nivel 1: solo " +
+      "admiten nivel 2 o 3, que sustituye a la integrada.",
     compatibilidad: { tipo: "porTipoArma", tiposPermitidos: ["fusil_asalto", "fusil_precision"] },
     niveles: [
       {

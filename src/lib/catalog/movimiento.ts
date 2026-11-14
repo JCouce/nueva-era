@@ -190,10 +190,22 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         maniobrabilidad: -3,
         notaTirada:
           "Acción simple, 1 carga cada 3 acciones de vuelo. Fallo: recorres la mitad. Fracaso crítico: " +
-          "desplazamiento descontrolado. Máxima Potencia declara acción Compleja y 2 cargas. (La " +
-          "elección Velocidad/Maniobrabilidad de la Progresión no está mecanizada — aplícala a mano si " +
-          "la tomaste.)",
+          "desplazamiento descontrolado. Máxima Potencia declara acción Compleja y 2 cargas.",
         bonusCriticoM: 50,
+        // «El usuario debe elegir una de dos opciones de mejora (la cual comprometerá el siguiente
+        // nivel)» (eq-36): se elige en Equipo; cambia los metros y la dificultad de «Volar», la
+        // velocidad de vuelo de la ficha y la esquiva en vuelo (rules/eleccionNivel.ts).
+        eleccion: {
+          etiqueta: "Progresión",
+          opciones: [
+            { id: "velocidad", label: "Velocidad", detalle: "+20 m de velocidad base; el crítico de Máxima Potencia, +60 m (nivel 4: 160 m y +80 m)." },
+            { id: "maniobrabilidad", label: "Maniobrabilidad", detalle: "1 menos de dificultad de maniobra (nivel 3: −2; nivel 4: −3)." },
+          ],
+        },
+        porEleccion: {
+          velocidad: { velocidadM: 120, bonusCriticoM: 60 },
+          maniobrabilidad: { maniobrabilidad: -2 },
+        },
         motor: [
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "ajuste_fijo", estado: "construido" },
@@ -202,9 +214,9 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
           // están: casilla "En vuelo" de la esquiva (conEsquivaEnVuelo, S101).
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
-          // La elección Velocidad/Maniobrabilidad no se guarda en la ficha
-          // todavía (comentario de NivelModulo.velocidadM) — texto puro hoy.
-          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "pendiente" },
+          // La Progresión (eq-36): la elección guardada en la pieza cambia el ajuste fijo de
+          // maniobrabilidad de «Volar» (y su velocidad, el derivado de arriba).
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "ajuste_fijo", estado: "construido" },
         ],
       },
       {
@@ -222,9 +234,15 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         maniobrabilidad: -4,
         notaTirada:
           "Acción simple, 1 carga cada 4 acciones de vuelo. Fallo: recorres la mitad. Fracaso crítico: " +
-          "desplazamiento descontrolado. Máxima Potencia declara acción Compleja y 2 cargas. (La mejora " +
-          "de Velocidad de la Progresión — 160 m base, +80 m en crítico — no está mecanizada.)",
+          "desplazamiento descontrolado. Máxima Potencia declara acción Compleja y 2 cargas.",
         bonusCriticoM: 70,
+        // La Progresión elegida en el nivel 3: «velocidad 140 metros (o 160 si eligió la progresión
+        // de Velocidad)», «70 metros adicionales (u 80…)», «dificultad base -4 (modificada según la
+        // elección)».
+        porEleccion: {
+          velocidad: { velocidadM: 160, bonusCriticoM: 80 },
+          maniobrabilidad: { maniobrabilidad: -3 },
+        },
         motor: [
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "ajuste_fijo", estado: "construido" },

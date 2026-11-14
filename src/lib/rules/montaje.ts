@@ -35,6 +35,7 @@ import {
   type AtributosExtremidad,
   type BonoPorTramo,
   type CondicionTirada,
+  type EfectoDanioCasilla,
   type EstadoCondiciones,
   type NotaMontada,
   type OpcionCondicion,
@@ -150,9 +151,10 @@ const SIN_AJUSTE_DANIO: AjusteDanio = { ajustes: [], categoria: null, sinBonoExi
 
 type Toggle = Extract<CondicionTirada, { tipo: "toggle" }>;
 
-// Cambios al daño de las casillas marcadas. «Derribo con acción estándar» (conBonoExitos)
-// devuelve el bono por éxitos que quita «Derribo» (sinBonoExitos).
-function danioDeCasillas(activas: Toggle[]): AjusteDanio {
+// Cambios al daño de las casillas marcadas y de las opciones elegidas (el modo adicional del
+// Proyector, eq-23). «Derribo con acción estándar» (conBonoExitos) devuelve el bono por éxitos
+// que quita «Derribo» (sinBonoExitos).
+function danioDeCasillas(activas: { etiqueta: string; danio?: EfectoDanioCasilla }[]): AjusteDanio {
   const conDanio = activas.filter((c) => c.danio);
   if (conDanio.length === 0) return SIN_AJUSTE_DANIO;
   const categoria = conDanio.find((c) => c.danio!.categoria);
@@ -497,7 +499,7 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     modoElegido: modo,
     ventaja: tirada.ventaja ?? activas.find((c) => c.ventaja)?.etiqueta ?? ventajaDeOpcion(elegidas),
     subeGrado: activas.find((c) => c.subeGrado)?.etiqueta ?? tirada.subeGradoFijo ?? null,
-    danio: conAjustesDanio(conDanioFijo(danioDeCasillas(activas), tirada.ataque?.sinBonoExitos), [
+    danio: conAjustesDanio(conDanioFijo(danioDeCasillas([...activas, ...elegidas]), tirada.ataque?.sinBonoExitos), [
       ...ajusteDanioDeExtremidad(ficha.ficha, mods, modsAplicado, extremidad, sutil && tirada.aplicadoSutil !== undefined),
       ...ajusteDanioFuerzaEntera(ficha.ficha, mods, tirada, activas),
     ]),

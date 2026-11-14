@@ -2,6 +2,9 @@ import type { NivelModulo } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
 import type { EfectoAlRecibir } from "../rules/resistirDanio";
 import type { ModoOcultacion, Ocultacion } from "../rules/sigilo";
+import type { EfectoArma } from "../rules/efectosArma";
+import { enCritico, salva, texto } from "./efectosArma";
+import { FALLA_RADIACION } from "./municion";
 
 export type Subsistema = {
   familia: "subsistema";
@@ -20,8 +23,58 @@ export type Subsistema = {
   // omite en vez de forzarlo a encajar.
   celula?: { cargas: number; recarga: string; bateriaCoste: number };
   notaApilamiento?: string;
+  // Lo que sus ataques le hacen al objetivo (Proyector de Pulso, eq-23), por modo de ataque
+  // (`soloEn.modo`, la etiqueta del modo) y por modo adicional (`soloEn.opcion` / `salvoEn`). Las
+  // dificultades «N + Nivel» de la fuente van como N: el motor les suma el nivel instalado
+  // (efectosDelProyector, combate.ts).
+  efectosObjetivo?: EfectoArma[];
   niveles: NivelModulo[];
 };
+
+// Proyector de Pulso: el selector «Modo adicional» de sus ataques (eq-23, Murillo: se eligen
+// libremente) y sus efectos sobre el objetivo, como dato (docs/fuente/equipamiento.md, tabla
+// «Modo de Ataque» y niveles 2-4). Etiquetas de los modos de ataque, las de la tabla.
+export const ID_MODO_ADICIONAL = "modo_adicional";
+const PULSO = "Pulso";
+const CARGADO = "Pulso Cargado";
+const BARRIDO = "Barrido";
+const AGUIJON = "Aguijón";
+// «Shock (4 + Nivel)», «(6 + Nivel)», «(7 + Nivel)» y el Aguijón «(4 + Nivel)».
+const SHOCK_POR_MODO: [string, number][] = [[PULSO, 4], [CARGADO, 6], [BARRIDO, 7], [AGUIJON, 4]];
+// «Crítico: Hemorragia» en Pulso, Pulso Cargado y Aguijón; el Barrido no trae crítico, así que los
+// modos adicionales («cambiando el efecto crítico convencional por…») no le ponen ninguno.
+const CON_CRITICO = [PULSO, CARGADO, AGUIJON];
+const conModo = (ids: string[]) => ({ condicion: ID_MODO_ADICIONAL, ids });
+// TODO(revisar): la tabla no da duración a la Hemorragia del Proyector (las armas dicen 1dN turnos).
+const HEMORRAGIA_PULSO: EfectoArma = {
+  tipo: "estado",
+  estadoId: "hemorragia",
+  duracion: { tipo: "sinDuracion", motivo: "la tabla no da su duración (la decide el máster)" },
+  cuando: "critico",
+};
+const EFECTOS_PROYECTOR_PULSO: EfectoArma[] = [
+  // Lo convencional: el Shock de cada modo (Disrupción de Campo lo sube) y la Hemorragia de crítico
+  // (los tres modos adicionales la sustituyen).
+  ...SHOCK_POR_MODO.map(([m, d]): EfectoArma => ({ ...salva("shock", d), soloEn: { modo: [m] }, salvoEn: { opcion: conModo(["disrupcion"]) } })),
+  { ...HEMORRAGIA_PULSO, soloEn: { modo: CON_CRITICO }, salvoEn: { opcion: conModo(["flux", "fotones", "disrupcion"]) } },
+  // Flux Radiactivo: «Envenenamiento por Radiación (dificultad de resistencia: 8 + Nivel)» en vez
+  // del crítico. Lo que pasa al fallarla, como la Munición Radiactiva (la fuente llama a lo de esa
+  // munición «envenenado por radiación»). TODO(revisar): la fuente no da los grados aquí.
+  { ...enCritico({ ...salva("envenenamiento", 8), tabla: FALLA_RADIACION }), soloEn: { modo: CON_CRITICO, opcion: conModo(["flux"]) } },
+  // Fotones Coherentes: «causa el efecto de Llamarada (con salvación idéntica al shock)» y
+  // «sustituye el crítico convencional por Ceguera (dificultad: 8 + Nivel)». El daño a Fuego, en el
+  // modo (`danio`).
+  ...SHOCK_POR_MODO.map(([m, d]): EfectoArma => ({ ...salva("llamarada", d), soloEn: { modo: [m], opcion: conModo(["fotones"]) } })),
+  { ...enCritico(salva("ceguera", 8)), soloEn: { modo: CON_CRITICO, opcion: conModo(["fotones"]) } },
+  // Disrupción de Campo: «El efecto de shock incrementa su dificultad en 1» y, en crítico, «destruye
+  // el blindaje o armadura del objetivo, consumiendo 1 punto (si el objetivo carece de blindaje,
+  // causa Hemorragia de forma normal)».
+  ...SHOCK_POR_MODO.map(([m, d]): EfectoArma => ({ ...salva("shock", d + 1), soloEn: { modo: [m], opcion: conModo(["disrupcion"]) } })),
+  {
+    ...enCritico(texto("Destruye 1 punto de blindaje o armadura del objetivo (si no tiene blindaje, Hemorragia normal)")),
+    soloEn: { modo: CON_CRITICO, opcion: conModo(["disrupcion"]) },
+  },
+];
 
 // Malla Plasmática, devolver el golpe (eq-24 del cuestionario, usuario 2026-11-13): «Si el
 // usuario es impactado por un golpe melee devuelve daño al objeto con el que es golpeado o al
@@ -539,6 +592,7 @@ export const SUBSISTEMAS: Subsistema[] = [
     ranurasQueConsume: 1,
     accionActivacion: "Cada ataque consume las cargas del modo elegido; se dispara como cualquier arma.",
     celula: { cargas: 10, recarga: "1 hora con conector (1 carga cada 6 minutos)", bateriaCoste: 150 },
+    efectosObjetivo: EFECTOS_PROYECTOR_PULSO,
     // La tabla "Modo de Ataque" del documento no es de uso (activo/pasivo),
     // es de disparo: cuatro perfiles distintos, cada uno con su propio coste,
     // dificultad, daño y alcance (escalan con el Nivel instalado).
@@ -587,6 +641,9 @@ export const SUBSISTEMAS: Subsistema[] = [
         // TODO(revisar): «solo percepción visual»; se resta del número entero del estado.
         delataAlAtacar: { motivo: "ionización", valor: 5 },
         motor: [
+          // Efectos sobre el objetivo de cada modo (Shock, Hemorragia de crítico), como dato
+          // (`efectosObjetivo`): aviso en el resultado con los rangos desde tu total (eq-23).
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "nota_fija", estado: "construido" },
           // Hallazgo #1, construido 2026-09-23: tiradaDeProyectorPulso()
           // (combate.ts), registrado en REGISTRO_DE_ATAQUE bajo "subsistema".
           // Aguijón (melee-dentro-de-arma-a-distancia) y "elige habilidad" ya
@@ -609,13 +666,14 @@ export const SUBSISTEMAS: Subsistema[] = [
             "Envenenamiento por Radiación (dificultad 8 + nivel).",
         ],
         modificadores: [],
+        modoAdicional: {
+          id: "flux",
+          label: "Flux Radiactivo",
+          nota: "El crítico es Envenenamiento por Radiación (dificultad 8 + nivel) en vez de Hemorragia.",
+        },
         motor: [
-          // Texto informativo en la nota de la tirada (mismo criterio "app
-          // informa, no arbitra" que el resto del catálogo) — el jugador
-          // elige entre los críticos desbloqueados en el momento de tirar,
-          // sin mecanismo estructurado (el mecanismo genérico de impacto/
-          // crítico sigue sin construir, ver equipo-efectos-especiales.md).
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_proyector_pulso" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+          // Selector «Modo adicional» al tirar (eq-23): el crítico que pone va por efectosObjetivo.
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "envenenamiento" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
       {
@@ -627,8 +685,16 @@ export const SUBSISTEMAS: Subsistema[] = [
             "(misma salvación que el shock); el crítico pasa a Ceguera (dificultad 8 + nivel).",
         ],
         modificadores: [],
+        modoAdicional: {
+          id: "fotones",
+          label: "Fotones Coherentes",
+          nota: "Daño a Fuego y Llamarada (misma dificultad que el Shock); el crítico es Ceguera (dificultad 8 + nivel).",
+          danio: { categoria: "Fuego" },
+        },
         motor: [
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_proyector_pulso" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+          // Daño a Fuego: resolución del daño de la opción elegida (`danio.categoria`).
+          { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_proyector_pulso" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "llamarada" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
       {
@@ -641,8 +707,13 @@ export const SUBSISTEMAS: Subsistema[] = [
             "Hemorragia normal).",
         ],
         modificadores: [],
+        modoAdicional: {
+          id: "disrupcion",
+          label: "Disrupción de Campo",
+          nota: "Shock +1 de dificultad; el crítico destruye 1 punto de blindaje del objetivo (sin blindaje, Hemorragia normal).",
+        },
         motor: [
-          { tipo: "texto", afecta: { modo: "accion_existente", id: "ataque_proyector_pulso" }, mecanismo: "nota_fija", estado: "ad_hoc" },
+          { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "shock" }, mecanismo: "eleccion_jugador", estado: "construido" },
         ],
       },
     ],

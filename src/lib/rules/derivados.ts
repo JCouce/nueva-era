@@ -20,6 +20,7 @@ import type { FormulaMovimiento } from "./formulaMovimiento";
 import { equipoPorId } from "../catalog/equipo";
 import { modificadoresDeEquipo } from "./equipo";
 import { modificadoresDeAumentos } from "./aumentos";
+import { nivelConEleccion } from "./eleccionNivel";
 import type { Sheet } from "./sheet";
 import { admiteEspecialidades } from "../catalog/especialidades";
 
@@ -266,7 +267,8 @@ export function vuelo(sheet: Sheet): { velocidadM: number; nivel: number } | nul
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
     if (cat?.familia !== "movimiento" || cat.tope !== "movilidadAerea") continue;
-    const nivelInfo = cat.niveles.find((n) => n.nivel === pieza.nivel);
+    // Con la Progresión de Movilidad Aérea 3 elegida (eq-36).
+    const nivelInfo = nivelConEleccion(pieza, cat);
     if (nivelInfo?.velocidadM === undefined) continue;
     return { velocidadM: nivelInfo.velocidadM, nivel: nivelInfo.nivel };
   }

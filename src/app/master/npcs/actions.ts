@@ -79,6 +79,8 @@ import {
   nuevaInstanciaId,
   armaIncorporadaEntradaSchema,
   fijarArmaIncorporada,
+  eleccionNivelEntradaSchema,
+  fijarEleccionDeNivel,
 } from "@/lib/rules";
 
 export type NpcResult = { ok: true; sheet: Sheet } | { ok: false; error: string };
@@ -393,6 +395,17 @@ export async function fijarArmaIncorporadaNpcAction(npcId: string, entrada: unkn
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   const res = fijarArmaIncorporada(ctx.sheet, parsed.data.brazoInstanciaId, parsed.data.armaInstanciaId);
+  if (!res.ok) return res;
+  return persist(npcId, res.sheet);
+}
+
+// La elección de un nivel de una pieza (eq-36): misma validación que la del personaje.
+export async function fijarEleccionDeNivelNpcAction(npcId: string, entrada: unknown): Promise<NpcResult> {
+  const parsed = eleccionNivelEntradaSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Elección no válida" };
+  const ctx = await loadSheet(npcId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const res = fijarEleccionDeNivel(ctx.sheet, parsed.data.instanciaId, parsed.data.eleccion);
   if (!res.ok) return res;
   return persist(npcId, res.sheet);
 }

@@ -1,7 +1,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet } from "./sheet";
-import { equipar } from "./equipo";
+import { equipar, tieneVtf } from "./equipo";
 import { accionesDeHerramientas, accionesDirectasDeHerramientas, ID_CASILLA_MATERIALES_REPARAR, tiradaDeReparar } from "./herramientas";
 import type { Rareza } from "../catalog/equipo";
 import { dificultadTrasCambio, estadoInicial } from "./condiciones";
@@ -24,6 +24,13 @@ describe("Valija Táctica de Fabricación", () => {
       nivel: 1,
     });
     assert.deepEqual(accionesDeHerramientas(sheet), []);
+  });
+
+  // eq-34: la valija abre o cierra la parte de Fabricar de «Reparar y Fabricar» (el modal y
+  // fabricarAction miran tieneVtf).
+  test("abre Fabricar: tieneVtf con ella, no sin ella", () => {
+    assert.equal(tieneVtf(defaultSheet()), false);
+    assert.equal(tieneVtf(equipar(defaultSheet(), { instanciaId: "v1", catalogoId: "valija_tactica_fabricacion", nivel: 1 })), true);
   });
 });
 

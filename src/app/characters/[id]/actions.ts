@@ -116,6 +116,8 @@ import {
   usoDeAccionAumento,
   armaIncorporadaEntradaSchema,
   fijarArmaIncorporada,
+  eleccionNivelEntradaSchema,
+  fijarEleccionDeNivel,
   marcarFavorita,
   conversionArmaEntradaSchema,
   conversionDeArma,
@@ -617,6 +619,19 @@ export async function fijarArmaIncorporadaAction(characterId: string, entrada: u
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   const res = fijarArmaIncorporada(ctx.sheet, parsed.data.brazoInstanciaId, parsed.data.armaInstanciaId);
+  if (!res.ok) return res;
+  return persist(ctx, characterId, res.sheet);
+}
+
+// La elección de un nivel de una pieza (Movilidad Aérea 3: Velocidad o Maniobrabilidad, eq-36): el
+// servidor comprueba que la pieza es de la ficha, que su nivel tiene elección y que la opción es
+// suya (fijarEleccionDeNivel). Sin coste.
+export async function fijarEleccionDeNivelAction(characterId: string, entrada: unknown): Promise<SaveResult> {
+  const parsed = eleccionNivelEntradaSchema.safeParse(entrada);
+  if (!parsed.success) return { ok: false, error: "Elección no válida" };
+  const ctx = await loadEditable(characterId);
+  if ("error" in ctx) return { ok: false, error: ctx.error };
+  const res = fijarEleccionDeNivel(ctx.sheet, parsed.data.instanciaId, parsed.data.eleccion);
   if (!res.ok) return res;
   return persist(ctx, characterId, res.sheet);
 }

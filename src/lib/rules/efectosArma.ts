@@ -64,15 +64,27 @@ export type DuracionEfecto = z.infer<typeof duracionSchema>;
 // ataque original», Golpe Fatigante) o tantos éxitos como los de tu ataque (maniobra Derribo).
 const dificultadSchema = z.union([z.number().int().min(0), z.literal("totalDelAtaque"), z.literal("exitosDelAtaque")]);
 
+const opcionElegidaSchema = z.strictObject({ condicion: z.string().min(1), ids: z.array(z.string().min(1)).min(1) });
+
 const comunes = {
   cuando: z.enum(["acierto", "critico", "siempre"]),
   // Solo con esa opción elegida al tirar: el modo («Acción Compleja: Derribo (8)»; por su
   // etiqueta en la tabla del arma), el tramo de distancia (Derribo de escopetas y
   // ametralladoras en corta y bocajarro) o una casilla marcada (la de la dote: «Golpe
   // fatigante»; la maniobra «Derribo»).
+  // `opcion`: la opción elegida en un selector de la tirada, por su id de condición (el
+  // «Modo adicional» del Proyector de Pulso, eq-23).
   soloEn: z
-    .strictObject({ modo: z.array(z.string().min(1)).optional(), tramo: z.array(z.enum(TRAMOS)).optional(), casilla: z.string().min(1).optional() })
+    .strictObject({
+      modo: z.array(z.string().min(1)).optional(),
+      tramo: z.array(z.enum(TRAMOS)).optional(),
+      casilla: z.string().min(1).optional(),
+      opcion: opcionElegidaSchema.optional(),
+    })
     .optional(),
+  // Salvo con esa opción elegida: lo convencional que un modo adicional sustituye («cambiando el
+  // efecto crítico convencional por…», Proyector de Pulso). Sin el selector en la tirada, vale.
+  salvoEn: z.strictObject({ opcion: opcionElegidaSchema }).optional(),
   // «Si el objetivo recibe daño» (Munición Supresora): el acierto no basta, lo dice el aviso.
   soloSiRecibeDanio: z.literal(true).optional(),
   // Lo que la fuente añade y no cabe en lo anterior (sintéticos +2, relanzar a los 10 turnos…).
@@ -202,16 +214,22 @@ function etiquetaModoElegido(t: TiradaConEfectos, estado: EstadoCondiciones): st
   return modos.find((m) => m.id === id)?.etiqueta ?? null;
 }
 
-// ¿Vale el efecto con lo elegido al tirar? (modo, tramo y casilla marcada).
+// ¿Vale el efecto con lo elegido al tirar? (modo, tramo, casilla marcada y opción de un selector).
 export function efectoAplicaCon(
-  e: Pick<EfectoArma, "soloEn">,
+  e: Pick<EfectoArma, "soloEn" | "salvoEn">,
   modo: string | null,
   tramo: string | null,
   estado: EstadoCondiciones = {},
 ): boolean {
+  const elegida = (o: { condicion: string; ids: string[] }) => {
+    const v = estado[o.condicion];
+    return typeof v === "string" && o.ids.includes(v);
+  };
   if (e.soloEn?.modo && (modo === null || !e.soloEn.modo.includes(modo))) return false;
   if (e.soloEn?.tramo && (tramo === null || !e.soloEn.tramo.includes(tramo as TramoDistancia))) return false;
   if (e.soloEn?.casilla && estado[e.soloEn.casilla] !== true) return false;
+  if (e.soloEn?.opcion && !elegida(e.soloEn.opcion)) return false;
+  if (e.salvoEn?.opcion && elegida(e.salvoEn.opcion)) return false;
   return true;
 }
 

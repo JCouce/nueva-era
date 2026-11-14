@@ -29,7 +29,7 @@
 // los tipos compartidos por varias familias (Rareza, NivelModulo,
 // Herramienta, Consumible) más el tipo unión Equipo y equipoPorId.
 import type { AlcanceModificador, Modificador } from "../rules/modificadores";
-import type { CondicionTirada, TramoDistancia } from "../rules/condiciones";
+import type { CondicionTirada, EfectoDanioCasilla, TramoDistancia } from "../rules/condiciones";
 import type { MotorMetadata } from "../rules/motor";
 import type { HabilidadId } from "../rules/habilidades";
 import type { EfectoSalvacion } from "../rules/aumentosTiradas";
@@ -114,10 +114,20 @@ export type NivelModulo = {
   modificadores: Modificador[];
   // Solo lo usa Movilidad Aérea: la velocidad base de vuelo de ese nivel, en
   // metros, para poder mostrarla en el card de Movimiento sin parsear el
-  // texto de `detalle`. No incluye la mejora opcional de +20 m (Progresión
-  // de nivel 3): esa elección no se guarda todavía en la ficha, se queda en
-  // `detalle` como texto.
+  // texto de `detalle`. Sin la Progresión de nivel 3: lo que cambia con ella va en
+  // `porEleccion` (eq-36).
   velocidadM?: number;
+  // Una elección que abre este nivel y que vale desde él (S9: la heredan los superiores):
+  // Movilidad Aérea 3, Velocidad o Maniobrabilidad (eq-36). Se elige en Equipo y se guarda en
+  // PiezaEquipada.eleccion (rules/eleccionNivel.ts). Sin elegir, los valores de la tabla.
+  eleccion?: EleccionDeNivel;
+  // Lo que cambia en ESTE nivel cada opción de la elección: totales del nivel, como velocidadM.
+  porEleccion?: Record<string, CambiosPorEleccion>;
+  // Modo adicional que abre este nivel (Proyector de Pulso 2-4, eq-23): una opción más del
+  // selector «Modo adicional» de los ataques de la pieza, que se elige libremente al tirar, con lo
+  // que cambia del daño (`danio`: Fotones Coherentes, a Fuego). Lo que le hace al objetivo va en
+  // los `efectosObjetivo` de la pieza, con `soloEn.opcion` (condicionModoAdicional, combate.ts).
+  modoAdicional?: ModoAdicional;
   // Efectos condicionados a una elección del jugador EN el momento de tirar
   // (apoyar el bípode, activar el puntero…): a diferencia de `modificadores`,
   // que es incondicional mientras se lleva puesto, esto solo se pinta en el
@@ -229,6 +239,18 @@ export type NivelModulo = {
   alShock?: AlShock;
   motor?: MotorMetadata[]; // docs/motor.md — un MotorMetadata por efecto DE ESTE NIVEL
 };
+
+export type ModoAdicional = { id: string; label: string; nota: string; danio?: EfectoDanioCasilla };
+
+// La elección de un nivel (eleccion de NivelModulo): qué se pregunta y las opciones.
+export type EleccionDeNivel = {
+  etiqueta: string;
+  opciones: { id: string; label: string; detalle: string }[];
+};
+
+// Los campos de un nivel que una opción puede cambiar (Movilidad Aérea: metros y dificultad de
+// maniobra). Cerrado a propósito: una elección nueva que toque otra cosa lo añade aquí.
+export type CambiosPorEleccion = Partial<Pick<NivelModulo, "velocidadM" | "bonusCriticoM" | "maniobrabilidad">>;
 
 // Bono de una pieza a una salvación contra unas amenazas. `subeLaDeLaArmadura`: el bono es el
 // total que pasa a tener la armadura contra ellas, no uno aparte (Mejora Ignífuga 2: "mejora
