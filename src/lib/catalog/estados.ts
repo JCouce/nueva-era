@@ -1040,6 +1040,21 @@ export const ESTADOS_DE_AUMENTO: Estado[] = [
       },
     ],
   },
+  // E5a: Metabolismo Sintético 4, la sobrecarga metabólica (3 rondas).
+  {
+    id: "aum_metabolismo_sobrecarga",
+    label: "Sobrecarga metabólica",
+    resumen: "Metabolismo Sintético 4: sin penalizadores por fatiga y ventaja en las salvaciones de Fortaleza.",
+    grados: [
+      {
+        id: "activo",
+        label: "Activa",
+        modificadores: [],
+        detalle: ["Sin penalizadores por fatiga. Ventaja en todas las salvaciones de Fortaleza."],
+        duracionTurnos: 3,
+      },
+    ],
+  },
   {
     id: "aum_proyeccion",
     label: "Proyección Neuro-Expresiva",

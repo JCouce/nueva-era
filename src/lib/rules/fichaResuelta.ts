@@ -387,7 +387,7 @@ function aportesDePiezasApagadas(sheet: Sheet, estados: EstadoActivo[], inutiliz
     pon(s.origen, { tipo: "tiradaId", id: s.salvacion });
   }
   for (const t of textosDeAumentos(sheet)) pon(t.origen, t.en);
-  for (const v of ventajasFijasDeAumentos(sheet)) pon(v.origen, v.alcance);
+  for (const v of [...ventajasFijasDeAumentos(sheet), ...efectosDeActivables(sheet, estados).ventajasFijas]) pon(v.origen, v.alcance);
   for (const b of bonosTramoDeAumentos(sheet)) pon(b.bono.origen, b.alcance);
   return aportes;
 }
@@ -535,7 +535,7 @@ export function resolverFicha(
     ]),
     textosTirada: [...textosDeEspecie(especie), ...dotes.textos, ...textosDeAumentos(enUso), ...activables.textos],
     objetivosTirada: dotes.objetivos,
-    ventajasFijas: ventajasFijasDeAumentos(enUso),
+    ventajasFijas: [...ventajasFijasDeAumentos(enUso), ...activables.ventajasFijas],
     fallosCriticos: fallosCriticosDeEspecie(especie),
     extrasDotes: {
       bonosTramo: [...dotes.bonosTramo, ...bonosTramoDeAumentos(enUso)],

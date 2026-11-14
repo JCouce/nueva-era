@@ -21,11 +21,15 @@
 //                     +1/+2 de la activa, no se suman). El resto de lo que hace aquel, sí.
 //   eliminaPenalizadoresUmbrales  (A5b) heridas y fatiga a 0 (Neuroprótesis 4), por el ajuste
 //                     de umbrales con un valor que cubre cualquier tramo y `elimina`: fuera también
-//                     la media velocidad y el recorte de carga de sus umbrales (td-10).
+//                     la media velocidad y el recorte de carga de sus umbrales (td-10). Con
+//                     "fatiga", solo la fatiga (Metabolismo Sintético 4, E5a).
+//   ventajasFijas     (E5a) ventaja sin casilla en las tiradas de ese alcance mientras dura
+//                     (Metabolismo Sintético 4: las salvaciones de Fortaleza); como las de
+//                     Red Frontoparietal (ventajasFijasDeAumentos).
 // Sin la pieza (o con el requisito roto), el estado sigue en la lista hasta que caduque o se
 // desactive, pero no hace nada.
 import type { AplicadoId } from "./atributos";
-import type { EfectoSalvacion } from "./aumentosTiradas";
+import type { EfectoSalvacion, VentajaFija } from "./aumentosTiradas";
 import type { DestinoTexto } from "../catalog/especies";
 import type { TextoEnTirada } from "./especie";
 import { aumentoPorId, operacionesActivas } from "./aumentos";
@@ -44,7 +48,8 @@ export type ActivoAumento = {
   anulaPenalizadores?: AlcanceModificador;
   textos?: { en: DestinoTexto; texto: string }[];
   sustituyePruebasDe?: string;
-  eliminaPenalizadoresUmbrales?: true;
+  eliminaPenalizadoresUmbrales?: true | "fatiga";
+  ventajasFijas?: { alcance: AlcanceModificador }[];
 };
 
 // Más que cualquier tramo de §7 (el peor es −5): el ajuste lo deja en 0 y no da línea.
@@ -57,6 +62,7 @@ export type EfectosActivables = {
   ajusteUmbrales: AjusteUmbrales;
   salvaciones: { fuente: string; efectos: EfectoSalvacion[]; origen: OrigenAporte }[];
   textos: TextoEnTirada[];
+  ventajasFijas: VentajaFija[];
 };
 
 export const SIN_EFECTOS_ACTIVABLES: EfectosActivables = {
@@ -64,6 +70,7 @@ export const SIN_EFECTOS_ACTIVABLES: EfectosActivables = {
   ajusteUmbrales: SIN_AJUSTE_UMBRALES,
   salvaciones: [],
   textos: [],
+  ventajasFijas: [],
 };
 
 // El `activo` de cada pieza equipada que funciona, con su fuente ("Neuroprótesis Simpática 2").
@@ -90,18 +97,25 @@ export function activosDeAumentos(sheet: Pick<Sheet, "equipo">): { fuente: strin
   });
 }
 
-export function efectosDeActivables(sheet: Pick<Sheet, "equipo">, estados: readonly EstadoActivo[]): EfectosActivables {
-  const encendidos = activosDeAumentos(sheet).flatMap(({ fuente, activo, origen }) => {
+// Los activables con su estado puesto.
+function encendidosDe(sheet: Pick<Sheet, "equipo">, estados: readonly EstadoActivo[]) {
+  return activosDeAumentos(sheet).flatMap(({ fuente, activo, origen }) => {
     const estado = estados.find((e) => e.estadoId === activo.estadoId);
     return estado ? [{ fuente, activo, grado: estado.gradoId, origen }] : [];
   });
+}
+
+export function efectosDeActivables(sheet: Pick<Sheet, "equipo">, estados: readonly EstadoActivo[]): EfectosActivables {
+  const encendidos = encendidosDe(sheet, estados);
   if (encendidos.length === 0) return SIN_EFECTOS_ACTIVABLES;
 
   const modificadores: ModificadorConFuente[] = [];
   const salvaciones: EfectosActivables["salvaciones"] = [];
   const textos: TextoEnTirada[] = [];
+  const ventajasFijas: VentajaFija[] = [];
   let reduccion: ReduccionDeUmbrales | null = null;
-  let elimina: string | null = null;
+  let eliminaSalud: string | null = null;
+  let eliminaFatiga: string | null = null;
   const sustituidos = new Set(encendidos.flatMap(({ activo }) => (activo.sustituyePruebasDe ? [activo.sustituyePruebasDe] : [])));
   for (const { fuente, activo, grado, origen } of encendidos) {
     const pruebas = sustituidos.has(activo.estadoId) ? {} : { ...activo.pruebas };
@@ -112,7 +126,11 @@ export function efectosDeActivables(sheet: Pick<Sheet, "equipo">, estados: reado
       modificadores.push({ tipo: "tirada", alcance: { tipo: "aplicado", aplicados: [id] }, valor, origen: "estado", fuente, item: origen });
     }
     for (const t of activo.textos ?? []) textos.push({ en: t.en, texto: t.texto, fuente, soloEnCritico: false, origen });
-    if (activo.eliminaPenalizadoresUmbrales) elimina = fuente;
+    if (activo.eliminaPenalizadoresUmbrales) {
+      eliminaFatiga = fuente;
+      if (activo.eliminaPenalizadoresUmbrales === true) eliminaSalud = fuente;
+    }
+    for (const v of activo.ventajasFijas ?? []) ventajasFijas.push({ alcance: v.alcance, fuente, origen });
     if (activo.anulaPenalizadores) {
       modificadores.push({ tipo: "anulaPenalizadores", alcance: activo.anulaPenalizadores, valor: 0, origen: "estado", fuente, item: origen });
     }
@@ -123,7 +141,9 @@ export function efectosDeActivables(sheet: Pick<Sheet, "equipo">, estados: reado
         : { valor: activo.reducePenalizadores, fuente };
     }
   }
-  const umbral = elimina ? { valor: ELIMINA_UMBRAL, fuente: elimina, elimina: true as const } : reduccion;
-  const ajusteUmbrales: AjusteUmbrales = umbral ? { salud: { ...umbral }, fatiga: { ...umbral } } : SIN_AJUSTE_UMBRALES;
-  return { modificadores, ajusteUmbrales, salvaciones, textos };
+  const umbral = (elimina: string | null) => (elimina ? { valor: ELIMINA_UMBRAL, fuente: elimina, elimina: true as const } : reduccion && { ...reduccion });
+  const salud = umbral(eliminaSalud);
+  const fatiga = umbral(eliminaFatiga);
+  const ajusteUmbrales: AjusteUmbrales = salud || fatiga ? { salud, fatiga } : SIN_AJUSTE_UMBRALES;
+  return { modificadores, ajusteUmbrales, salvaciones, textos, ventajasFijas };
 }

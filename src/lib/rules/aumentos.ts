@@ -412,11 +412,17 @@ export function ajusteCosteDeSubida(base: AjusteCoste, sheet: Pick<Sheet, "equip
 
 // ── Penalizadores (A3) ─────────────────────────────────────────────────
 
-// Las reducciones de penalizador de las operaciones que funcionan, con su pieza.
+// Las reducciones de penalizador de las operaciones que funcionan, con su pieza. Implantes (E5a:
+// Metabolismo Sintético 2+, Control Sensorial): la del nivel más alto que la trae (total del nivel).
 function reduccionesDeAumentos(sheet: Pick<Sheet, "equipo">): { fuente: string; r: ReduccionPenalizadorAumento }[] {
   const activas = operacionesActivas(sheet);
   return sheet.equipo.flatMap((pieza) => {
     const cat = aumentoPorId(pieza.catalogoId);
+    if (cat?.familia === "implante") {
+      if (pieza.nivel === undefined) return [];
+      const nivel = ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel), "reduceUmbrales");
+      return (nivel?.reduceUmbrales ?? []).map((r) => ({ fuente: `${cat.label} ${pieza.nivel}`, r }));
+    }
     if (cat?.familia !== "operacionGenetica" || !activas.has(cat.id)) return [];
     return (cat.reducePenalizador ?? []).map((r) => ({ fuente: cat.label, r }));
   });

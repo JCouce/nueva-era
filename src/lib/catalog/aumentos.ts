@@ -171,6 +171,11 @@ export type NivelImplante = NivelModulo & {
   // T6a (au-04, au-05): permite tener poderes, con este sobreesfuerzo. Cada nivel que lo trae lo
   // trae entero: vale el del nivel más alto (fuentesPsionicasDeAumentos).
   fuentePsionica?: FuentePsionica;
+  // E5a: puntos menos de penalizador por heridas y fatiga (Metabolismo Sintético 2, Control
+  // Sensorial), como el `reducePenalizador` de las operaciones (ajusteUmbralesDeAumentos). Total del
+  // nivel: vale el del nivel más alto que lo trae. (No es `NivelModulo.reducePenalizador`, el del
+  // equipo, que va por alcance.)
+  reduceUmbrales?: ReduccionPenalizadorAumento[];
 };
 
 export type Implante = {
@@ -1450,6 +1455,36 @@ const MOTOR_SOBREESFUERZO_IRM: MotorMetadata[] = [
   { tipo: "resolucion", afecta: { modo: "accion_existente", id: "sobreesfuerzo_psionico" }, mecanismo: "siempre_activo", estado: "construido" },
 ];
 
+// Metabolismo Sintético (E5a, sync Drive 2026-11-14). «Los bonificadores y efectos numéricos de
+// este implante en primer nivel aumentan en 1 por cada nivel subsiguiente»: la fatiga máxima (+1 …
+// +4, usuario 2026-11-14) y las salvaciones (+1 … +4); la apnea, ×2 … ×5. Mismas claves en cada
+// nivel: el alto sustituye al bajo. «Envenenamiento» = toxinas y venenos; «shock eléctrico» = shock.
+const CONTRA_METABOLISMO = ["congelacion", "enfermedad", "toxinas", "venenos", "fatiga", "paralisis", "shock"] as const;
+function nivelMetabolismo(nivel: number): Pick<NivelImplante, "modificadores" | "salvaciones"> {
+  const asfixia3 = nivel >= 3 ? " Ignoras el gasto de fatiga por acción en asfixia de grado 1." : "";
+  return {
+    modificadores: [{ tipo: "derivado", id: "fatiga", valor: nivel }],
+    salvaciones: [
+      { contra: [...CONTRA_METABOLISMO], bono: nivel },
+      // La apnea no es un número de la tirada (la app no mide el tiempo): nota en la opción «Asfixia».
+      { contra: ["asfixia"], nota: `aguantas ×${nivel + 1} el tiempo en apnea o sin oxígeno.${asfixia3}` },
+    ],
+  };
+}
+const MOTOR_NIVEL_METABOLISMO: MotorMetadata[] = [
+  // Fatiga máxima (Modificador "derivado" fatiga).
+  { tipo: "numerico", afecta: { modo: "accion_existente", id: "fatiga" }, mecanismo: "suma_derivado", estado: "construido" },
+  { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+  { tipo: "texto", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "eleccion_jugador", estado: "construido" },
+];
+
+// Metabolismo Sintético 4: sobrecarga metabólica, 3 turnos = 3 rondas (patrón Neuroprótesis).
+const ACTIVO_METABOLISMO: ActivoAumento = {
+  estadoId: "aum_metabolismo_sobrecarga",
+  eliminaPenalizadoresUmbrales: "fatiga",
+  ventajasFijas: [{ alcance: { tipo: "tiradaId", id: "salv_fortaleza" } }],
+};
+
 export const IMPLANTES: Implante[] = [
   {
     familia: "implante",
@@ -2167,6 +2202,92 @@ export const IMPLANTES: Implante[] = [
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ficha" }, mecanismo: "nota_fija", estado: "pendiente" },
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_tempestad_nanobotica" }, mecanismo: "accion_equipo", estado: "construido" },
           { tipo: "texto", afecta: { modo: "objetivo_tercero", id: "blindaje_del_objetivo" }, mecanismo: "nota_fija", estado: "construido" },
+        ],
+      },
+    ],
+  },
+  {
+    familia: "implante",
+    id: "aum_metabolismo_sintetico",
+    label: "Metabolismo Sintético",
+    resumen: "+1 a la fatiga máxima y a salvaciones contra toxinas, enfermedad, frío, parálisis y shock por nivel; más apnea, descanso y sobrecarga metabólica.",
+    descripcion:
+      "Conjunto de microimplantes de purificación intravascular, filtración molecular y reguladores enzimáticos acoplados de forma permanente al sistema cardiocirculatorio y linfático. Maximiza la absorción de oxígeno, neutraliza patógenos hemáticos, metaboliza toxinas y reescribe los umbrales de fatiga celular. Al ser un sistema electrónico-biológico integrado, es susceptible al estado de shock y al sabotaje por otros medios. Satura el sistema circulatorio, linfático y hematopoyético con hardware: es completamente incompatible con Biogénesis Mitocondrial, Angiogénesis Sistémica y Regeneración Tisular Acelerada.",
+    sabotaje: true,
+    shock: "cuerpo",
+    extraible: null,
+    // E4/E5a: declarada aquí (las operaciones no la repiten).
+    incompatibleCon: ["aum_biogenesis_mitocondrial", "aum_angiogenesis_sistemica", "aum_regeneracion_tisular_acelerada"],
+    niveles: [
+      {
+        nivel: 1,
+        rareza: "Poco Habitual",
+        coste: 18000,
+        detalle: [
+          "El personaje amplía su reserva máxima en +1 punto de fatiga.",
+          "El sistema optimiza el intercambio gaseoso y la respuesta inmunológica artificial. El personaje gana un bonificador de +1 en tiradas de salvación contra congelación, enfermedad, envenenamiento, fatiga inducida, parálisis y shock eléctrico. Además, duplica (x2) el tiempo máximo que el organismo puede permanecer en apnea o sin oxígeno ante un efecto de asfixia.",
+          "Los bonificadores y efectos numéricos de este implante en primer nivel aumentan en 1 por cada nivel subsiguiente. También el tiempo capaz de resistir sin oxígeno aumenta su multiplicador en 1 por nivel.",
+        ],
+        ...nivelMetabolismo(1),
+        motor: MOTOR_NIVEL_METABOLISMO,
+      },
+      {
+        nivel: 2,
+        rareza: "Extraño",
+        coste: 36000,
+        detalle: [
+          "Gracias a su eficacia circulatoria, cuando el personaje realiza un descanso corto de 10 minutos, recupera 1 punto extra de fatiga (sumando un total de 4 puntos recuperados en lugar de los 3 habituales). Adicionalmente, reduce en 1 los penalizadores acumulados por fatiga.",
+        ],
+        ...nivelMetabolismo(2),
+        reduceUmbrales: [{ de: "fatiga", valor: 1 }],
+        motor: [
+          ...MOTOR_NIVEL_METABOLISMO,
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
+          // Descanso corto: los descansos no están en la app; texto en la pieza.
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
+        ],
+      },
+      {
+        nivel: 3,
+        rareza: "Extraño",
+        coste: 72000,
+        detalle: [
+          "Asimila con mayor eficiencia los nutrientes: duplica la cantidad de fatiga recuperada por comida.",
+          "Además, el usuario de este implante ignora el gasto de fatiga por acción cuando se encuentre en el estado de asfixia de grado 1.",
+        ],
+        ...nivelMetabolismo(3),
+        motor: [
+          ...MOTOR_NIVEL_METABOLISMO,
+          // Comida: no hay acción de comer (usuario, 2026-11-14); texto en la pieza.
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
+        ],
+      },
+      {
+        nivel: 4,
+        rareza: "Muy Extraño",
+        coste: 144000,
+        detalle: [
+          "Como acción gratuita durante su turno, el personaje puede inyectarse una sobrecarga metabólica gastando 2 puntos de fatiga: durante 3 turnos, elimina por completo cualquier penalizador por fatiga, y obtiene ventaja en todas las tiradas de salvación de Fortaleza. Esta habilidad solo puede usarse una vez por descanso corto o largo.",
+        ],
+        ...nivelMetabolismo(4),
+        acciones: [
+          {
+            id: "aumentos_activar_metabolismo",
+            label: "Sobrecarga metabólica",
+            economia: "Acción gratuita en tu turno",
+            costeFatiga: 2,
+            nota: "Sin penalizadores por fatiga y ventaja en todas las salvaciones de Fortaleza. Dura 3 rondas, que solo corren en combate: fuera de él, desactívala a mano. Una vez por descanso corto o largo (la app no lleva los descansos).",
+            efecto: { tipo: "activar", estadoId: "aum_metabolismo_sobrecarga", duracion: { tipo: "rondas", rondas: 3 } },
+          },
+        ],
+        activo: ACTIVO_METABOLISMO,
+        motor: [
+          ...MOTOR_NIVEL_METABOLISMO,
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_activar_metabolismo" }, mecanismo: "accion_equipo", estado: "construido" },
+          { tipo: "coste", afecta: { modo: "accion_nueva", id: "aumentos_activar_metabolismo" }, mecanismo: "accion_equipo", estado: "construido" },
+          // Sin penalizadores por fatiga (ajuste de umbrales) y ventaja en la Salvación de Fortaleza.
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
+          { tipo: "resolucion", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
         ],
       },
     ],

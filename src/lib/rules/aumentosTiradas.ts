@@ -56,6 +56,11 @@ export const AMENAZAS = [
   { id: "venenos", label: "Venenos", salvacion: "salv_fortaleza" },
   { id: "enfermedad", label: "Enfermedad", salvacion: "salv_fortaleza" },
   { id: "radiacion", label: "Radiación", salvacion: "salv_fortaleza" },
+  // Metabolismo Sintético (E5a): «fatiga inducida» (la fatiga que permite salvación de Fortaleza,
+  // reglas-base) y parálisis. TODO(revisar): la fuente no dice con qué se salva la parálisis; va con
+  // Fortaleza porque la causan el daño tóxico y el shock, que se salvan con Fortaleza.
+  { id: "fatiga", label: "Fatiga inducida", salvacion: "salv_fortaleza" },
+  { id: "paralisis", label: "Parálisis", salvacion: "salv_fortaleza" },
   // Solo frío y calor del ambiente, no el fuego de las armas (Resiliencia, tercera ronda).
   { id: "termicos", label: "Frío o calor extremos", salvacion: "salv_fortaleza" },
   // Los estados de equipo (2026-10-24): el bono de cada pieza solo vale contra su amenaza

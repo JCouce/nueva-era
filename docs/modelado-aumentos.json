@@ -5323,6 +5323,369 @@
           ]
         }
       ]
+    },
+    {
+      "familia": "implante",
+      "id": "aum_metabolismo_sintetico",
+      "label": "Metabolismo Sintético",
+      "descripcion": "Microimplantes de purificación intravascular, filtración molecular y reguladores enzimáticos acoplados al sistema cardiocirculatorio y linfático. Susceptible al shock y al sabotaje. Incompatible con Biogénesis Mitocondrial, Angiogénesis Sistémica y Regeneración Tisular Acelerada.",
+      "sabotaje": true,
+      "extraible": null,
+      "electronico": true,
+      "incompatibleCon": [
+        "aum_biogenesis_mitocondrial",
+        "aum_angiogenesis_sistemica",
+        "aum_regeneracion_tisular_acelerada"
+      ],
+      "niveles": [
+        {
+          "nivel": 1,
+          "rareza": "Poco Habitual",
+          "coste": 18000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "derivado",
+              "id": "fatiga",
+              "valor": 1,
+              "resuelto": "usuario 2026-11-14: el +1 por nivel sube también la fatiga máxima"
+            },
+            {
+              "tipo": "bono",
+              "alcance": "salv_fortaleza",
+              "valor": 1,
+              "condicion": "¿Contra congelación, enfermedad, envenenamiento, fatiga inducida, parálisis o shock eléctrico?"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "salv_voluntad",
+              "texto": "Apnea ×2 ante un efecto de asfixia.",
+              "condicion": "¿Contra asfixia?",
+              "porque": "tiempo"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "fatiga"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_fortaleza"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_voluntad"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            }
+          ]
+        },
+        {
+          "nivel": 2,
+          "rareza": "Extraño",
+          "coste": 36000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "derivado",
+              "id": "fatiga",
+              "valor": 2,
+              "resuelto": "usuario 2026-11-14: el +1 por nivel sube también la fatiga máxima"
+            },
+            {
+              "tipo": "bono",
+              "alcance": "salv_fortaleza",
+              "valor": 2,
+              "condicion": "¿Contra congelación, enfermedad, envenenamiento, fatiga inducida, parálisis o shock eléctrico?"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "salv_voluntad",
+              "texto": "Apnea ×3 ante un efecto de asfixia.",
+              "condicion": "¿Contra asfixia?",
+              "porque": "tiempo"
+            },
+            {
+              "tipo": "reduce_penalizador",
+              "de": [
+                "fatiga"
+              ],
+              "valor": 1
+            },
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "Descanso corto: recuperas 1 de fatiga más (4 en vez de 3).",
+              "condicion": null,
+              "porque": "tiempo"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "fatiga"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_fortaleza"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_voluntad"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "todas"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "ninguna"
+              },
+              "mecanismo": null,
+              "estado": "ad_hoc"
+            }
+          ]
+        },
+        {
+          "nivel": 3,
+          "rareza": "Extraño",
+          "coste": 72000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "derivado",
+              "id": "fatiga",
+              "valor": 3,
+              "resuelto": "usuario 2026-11-14: el +1 por nivel sube también la fatiga máxima"
+            },
+            {
+              "tipo": "bono",
+              "alcance": "salv_fortaleza",
+              "valor": 3,
+              "condicion": "¿Contra congelación, enfermedad, envenenamiento, fatiga inducida, parálisis o shock eléctrico?"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "salv_voluntad",
+              "texto": "Apnea ×4 ante un efecto de asfixia.",
+              "condicion": "¿Contra asfixia?",
+              "porque": "tiempo"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "Duplica la fatiga recuperada por comida.",
+              "condicion": null,
+              "porque": "sin acción de comer (usuario 2026-11-14)"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "salv_voluntad",
+              "texto": "Ignoras el gasto de fatiga por acción en asfixia de grado 1.",
+              "condicion": "¿Contra asfixia?",
+              "porque": "tiempo"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "fatiga"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_fortaleza"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_voluntad"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "ninguna"
+              },
+              "mecanismo": null,
+              "estado": "ad_hoc"
+            }
+          ]
+        },
+        {
+          "nivel": 4,
+          "rareza": "Muy Extraño",
+          "coste": 144000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "derivado",
+              "id": "fatiga",
+              "valor": 4,
+              "resuelto": "usuario 2026-11-14: el +1 por nivel sube también la fatiga máxima"
+            },
+            {
+              "tipo": "bono",
+              "alcance": "salv_fortaleza",
+              "valor": 4,
+              "condicion": "¿Contra congelación, enfermedad, envenenamiento, fatiga inducida, parálisis o shock eléctrico?"
+            },
+            {
+              "tipo": "texto",
+              "lugar": "salv_voluntad",
+              "texto": "Apnea ×5 ante un efecto de asfixia.",
+              "condicion": "¿Contra asfixia?",
+              "porque": "tiempo"
+            },
+            {
+              "tipo": "activable",
+              "coste": {
+                "fatiga": 2
+              },
+              "economia": [
+                "gratuita"
+              ],
+              "duracion": {
+                "rondas": 3
+              },
+              "limite": {
+                "veces": 1,
+                "por": "descanso",
+                "resuelto": "usuario 2026-11-14: texto"
+              },
+              "efectos": [
+                {
+                  "tipo": "reduce_penalizador",
+                  "de": [
+                    "fatiga"
+                  ],
+                  "valor": "todo"
+                },
+                {
+                  "tipo": "ventaja",
+                  "alcance": "salv_fortaleza"
+                }
+              ]
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "fatiga"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_fortaleza"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_voluntad"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "aumentos_activar_metabolismo"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "construido"
+            },
+            {
+              "tipo": "coste",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "aumentos_activar_metabolismo"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "todas"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "resolucion",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_fortaleza"
+              },
+              "mecanismo": "siempre_activo",
+              "estado": "construido"
+            }
+          ]
+        }
+      ]
     }
   ],
   "extraccion": {

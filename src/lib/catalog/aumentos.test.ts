@@ -33,13 +33,14 @@ const MODELADO = (
 ).aumentos;
 
 describe("catálogo de aumentos contra docs/modelado-aumentos.json", () => {
-  test("mismas 32 piezas, mismos ids y en el mismo orden (26 operaciones y 6 implantes)", () => {
+  // E5a (sync Drive 2026-11-14): + Metabolismo Sintético.
+  test("mismas 33 piezas, mismos ids y en el mismo orden (26 operaciones y 7 implantes)", () => {
     assert.deepEqual(
       AUMENTOS.map((a) => a.id),
       MODELADO.map((a) => a.id),
     );
     assert.equal(OPERACIONES_GENETICAS.length, 26);
-    assert.equal(IMPLANTES.length, 6);
+    assert.equal(IMPLANTES.length, 7);
   });
 
   test("operaciones: label, rareza, coste, requisitos, elección y repetible", () => {
@@ -133,7 +134,7 @@ describe("integridad del catálogo de aumentos", () => {
     }
   });
 
-  test("A2a: de los implantes, solo el Ojo trae modificadores: distancia y Alerta pasiva, sin apilarse con miras", () => {
+  test("A2a y E5a: modificadores de los implantes (Ojo: distancia y Alerta pasiva, sin apilarse con miras; Metabolismo)", () => {
     const distancia = (valor: number) => ({
       tipo: "tirada",
       alcance: { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" },
@@ -147,9 +148,15 @@ describe("integridad del catálogo de aumentos", () => {
       3: [distancia(2), alerta(3)],
       4: [distancia(3), alerta(4)],
     };
+    const fatiga = (valor: number) => ({ tipo: "derivado", id: "fatiga", valor });
+    const esperados: Record<string, Record<number, object[]>> = {
+      aum_ojo_bionico: ojo,
+      // E5a: la fatiga máxima sube 1 por nivel (usuario, 2026-11-14).
+      aum_metabolismo_sintetico: { 1: [fatiga(1)], 2: [fatiga(2)], 3: [fatiga(3)], 4: [fatiga(4)] },
+    };
     for (const imp of IMPLANTES) {
       for (const n of imp.niveles) {
-        assert.deepEqual(n.modificadores, imp.id === "aum_ojo_bionico" ? ojo[n.nivel] : [], `${imp.id} ${n.nivel}`);
+        assert.deepEqual(n.modificadores, esperados[imp.id]?.[n.nivel] ?? [], `${imp.id} ${n.nivel}`);
       }
     }
   });
@@ -224,6 +231,12 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_implante_de_resonancia_metrica 2": 2,
     "aum_implante_de_resonancia_metrica 3": 2,
     "aum_implante_de_resonancia_metrica 4": 2,
+    // E5a (sync Drive 2026-11-14). Metabolismo: fatiga máxima, salvaciones y la nota de la apnea por
+    // nivel; el 2, −1 a la fatiga; el 4, la sobrecarga (acción, coste, sin fatiga y ventaja).
+    "aum_metabolismo_sintetico 1": 3,
+    "aum_metabolismo_sintetico 2": 4,
+    "aum_metabolismo_sintetico 3": 3,
+    "aum_metabolismo_sintetico 4": 7,
   };
 
   test("A1, A2a, A2b, A3, A4a, A4b, A5a, A5b, A6a, A6b y A7: solo lo construido (o lo narrativo) está marcado como construido", () => {
