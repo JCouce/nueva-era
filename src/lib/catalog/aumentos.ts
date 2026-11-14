@@ -1805,7 +1805,8 @@ export const IMPLANTES: Implante[] = [
     id: "aum_ojo_bionico",
     label: "Ojo Biónico",
     resumen: "Bonos a percepción visual y a distancia, visión nocturna y térmica, rayos X y, en niveles altos, inmunidad a la ceguera.",
-    descripcion: "El Ojo Biónico reemplaza el globo ocular orgánico por un complejo ensamblaje optoelectrónico integrado directamente en el nervio óptico y el córtex visual. Utiliza microcristales de enfoque activo, sensores de espectro variable y un coprocesador gráfico dedicado que procesa la información en tiempo real, eliminando el temblor natural de la pupila biológica, filtrando destellos cegadores y superponiendo una interfaz de datos táctica directamente sobre el campo de visión del usuario.",
+    descripcion: "El Ojo Biónico reemplaza el globo ocular orgánico por un complejo ensamblaje optoelectrónico integrado directamente en el nervio óptico y el córtex visual. Utiliza microcristales de enfoque activo, sensores de espectro variable y un coprocesador gráfico dedicado que procesa la información en tiempo real, eliminando el temblor natural de la pupila biológica, filtrando destellos cegadores y superponiendo una interfaz de datos táctica directamente sobre el campo de visión del usuario. Incompatible con aumentos genéticos de la visión como la Optimización Foveo-Sensorial al sustituir el tejido orgánico por prótesis cibernéticas.",
+    // Sync Drive 2026-11-14: la incompatibilidad con Foveo es texto; el bloqueo al comprar, en E4.
     sabotaje: true,
     shock: "cuerpo",
     extraible: null,

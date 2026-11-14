@@ -2399,6 +2399,8 @@ sobreesfuerzo.
     fatiga)» en los ataques a distancia y en Buscar / percibir. El límite es texto (usuario:
     límites de uso = texto salvo «por escena»): nivel 1 una vez al día; 2, una por descanso largo
     que se recupera tras un descanso corto; 3, una por hora; 4, sin límite.
+  - **Incompatible con Optimización Foveo-Sensorial** (y los aumentos genéticos de la visión):
+    hoy solo texto en la descripción del Ojo; el bloqueo al comprar llega con E4.
 - *En la app (A7, inmunidades; usuario, 2026-10-22):* `rules/inmunidades.ts`, con los datos en el
   catálogo (`inmuneA` del nivel del implante o de la operación).
   - **Quién:** Ojo Biónico 2, 3 y 4 contra la **ceguera** (fuente "Ojo Biónico N"; el 1, nada) y
