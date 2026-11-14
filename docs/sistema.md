@@ -1356,8 +1356,9 @@ o eran texto. Decidido:
   elegida esa especialidad.
 - **Cambio de resultado** (*Balanceo*, *Velocista*…): solo el fracaso normal pasa a éxito;
   el fracaso crítico se queda.
-- ***Imitación***: casilla «Imitando a alguien» en Convencer / mentir. `TODO(revisar)` desde la
-  foto del 2026-11-14 (pide Mimetismo): ¿también, o solo, en Pasar desapercibido?
+- ***Imitación***: casilla «Imitando a alguien» en Convencer / mentir. Desde la foto del
+  2026-11-14 pide Mimetismo, pero el bono sigue solo en Convencer / mentir, no en Pasar
+  desapercibido (usuario, 2026-11-14).
 - ***Especialidad Médica***, «hemorragia y herida»: solo el estado Heridas, no toda cura.
 - **Sin *Combate Sutil* no hay modo sutil**: tirada con Potencia y daño con Fuerza, también
   el Aguijón del Proyector de Pulso.
