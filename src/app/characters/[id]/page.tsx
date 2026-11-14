@@ -8,6 +8,7 @@ import { StatusControl } from "@/app/master/MasterControls";
 import { EstadoFichaChip } from "@/components/EstadoFichaChip";
 import { CharacterSheet } from "./CharacterSheet";
 import { mesaDeFicha } from "@/lib/mesaDeFicha";
+import { hayVueltaAlCombate } from "@/lib/navegacionCombate";
 
 export default async function CharacterPage({
   params,
@@ -31,8 +32,10 @@ export default async function CharacterPage({
   // compacta siempre visible + tab "Combate" con la cola completa. Los estados de
   // cada fila, como en master/combate/page.tsx (estadosDeCombatiente): los de su
   // ficha para un jugador, los de su fila para un NPC.
-  const combateRaw = await prisma.combate.findFirst({
-    where: { estado: "EN_CURSO" },
+  // Se busca también el que se está preparando (solo hay uno abierto a la vez), pero solo para
+  // el «← Volver al combate» del máster: el jugador no ve nada hasta que empieza.
+  const abierto = await prisma.combate.findFirst({
+    where: { estado: { in: ["PREPARANDO", "EN_CURSO"] } },
     include: {
       combatientes: {
         orderBy: { orden: "asc" },
@@ -40,6 +43,7 @@ export default async function CharacterPage({
       },
     },
   });
+  const combateRaw = abierto?.estado === "EN_CURSO" ? abierto : null;
   const combate = combateRaw && {
     ...combateRaw,
     combatientes: combateRaw.combatientes.map(({ character, ...c }) => ({
@@ -60,6 +64,7 @@ export default async function CharacterPage({
         name={user.name}
         role={user.role}
         back={{ href: "/characters", label: "Personajes" }}
+        volverAlCombate={hayVueltaAlCombate(user.role, abierto?.estado)}
       />
       {/* Abajo, hueco para el dock de NavegacionFicha en móvil (más el safe-area); en
           escritorio, una columna hasta xl; desde xl, ancho entero para la cabina de tres columnas. */}
