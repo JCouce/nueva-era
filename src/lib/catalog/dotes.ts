@@ -7266,6 +7266,52 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_piloto_de_exoarmadura",
+    "label": "Piloto de Exoarmadura",
+    "grupo": "pilotaje",
+    "coste": 2,
+    "requisitos": [
+      {
+        "tipo": "especialidad",
+        "habilidad": "pilotaje",
+        "id": "exoarmadura",
+        "min": 1
+      },
+      {
+        "tipo": "aplicado",
+        "id": "reflejos",
+        "min": 1
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "El personaje reduce en 2 el penalizador por dificultad para maniobras de su propulsión aéra *(sic)* de la armadura o el traje cuando realiza acciones defensivas de esquiva.",
+    "efectos": [
+      {
+        "tipo": "bono",
+        "alcance": "defensa",
+        "valor": 2,
+        "condicion": "Esquivando en vuelo con la propulsión aérea (reduce 2 la dificultad de maniobra)",
+        "borrador": 0
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "numerico",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "defensa"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_movimiento_sigiloso",
     "label": "Movimiento Sigiloso",
     "grupo": "sigilo",
@@ -8895,8 +8941,8 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   216 efectos (206 en el borrador)
-//   construidos: 120
+//   217 efectos (207 en el borrador)
+//   construidos: 121
 //   texto: 96
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0

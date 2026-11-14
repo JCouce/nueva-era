@@ -4,7 +4,9 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
-import { ACCIONES, type Accion } from "./acciones";
+import { ACCIONES, usarHabilidadAlternativa, type Accion } from "./acciones";
+import { equipar } from "./equipo";
+import { conEsquivaEnVuelo } from "./movimiento";
 import { HABILIDADES } from "./habilidades";
 import { resolverFicha, conExtrasDeFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
 import { montarTirada, eleccionSinTocar } from "./montaje";
@@ -120,5 +122,32 @@ describe("Finta de Manos", () => {
     const s = ficha([{ id: "dote_finta_de_manos" }]);
     const sin = { ...s, habilidades: { ...s.habilidades, sigilo: { valor: 4, especialidades: ["ocultacion" as const] } } };
     assert.equal(deDote(resolver(sin), "dotes_finta_de_manos"), undefined);
+  });
+});
+
+describe("Piloto de Exoarmadura", () => {
+  test("casilla en la esquiva: +2 esquivando en vuelo con la propulsión (compensa la dificultad de maniobra)", () => {
+    const f = resolver(ficha([{ id: "dote_piloto_de_exoarmadura" }]));
+    const t = fija(f, "defensa");
+    const [c] = casillasDe(t, "dote_piloto_de_exoarmadura");
+    assert.match(c.etiqueta, /Esquivando en vuelo con la propulsión aérea/);
+    assert.equal(total(f, t, [c.id]) - total(f, t), 2);
+  });
+
+  test("en vuelo con Propulsión Aérea 1 (−3): la casilla sale también ahí y deja la maniobra en −1", () => {
+    let s = ficha([{ id: "dote_piloto_de_exoarmadura" }]);
+    s = equipar(equipar(s, { instanciaId: "a1", catalogoId: "armadura_pesada" }), { instanciaId: "m1", catalogoId: "movilidad_aerea", nivel: 1, instaladoEnId: "a1" });
+    const f = resolver(s);
+    const enVuelo = usarHabilidadAlternativa(conEsquivaEnVuelo(s, fija(f, "defensa")))!;
+    const [c] = casillasDe(enVuelo, "dote_piloto_de_exoarmadura");
+    // La maniobrabilidad (−3) sigue en la esquiva en vuelo; la casilla le quita 2.
+    assert.deepEqual(enVuelo.ajustesFijos, [{ valor: -3, fuente: "Maniobrabilidad (Propulsión Aérea)" }]);
+    assert.equal(total(f, enVuelo, [c.id]) - total(f, enVuelo), 2);
+  });
+
+  test("sin Exoarmadura, nada", () => {
+    const s = ficha([{ id: "dote_piloto_de_exoarmadura" }]);
+    const sin = resolver({ ...s, habilidades: { ...s.habilidades, pilotaje: { valor: 4, especialidades: ["aereo"] } } });
+    assert.deepEqual(casillasDe(fija(sin, "defensa"), "dote_piloto_de_exoarmadura"), []);
   });
 });

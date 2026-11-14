@@ -60,6 +60,10 @@ const familia = (f: FamiliaArma): DestinoDote => ({ tipo: "tirada", alcance: { t
 
 export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // ── Tiradas fijas (ACCIONES) ──
+  // Esquiva. Piloto y As de Exoarmadura (E6): casilla «Esquivando en vuelo» que reduce la
+  // dificultad de maniobra (+2 / +3), aparte de la casilla «En vuelo» de la pieza.
+  // TODO(revisar): no se topa con la maniobrabilidad: con la Progresión de Maniobrabilidad del
+  // nivel 3 (−2), el +3 de As deja +1 de más.
   defensa: tirada("defensa"),
   atletismo: tirada("atletismo"),
   escalar: tirada("escalar"),
