@@ -125,7 +125,8 @@ export const ARMADURAS: Armadura[] = [
     descripcion:
       "Usando los mismos materiales que el traje ultra ligero, ofrece una defensa óptima " +
       "pero con apariencia de conjunto de ropa normal — chaqueta, pantalón y calzado, de lo más " +
-      "elegante a lo puramente casual. Al igual que el traje, otorga un bonificador en tiradas de " +
+      "elegante a lo puramente casual. El conjunto incluye un elegante casco cuyo aspecto no imita " +
+      "la ropa. Al igual que el traje, otorga un bonificador en tiradas de " +
       "salvación contra congelación y llamarada de +1.",
     blindaje: 3,
     bonifMaxAgilidad: null,
