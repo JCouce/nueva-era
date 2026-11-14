@@ -9,6 +9,7 @@ import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta
 import { montarTirada, SIN_ELECCION, type TiradaMontada } from "./montaje";
 import type { EstadoActivo } from "./estados";
 import { ponerEstado } from "./estadosFicha";
+import { estadosDelPanel } from "../catalog/estados";
 import { estadoPorUso } from "./sigilo";
 import { cambiosDeEstadoDe, consecuenciaPropia, estadosActivosDe, textoDeCambiosDeEstado } from "./consecuenciasPropias";
 
@@ -426,5 +427,18 @@ describe("fármacos instantáneos: Hemostáticos y Estabilizadores Neurales", ()
   test("Estabilizadores: el crítico quita el Aturdido entero; fallando, nada", () => {
     assert.deepEqual(cambios("farmaco_estabilizadores_neurales", "critico", [puesto("aturdido", "fracaso_critico")]), [{ tipo: "quitar", estadoId: "aturdido" }]);
     for (const grado of ["fracaso", "fracasoCritico"] as const) assert.equal(cambios("farmaco_estabilizadores_neurales", grado, [puesto("aturdido", "fracaso")]), null, grado);
+  });
+});
+
+describe("la Mesa pone y quita los estados de fármaco", () => {
+  test("todos los de fármaco salen en el selector del máster para ponerlos, sin duplicarse", () => {
+    const panel = estadosDelPanel(["bajo_analgesico"]);
+    for (const id of ["bajo_analgesico", "bajo_calmante", "antipatogeno", "bajo_ultra_estimulante", "bajo_xovromium", "bajon_ultra_estimulante"]) {
+      const filas = panel.filter((x) => x.estado.id === id);
+      assert.equal(filas.length, 1, id);
+      assert.equal(filas[0].soloQuitar, false, id);
+    }
+    // Los de equipo siguen solo para quitarlos.
+    assert.ok(estadosDelPanel(["malla_activa"]).some((x) => x.estado.id === "malla_activa" && x.soloQuitar));
   });
 });

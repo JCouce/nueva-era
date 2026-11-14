@@ -1477,15 +1477,17 @@ export function esEstadoDeAumento(id: string): boolean {
   return ESTADOS_DE_AUMENTO.some((e) => e.id === id);
 }
 
-// La rejilla del panel de estados del máster: el catálogo que pone (ESTADOS) y, detrás, los que
-// llevan puestos sus objetivos aunque no los ponga él (de ocultación, de aumento, de poder), solo
-// para quitarlos (T4: el máster quita el Sigilo de un jugador).
+// La rejilla del panel de estados del máster: el catálogo que pone (ESTADOS y los de fármaco, para
+// arreglar lo que haga falta: fármacos como estados, usuario 2026-11-14) y, detrás, los que llevan
+// puestos sus objetivos aunque no los ponga él (de ocultación, de aumento, de poder, de equipo),
+// solo para quitarlos (T4: el máster quita el Sigilo de un jugador).
 export function estadosDelPanel(puestos: readonly string[]): { estado: Estado; soloQuitar: boolean }[] {
+  const pone = [...ESTADOS, ...ESTADOS_DE_FARMACO];
   const aparte = [...new Set(puestos)].flatMap((id) => {
-    const e = ESTADOS.some((x) => x.id === id) ? null : estadoPorId(id);
+    const e = pone.some((x) => x.id === id) ? null : estadoPorId(id);
     return e ? [{ estado: e, soloQuitar: true }] : [];
   });
-  return [...ESTADOS.map((estado) => ({ estado, soloQuitar: false })), ...aparte];
+  return [...pone.map((estado) => ({ estado, soloQuitar: false })), ...aparte];
 }
 
 // Los que el propio jugador puede quitarse desde su ficha: los de poder, los de ocultación y los

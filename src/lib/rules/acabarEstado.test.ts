@@ -91,7 +91,8 @@ describe("bajones y rechazo: tiradas con atributos mentales", () => {
       assert.equal(loQuitaElJugador(e.estadoId), false, e.estadoId);
       assert.equal(describirEstadosActivos([e])[0].quitarJugador, undefined, e.estadoId);
     }
-    assert.ok(estadosDelPanel([BAJON_ULTRA.estadoId]).some((x) => x.estado.id === BAJON_ULTRA.estadoId && x.soloQuitar));
+    // Fármacos como estados (2026-11-14): el máster los pone y quita desde su panel.
+    assert.ok(estadosDelPanel([BAJON_ULTRA.estadoId]).some((x) => x.estado.id === BAJON_ULTRA.estadoId && !x.soloQuitar));
     const [bajo, bajon] = describirEstadosActivos([BAJO_ULTRA, BAJON_ULTRA]);
     assert.deepEqual(bajo.acabar, { etiqueta: "Se acabó: aplicar el bajón", fatiga: 2 });
     assert.equal(bajo.quitarJugador, "Quitar sin bajón");
