@@ -950,8 +950,8 @@ Cuando un personaje con esta dote flanquea a un enemigo puede coordinar el ataqu
 **Coste:** 2
 
 **Requisitos:**
-- Táctica 1 · especialidad (Exploración)
 - Combate Melee 1 · habilidad
+- Táctica 1 · especialidad (Exploración)
 
 **Efecto:**
 Cuando el personaje realiza un ataque cuerpo a cuerpo contra un objetivo situado en una posición físicamente inferior con diferencia de altura apreciable, como escalones, desnivel, rocas o vehículos sabe sacar una ventaja notable.

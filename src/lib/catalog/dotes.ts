@@ -5719,14 +5719,14 @@ export const DOTES: readonly DoteCatalogo[] = [
     "coste": 2,
     "requisitos": [
       {
-        "tipo": "especialidad",
-        "habilidad": "exploracion",
-        "id": "tactica",
+        "tipo": "habilidad",
+        "id": "combate_melee",
         "min": 1
       },
       {
-        "tipo": "habilidad",
-        "id": "combate_melee",
+        "tipo": "especialidad",
+        "habilidad": "exploracion",
+        "id": "tactica",
         "min": 1
       }
     ],
