@@ -344,8 +344,18 @@ describe("gasto por modo (docs/prompt-gasto-recursos.md, Fase 1)", () => {
     const fila = accionesDeAtaque(sheet).find((t) => t.label.startsWith("Disparar Proyector de Pulso"))!;
     assert.equal(fila.recursoInstanciaId, "pp1");
     assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso")?.gasto, 1);
-    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso_cargado")?.gasto, 4);
-    assert.equal(fila.ataque?.modos.find((m) => m.id === "barrido")?.gasto, 5);
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso_cargado")?.gasto, 1); // sync Drive 2026-11-14 (antes 4)
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "barrido")?.gasto, 2); // sync Drive 2026-11-14 (antes 5)
+  });
+
+  // Sync Drive 2026-11-14: Pulso Cargado 1 carga y 11 + N; Barrido 2 cargas y área 10 + N.
+  test("Pulso Cargado y Barrido: gasto al confirmar y daño por nivel", () => {
+    const fila = accionesDeAtaque(conProyectorPulso(1)).find((t) => t.label.startsWith("Disparar Proyector de Pulso"))!;
+    assert.equal(gastoTotal(fila, "pulso_cargado", {}), 1);
+    assert.equal(gastoTotal(fila, "barrido", {}), 2);
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso_cargado")?.danio, 12);
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "barrido")?.danio, 11);
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso_cargado")?.disparoPulso, undefined);
   });
 
   // Sync Drive 2026-11-14: «1 carga × 3 disparos», con el contador en la pieza (usuario).
@@ -1366,8 +1376,8 @@ describe("Proyector de Pulso (subsistema con acción propia, Hallazgo #1)", () =
       t.label.includes("Combate a Distancia"),
     )!;
     assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso")?.danio, 10); // 8 + 2 (sync Drive 2026-11-14)
-    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso_cargado")?.danio, 12); // 10 + 2
-    assert.equal(fila.ataque?.modos.find((m) => m.id === "barrido")?.danio, 11); // 9 + 2
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso_cargado")?.danio, 13); // 11 + 2 (sync Drive 2026-11-14)
+    assert.equal(fila.ataque?.modos.find((m) => m.id === "barrido")?.danio, 12); // 10 + 2 (sync Drive 2026-11-14)
     const modo = fila.condiciones?.find((c) => c.id === "modo");
     assert.equal(opcion(modo, "pulso"), -2);
     assert.equal(opcion(modo, "pulso_cargado"), -2);

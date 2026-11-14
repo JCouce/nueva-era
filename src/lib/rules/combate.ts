@@ -1092,8 +1092,8 @@ function tiradaLanzarArmaMelee(
 // El de Pulso es por carga, no por disparo: 1 carga cada DISPAROS_POR_CARGA_PULSO disparos
 // (gastoDisparoPulso, con el contador de la pieza; sync Drive 2026-11-14).
 const GASTO_MODO_PULSO: Record<string, number> = {
-  pulso_cargado: 4,
-  barrido: 5,
+  pulso_cargado: 1,
+  barrido: 2,
   aguijon: 1,
 };
 
@@ -1253,7 +1253,7 @@ function tiradaDeProyectorPulso(
         {
           id: "pulso_cargado",
           etiqueta: "Pulso Cargado",
-          danio: 10 + nivel,
+          danio: 11 + nivel,
           formulaDanio: null,
           categoriaDanio: "Grave",
           gasto: GASTO_MODO_PULSO.pulso_cargado,
@@ -1261,7 +1261,7 @@ function tiradaDeProyectorPulso(
         {
           id: "barrido",
           etiqueta: "Barrido",
-          danio: 9 + nivel,
+          danio: 10 + nivel,
           formulaDanio: null,
           categoriaDanio: "Grave",
           gasto: GASTO_MODO_PULSO.barrido,

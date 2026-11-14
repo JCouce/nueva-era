@@ -609,14 +609,14 @@ export const SUBSISTEMAS: Subsistema[] = [
       {
         label: "Pulso Cargado",
         descripcion:
-          "Acción compleja, 4 cargas, dificultad -2, daño 10 + Nivel, alcance corto 30 + (10 × Nivel), " +
+          "Acción compleja, 1 carga, dificultad -2, daño 11 + Nivel, alcance corto 30 + (10 × Nivel), " +
           "medio 100 + (20 × Nivel), largo 200 + (20 × Nivel) metros. " +
           "Efecto: Shock (6 + Nivel); crítico: Hemorragia.",
       },
       {
         label: "Barrido",
         descripcion:
-          "Acción estándar, 5 cargas, dificultad -3, daño de área 9 + Nivel en 6x6, alcance corto " +
+          "Acción estándar, 2 cargas, dificultad -3, daño de área 10 + Nivel en 6x6, alcance corto " +
           "20 + (10 × Nivel), medio 80 + (20 × Nivel), largo 160 + (20 × Nivel) metros. " +
           "Efecto: Esquiva (7 + Nivel) y Shock (7 + Nivel).",
       },
