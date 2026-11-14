@@ -573,6 +573,7 @@ export async function comprarAumentoAction(characterId: string, entrada: unknown
   const res = comprarAumento(ctx.sheet, compra, {
     libre: false,
     instanciaId: nuevaInstanciaId(),
+    atributos: valoresRequisitoDeFicha(ctx.sheet).atributos,
     bolsaTotal: bolsaDeAumentos(especieDeFicha(ctx.sheet)),
     creditos: ctx.creditos,
   });

@@ -163,6 +163,36 @@ describe("implantes: cualquier nivel directo y subir paga la diferencia", () => 
     assert.equal(costeDePieza({ instanciaId: "b", catalogoId: BRAZO, nivel: 1 }), 8_000);
   });
 
+  // Sync Drive 2026-11-14 (M2.5): requisito de atributo en los aumentos, con la Fuerza permanente
+  // (la de los requisitos de dote: especie y aumentos).
+  test("Brazo Biónico 4 Fuerte: requiere Fuerza 2; con 1 se rechaza, con 2 se instala", () => {
+    const conFuerza = (fuerza: number) => {
+      const s = defaultSheet();
+      return { ...s, atributos: { ...s.atributos, fuerza } };
+    };
+    const fuerte = { catalogoId: BRAZO, nivel: 4, eleccion: "fuerte" };
+    const debil = conFuerza(1);
+    const conUno = comprarAumento(debil, fuerte, ctx({ atributos: valoresRequisitoDeFicha(debil).atributos }));
+    assert.equal(conUno.ok, false);
+    assert.equal(!conUno.ok && conUno.error, "Requiere Fuerza 2 (tienes 1).");
+    const fuerteSheet = conFuerza(2);
+    assert.equal(comprarAumento(fuerteSheet, fuerte, ctx({ atributos: valoresRequisitoDeFicha(fuerteSheet).atributos })).ok, true);
+    // Los otros modelos del 4, sin requisito.
+    assert.equal(planCompraAumento(debil, { catalogoId: BRAZO, nivel: 4, eleccion: "agil" }, valoresRequisitoDeFicha(debil).atributos).ok, true);
+    // El NPC, igual.
+    assert.equal(comprarAumento(debil, fuerte, { libre: true, instanciaId: "npc", atributos: valoresRequisitoDeFicha(debil).atributos }).ok, false);
+    // Sin los atributos no se valida.
+    const sin = planCompraAumento(fuerteSheet, fuerte);
+    assert.equal(!sin.ok && sin.motivo, "Requiere Fuerza 2.");
+  });
+
+  test("Brazo Biónico 4 Fuerte: la Fuerza de un aumento permanente cuenta (Osteotendinosa)", () => {
+    const s = defaultSheet();
+    const base = compra({ ...s, atributos: { ...s.atributos, fuerza: 1 } }, { catalogoId: "aum_integridad_osteotendinosa" });
+    const plan = planCompraAumento(base, { catalogoId: BRAZO, nivel: 4, eleccion: "fuerte" }, valoresRequisitoDeFicha(base).atributos);
+    assert.equal(plan.ok, true);
+  });
+
   test("subir de 1 a 3 cuesta 64.000 − 16.000 y sube la misma instancia", () => {
     const s = compra(defaultSheet(), { catalogoId: OJO, nivel: 1 });
     const inst = s.equipo[0].instanciaId;

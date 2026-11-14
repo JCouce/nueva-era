@@ -63,6 +63,7 @@ import {
   type Implante,
   type CompraAumento,
   type BolsaAumentosResuelta,
+  type AtributoId,
 } from "@/lib/rules";
 import { Acordeon } from "@/components/Acordeon";
 import { BolsaAumentos } from "./BolsaAumentos";
@@ -832,6 +833,9 @@ function DetalleMunicionEspecial({
 
 type ContextoPagoAumento = {
   sheet: Sheet;
+  // Los permanentes de la ficha (FichaResuelta.requisitosDotes.atributos), para el requisito de
+  // atributo de un modelo (Brazo Biónico 4 Fuerte, Fuerza 2).
+  atributos: Readonly<Record<AtributoId, number>>;
   creditos: number;
   // Saldo de la bolsa del humano (0 si no la tiene); se gasta antes que los créditos.
   saldoBolsa: number;
@@ -894,7 +898,7 @@ function CompraAumentoBoton({
   pista: string | null;
   ctx: ContextoPagoAumento;
 }) {
-  const plan = planCompraAumento(ctx.sheet, compra);
+  const plan = planCompraAumento(ctx.sheet, compra, ctx.atributos);
   const pago = plan.ok && !ctx.libre ? repartoPago(plan.precio, ctx.saldoBolsa, ctx.creditos) : null;
   const sinRareza = ctx.topeRareza !== null && !rarezaPermitida(rareza, ctx.topeRareza);
   const motivo = pista
@@ -1086,6 +1090,7 @@ export function TiendaTab({
   libre = false,
   bolsaAumentos = null,
   excepcionRareza = null,
+  atributosRequisito,
   onEquipar,
   onComprarAumento,
   onComprarGranada,
@@ -1101,6 +1106,8 @@ export function TiendaTab({
   bolsaAumentos?: BolsaAumentosResuelta | null;
   // Excepción de rareza por especie (kerzul del Arköru, §14.6); null en el NPC.
   excepcionRareza?: ContextoExcepcionRareza | null;
+  // De la FichaResuelta (requisitosDotes.atributos): el requisito de atributo de un aumento.
+  atributosRequisito: Readonly<Record<AtributoId, number>>;
   onEquipar: (p: PiezaEquipada) => void;
   onComprarGranada: (catalogoId: string) => void;
   onComprarFarmaco: (catalogoId: string) => void;
@@ -1457,6 +1464,7 @@ export function TiendaTab({
           <SeccionAumentos
             ctx={{
               sheet,
+              atributos: atributosRequisito,
               creditos: creditosEfectivos,
               saldoBolsa: bolsaAumentos?.saldo ?? 0,
               topeRareza,

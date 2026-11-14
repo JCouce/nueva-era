@@ -22,6 +22,7 @@ import {
 import {
   type Sheet,
   defaultSheet,
+  valoresRequisitoDeFicha,
   parseSheet,
   clampInt,
   addEspecialidad,
@@ -377,7 +378,11 @@ export async function comprarAumentoNpcAction(npcId: string, entrada: unknown): 
   if (!parsed.success) return { ok: false, error: "Aumento inválido" };
   const ctx = await loadSheet(npcId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  const res = comprarAumento(ctx.sheet, parsed.data, { libre: true, instanciaId: nuevaInstanciaId() });
+  const res = comprarAumento(ctx.sheet, parsed.data, {
+    libre: true,
+    instanciaId: nuevaInstanciaId(),
+    atributos: valoresRequisitoDeFicha(ctx.sheet).atributos,
+  });
   if (!res.ok) return { ok: false, error: res.error };
   return persist(npcId, res.sheet);
 }

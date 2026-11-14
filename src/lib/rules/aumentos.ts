@@ -15,6 +15,7 @@ import type { Aumento, Implante, NivelImplante, OperacionGenetica, ReduccionPena
 import { acumulaPorClave, claveModificador, costeDePieza, nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import type { FuenteConNombre } from "./sobreesfuerzo";
 import { HABILIDADES, type HabilidadId } from "./habilidades";
+import { ATRIBUTOS, type AtributoId } from "./atributos";
 import { SIN_AJUSTE_UMBRALES, type AjusteUmbral, type AjusteUmbrales, type ReduccionPorAplicado } from "./estados";
 import type { ModificadorConFuente } from "./modificadores";
 import { origenDePieza } from "./origen";
@@ -119,10 +120,29 @@ export type PlanCompraAumento =
 
 // Valida la compra contra la ficha y dice cuánto cuesta. Sin dinero de por medio: eso
 // es repartoPago. La UI lo usa para pintar precio y motivo; el servidor, para cobrar.
-export function planCompraAumento(sheet: Pick<Sheet, "equipo">, compra: CompraAumento): PlanCompraAumento {
+// `atributos`: los permanentes de la ficha (los de los requisitos de dote: especie y aumentos,
+// ValoresRequisito.atributos), para el requisito de atributo de un modelo (Brazo 4 Fuerte,
+// Fuerza 2; sync Drive 2026-11-14). Sin ellos, una compra que lo pide no se valida.
+export function planCompraAumento(
+  sheet: Pick<Sheet, "equipo">,
+  compra: CompraAumento,
+  atributos?: Readonly<Record<AtributoId, number>>,
+): PlanCompraAumento {
   const cat = aumentoPorId(compra.catalogoId);
   if (!cat) return { ok: false, motivo: "No es un aumento del catálogo." };
-  return cat.familia === "operacionGenetica" ? planOperacion(sheet, cat, compra) : planImplante(sheet, cat, compra);
+  return cat.familia === "operacionGenetica" ? planOperacion(sheet, cat, compra) : planImplante(sheet, cat, compra, atributos);
+}
+
+// El atributo que pide un modelo para instalarse, si falta: "Requiere Fuerza 2 (tienes 1)."
+export function requisitoAtributoQueFalta(
+  req: { id: AtributoId; min: number } | undefined,
+  atributos: Readonly<Record<AtributoId, number>> | undefined,
+): string | null {
+  if (!req) return null;
+  const label = ATRIBUTOS.find((a) => a.id === req.id)?.label ?? req.id;
+  if (!atributos) return `Requiere ${label} ${req.min}.`;
+  const tienes = atributos[req.id];
+  return tienes >= req.min ? null : `Requiere ${label} ${req.min} (tienes ${tienes}).`;
 }
 
 function planOperacion(sheet: Pick<Sheet, "equipo">, op: OperacionGenetica, compra: CompraAumento): PlanCompraAumento {
@@ -145,13 +165,21 @@ function planOperacion(sheet: Pick<Sheet, "equipo">, op: OperacionGenetica, comp
   return { ok: true, precio: op.coste, subeDe: null };
 }
 
-function planImplante(sheet: Pick<Sheet, "equipo">, imp: Implante, compra: CompraAumento): PlanCompraAumento {
+function planImplante(
+  sheet: Pick<Sheet, "equipo">,
+  imp: Implante,
+  compra: CompraAumento,
+  atributos: Readonly<Record<AtributoId, number>> | undefined,
+): PlanCompraAumento {
   if (compra.nivel === undefined) return { ok: false, motivo: "Elige un nivel." };
   const nivel = nivelDeImplante(imp, compra.nivel);
   if (!nivel) return { ok: false, motivo: `${imp.label} no tiene nivel ${compra.nivel}.` };
   if (nivel.variantes?.length) {
     if (!compra.eleccion) return { ok: false, motivo: "Elige modelo." };
-    if (!nivel.variantes.some((v) => v.id === compra.eleccion)) return { ok: false, motivo: "Modelo no válido." };
+    const variante = nivel.variantes.find((v) => v.id === compra.eleccion);
+    if (!variante) return { ok: false, motivo: "Modelo no válido." };
+    const falta = requisitoAtributoQueFalta(variante.requisitoAtributo, atributos);
+    if (falta) return { ok: false, motivo: falta };
   } else if (compra.eleccion !== undefined) {
     return { ok: false, motivo: `El nivel ${nivel.nivel} no tiene modelos.` };
   }
@@ -218,6 +246,8 @@ function aplicarPlan(
   return { ...sheet, equipo: [...sheet.equipo, pieza] };
 }
 
+// `atributos`: los permanentes (ValoresRequisito.atributos), para el requisito de atributo de
+// un modelo (planCompraAumento). Sin ellos, esa compra se rechaza.
 export type ContextoCompraAumento =
   | {
       libre: false;
@@ -225,16 +255,17 @@ export type ContextoCompraAumento =
       // Bolsa de la especie (FichaResuelta.bolsaAumentos.total / bolsaDeAumentos), o null.
       bolsaTotal: number | null;
       creditos: number;
+      atributos?: Readonly<Record<AtributoId, number>>;
     }
   // NPC (§14.3): sin cartera ni bolsa; las reglas de la compra, las mismas.
-  | { libre: true; instanciaId: string };
+  | { libre: true; instanciaId: string; atributos?: Readonly<Record<AtributoId, number>> };
 
 export type ResultadoCompraAumento =
   | { ok: true; sheet: Sheet; precio: number; pago: RepartoPago }
   | { ok: false; error: string };
 
 export function comprarAumento(sheet: Sheet, compra: CompraAumento, ctx: ContextoCompraAumento): ResultadoCompraAumento {
-  const plan = planCompraAumento(sheet, compra);
+  const plan = planCompraAumento(sheet, compra, ctx.atributos);
   if (!plan.ok) return { ok: false, error: plan.motivo };
   if (ctx.libre) {
     return { ok: true, sheet: aplicarPlan(sheet, compra, plan.subeDe, ctx.instanciaId, 0), precio: 0, pago: { deBolsa: 0, deCreditos: 0 } };

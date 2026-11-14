@@ -63,7 +63,7 @@
 // efectos `atributo` (suma_derivado: Modificador "atributo"), `coste_habilidad`
 // (sin acción: ajuste de coste de progresión) y `formula_salud` (suma_derivado:
 // Modificador "multiplicadorVida" sobre la vida).
-import type { AplicadoId } from "../rules/atributos";
+import type { AplicadoId, AtributoId } from "../rules/atributos";
 import type { HabilidadId } from "../rules/habilidades";
 import type { CondicionTirada } from "../rules/condiciones";
 import type { Modificador } from "../rules/modificadores";
@@ -128,7 +128,16 @@ export type OperacionGenetica = {
 
 // Modelos del Brazo Biónico en los niveles 3 y 4: se elige al comprar ese nivel. A6a: la
 // Fuerza, la Agilidad y el blindaje del modelo (`extremidad`, rules/brazoBionico.ts).
-export type VarianteImplante = { id: string; label: string; detalle: string[]; extremidad?: ExtremidadBionica };
+// `requisitoAtributo` (sync Drive 2026-11-14): el atributo que pide para instalarse (Brazo 4
+// Fuerte, Fuerza 2), con el valor permanente de los requisitos (rules/aumentos.ts).
+export type RequisitoAtributoAumento = { id: AtributoId; min: number };
+export type VarianteImplante = {
+  id: string;
+  label: string;
+  detalle: string[];
+  extremidad?: ExtremidadBionica;
+  requisitoAtributo?: RequisitoAtributoAumento;
+};
 // A2a: `modificadores` lleva los bonos siempre activos (Ojo a distancia y a la Alerta
 // pasiva), `condiciones` las casillas con alcance y `salvaciones` lo que entra en el
 // selector "Contra…" (rules/aumentosTiradas.ts). Los niveles se acumulan; la misma clave
@@ -1703,8 +1712,9 @@ export const IMPLANTES: Implante[] = [
           {
             id: "fuerte",
             label: "Modelo Fuerte",
-            detalle: ["+4 a puntuación de fuerza que se contabiliza hasta un máximo de 10, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 8 puntos, aumenta en 3 el daño de sus golpes pero mantiene en 2 el aumento de dificultad al crítico de aturdimiento."],
+            detalle: ["+4 a puntuación de fuerza que se contabiliza hasta un máximo de 10, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 8 puntos, aumenta en 3 el daño de sus golpes pero mantiene en 2 el aumento de dificultad al crítico de aturdimiento. El modelo fuerte de nivel 4 tiene una limitación y es que debido a su tamaño y peso, el usuario debe tener una puntuación de fuerza de 2 o más para poder instalarse el brazo."],
             extremidad: { fuerza: { delta: 4, tope: 10 }, agilidad: { delta: 0 }, blindaje: 8, bloquea: true, peleaLetal: true, pelea: { danio: 3, aturdimiento: 2 } },
+            requisitoAtributo: { id: "fuerza", min: 2 },
           },
           {
             id: "equilibrado",
