@@ -1939,7 +1939,7 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 1,
         rareza: "Poco Habitual",
-        coste: 25000,
+        coste: 22000,
         detalle: [
           "Gracias a este implante, el personaje puede utilizar drogas y medicamentos con un bonificador de +3 exclusivamente cuando las utilice de modo personal. Si un tercero utiliza medicinas para sanar al personaje con este implante, también gana el mismo bonificador.",
         ],
@@ -1957,7 +1957,7 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 2,
         rareza: "Extraño",
-        coste: 50000,
+        coste: 44000,
         detalle: [
           "Gracias a unos nanobots de microcirugía, el personaje que adquiera este aumento biónico regenera un nivel de daño no letal por turno, uno letal por minuto (10 turnos) y uno grave por hora. Además si consume un nivel fatiga podrá sanar un nivel letal de forma automática, y si consume 5 a lo largo de un mínimo de 5 turnos, podrá sanar uno grave. Este implante en su función pasiva funciona siempre y cuando el personaje no tenga penalizadores por fatiga.",
         ],
@@ -1995,7 +1995,7 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 3,
         rareza: "Muy Extraño",
-        coste: 100000,
+        coste: 88000,
         detalle: [
           "El enjambre evoluciona hacia una red defensiva y de purga sistémica avanzada. El usuario obtiene un bonificador de +4 en tiradas de salvación contra toxinas, venenos y enfermedades.",
           "Además, como reacción y con el gasto de un punto de fatiga el enjambre puede densificarse de forma reactiva bajo la dermis, otorgando 3 puntos de blindaje contra un golpe específico. Si el impacto causa atudimiento el usuario recibe un bonificador de +3 contra el efecto.",
@@ -2026,7 +2026,7 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 4,
         rareza: "Muy Extraño",
-        coste: 200000,
+        coste: 176000,
         detalle: [
           "El cénit de la simbiosis nanotecnológica. El enjambre rompe las limitaciones biológicas previas: la regeneración pasiva del implante funciona incluso si el personaje se encuentra fatigado o exhausto, y duplica su velocidad mientras no esté fatigado (regenera un nivel de daño no letal por acción, uno letal por turno y uno grave por cada 10 turnos).",
           "Además, introduce la capacidad de Tempestad Nanobótica: como acción estándar y gastando 2 puntos de fatiga, el usuario puede forzar al enjambre a desbordarse momentáneamente a través de la piel para atacar o sabotear el entorno inmediato. El ataque se resuelve como acción estándar, su alcance es melee y requiere de una tirada de reflejos + tecnociencia. Su daño básico es de 1 Grave, y es cuando acierta al blindaje destruye 1 punto por contacto físico. De la misma forma se puede emplear para sabotear objetos.",

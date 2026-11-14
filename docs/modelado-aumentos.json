@@ -4979,7 +4979,7 @@
         {
           "nivel": 1,
           "rareza": "Poco Habitual",
-          "coste": 25000,
+          "coste": 22000,
           "sustituye": [],
           "variantes": null,
           "efectos": [
@@ -5036,7 +5036,7 @@
         {
           "nivel": 2,
           "rareza": "Extraño",
-          "coste": 50000,
+          "coste": 44000,
           "sustituye": [],
           "variantes": null,
           "efectos": [
@@ -5163,7 +5163,7 @@
         {
           "nivel": 3,
           "rareza": "Muy Extraño",
-          "coste": 100000,
+          "coste": 88000,
           "sustituye": [],
           "variantes": null,
           "efectos": [
@@ -5235,7 +5235,7 @@
         {
           "nivel": 4,
           "rareza": "Muy Extraño",
-          "coste": 200000,
+          "coste": 176000,
           "sustituye": [
             {
               "efecto": "regeneración pasiva del nivel 2: condición 'sin penalizadores por fatiga'",

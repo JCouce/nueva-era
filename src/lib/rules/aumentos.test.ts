@@ -149,6 +149,13 @@ describe("implantes: cualquier nivel directo y subir paga la diferencia", () => 
     assert.equal(sube.precio, 144_000 - 18_000);
   });
 
+  test("Enjambre Nanobot (sync Drive 2026-11-14): 22.000 / 44.000 / 88.000 / 176.000", () => {
+    const ENJAMBRE = "aum_enjambre_nanobot";
+    const precios = [1, 2, 3, 4].map((nivel) => planCompraAumento(defaultSheet(), { catalogoId: ENJAMBRE, nivel }));
+    assert.deepEqual(precios.map((p) => p.ok && p.precio), [22_000, 44_000, 88_000, 176_000]);
+    assert.deepEqual([1, 2, 3, 4].map((nivel) => costeDePieza({ instanciaId: "e", catalogoId: ENJAMBRE, nivel })), [22_000, 44_000, 88_000, 176_000]);
+  });
+
   test("subir de 1 a 3 cuesta 64.000 − 16.000 y sube la misma instancia", () => {
     const s = compra(defaultSheet(), { catalogoId: OJO, nivel: 1 });
     const inst = s.equipo[0].instanciaId;
