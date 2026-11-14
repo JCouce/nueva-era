@@ -1348,8 +1348,8 @@ const DISTANCIA = { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combat
 // jugador cuando la prueba es solo con el brazo. Mismo id en los cuatro niveles: el alto sustituye
 // al bajo (acumulaPorClave). El límite, nota (los descansos no se miden); el del nivel 3, por
 // escena (`usoPorEscena`); el 4, sin límite.
-// TODO(revisar): «prueba que utilice el brazo» = cualquier prueba de Fortaleza, Potencia o Reflejos
-// (no solo las filas que ya llevan «Con el brazo biónico»).
+// «Prueba que utilice el brazo» = cualquier prueba de Fortaleza, Potencia o Reflejos, no solo las
+// filas que ya llevan «Con el brazo biónico» (usuario, 2026-11-14).
 function casillaVentajaBrazo(limite: string | null, porEscena = false): CondicionTirada {
   return {
     id: "aum_brazo_ventaja",
@@ -1829,8 +1829,7 @@ export const IMPLANTES: Implante[] = [
         salvaciones: [{ contra: ["ceguera"], bono: 3 }],
         // Sync Drive 2026-11-14: «con las mismas características de los visores de nivel 2» (antes,
         // 500 m). Solo texto: lo que los visores 2 suman (cobertura, destellos) no se copia aquí.
-        // TODO(revisar): si el Ojo 1 debe aplicar además los números del Visor Nocturno 2 y del
-        // Térmico 2 (−2 a la cobertura visual a 50 m, +3 contra la ceguera por destellos).
+        // Solo texto, sin los números del Visor Nocturno 2 ni del Térmico 2 (usuario, 2026-11-14).
         textos: [{ id: "vision", en: BUSCAR, texto: "Visión nocturna y termo-óptica, como los visores de nivel 2 (Visor Nocturno y Visor Térmico)." }],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
@@ -2105,7 +2104,7 @@ export const IMPLANTES: Implante[] = [
         ],
         // A4b: casilla en "Resistir daño" que cobra al marcarla.
         // Sync Drive 2026-11-14: «red defensiva contra traumatismos»: solo contra el daño cinético
-        // (supuesto: traumatismo = golpe físico, el Cinético de la app, como la Osteotendinosa).
+        // (usuario, 2026-11-14: traumatismo = Cinético, como la Osteotendinosa).
         blindajeReactivo: {
           etiqueta: "Densificar",
           valor: 3,

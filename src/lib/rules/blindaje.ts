@@ -178,8 +178,8 @@ export function blindajeNoCuenta(tipo: TipoDanio): string | null {
 // la suma del blindaje fijo del cuerpo (armadura, armadura natural de especie y de aumentos) y
 // aporta solo lo que le falta a esa suma para llegar a su valor (lectura A, usuario 2026-11-14).
 // El Escudo Deflector, el blindaje reactivo y la Contención suman aparte. Con el nivel 1, nada.
-// TODO(revisar): el Tejido Conductor (+1 contra eléctrico) también suma aparte; el plan no lo
-// nombra.
+// El Tejido Conductor (+1 contra eléctrico) también suma aparte, como el Deflector (usuario,
+// 2026-11-14).
 // `contencion` (P1 de psiónica): la absorción de la Contención puesta, que vale también contra
 // el fuego; contra el mental, no.
 export function desgloseBlindaje(

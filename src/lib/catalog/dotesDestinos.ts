@@ -110,7 +110,7 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // Diagnóstico de Sistemas (sync Drive 2026-11-14): no hay tirada propia de diagnóstico, así
   // que la casilla va a toda tirada de Tecnociencia (hoy solo Hackeo: la tirada libre no lleva
   // casillas y Reparar no tira).
-  // TODO(revisar): ¿hace falta una tirada fija de diagnóstico (Informática/Mecánica) para ella?
+  // Aceptado así (usuario, 2026-11-14).
   "habilidad:tecnociencia": { tipo: "tirada", alcance: { tipo: "habilidad", habilidad: "tecnociencia" }, textos: ["tecnica"] },
 
   // ── Texto que solo vive en la tarjeta de la dote ──
