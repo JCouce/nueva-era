@@ -6290,6 +6290,42 @@
       "candidataUX": null
     },
     {
+      "id": "dote_fuego_de_barrera",
+      "label": "Fuego de Barrera",
+      "grupo": "combate_distancia",
+      "coste": 4,
+      "requisitos": [
+        {
+          "tipo": "habilidad",
+          "id": "combate_distancia",
+          "min": 2
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "objetivo",
+          "lugar": "familia:ataque_fuego",
+          "condicion": null,
+          "efecto": {
+            "tipo": "texto",
+            "texto": "Fuego de barrera: si recibe impacto, su velocidad baja a la mitad en su primera acción de movimiento hasta el final de su siguiente turno.",
+            "cuando": "acierto",
+            "soloEn": {
+              "modo": [
+                "Estándar (F. Auto)",
+                "Compleja (F. Auto)"
+              ]
+            }
+          }
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_vigilancia_tactica",
       "label": "Vigilancia Táctica",
       "grupo": "exploracion",

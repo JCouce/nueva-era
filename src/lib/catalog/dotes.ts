@@ -6740,6 +6740,56 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_fuego_de_barrera",
+    "label": "Fuego de Barrera",
+    "grupo": "combate_distancia",
+    "coste": 4,
+    "requisitos": [
+      {
+        "tipo": "habilidad",
+        "id": "combate_distancia",
+        "min": 2
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "Cuando realizas un ataque de fuego automático, los objetivos que reciban impacto ven reducida su velocidad a la mitad en su primera acción de movimiento hasta el final de su siguiente turno.",
+    "efectos": [
+      {
+        "tipo": "objetivo",
+        "lugar": "familia:ataque_fuego",
+        "condicion": null,
+        "efecto": {
+          "tipo": "texto",
+          "texto": "Fuego de barrera: si recibe impacto, su velocidad baja a la mitad en su primera acción de movimiento hasta el final de su siguiente turno.",
+          "cuando": "acierto",
+          "soloEn": {
+            "modo": [
+              "Estándar (F. Auto)",
+              "Compleja (F. Auto)"
+            ]
+          }
+        },
+        "borrador": 0
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "objetivo_tercero",
+          "id": "familia:ataque_fuego"
+        },
+        "mecanismo": "nota_fija",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_vigilancia_tactica",
     "label": "Vigilancia Táctica",
     "grupo": "exploracion",
@@ -9341,9 +9391,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   229 efectos (219 en el borrador)
+//   230 efectos (220 en el borrador)
 //   construidos: 126
-//   texto: 103
+//   texto: 104
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

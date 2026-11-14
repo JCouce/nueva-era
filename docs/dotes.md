@@ -16,8 +16,8 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **125 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 16 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 3 · Sigilo 8 ·
+> Recuento: **126 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 17 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 3 · Sigilo 8 ·
 > Tecnociencia 1 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
@@ -34,7 +34,7 @@
 >
 > **Dotes atrasadas** (estaban en Drive desde fotos anteriores y no se habían transcrito;
 > sync del 2026-11-14, `docs/plan-sync-2026-11-14.md`, «Después del sync»), con el mismo criterio:
-> *Disparo Relámpago*, *Disparo de Interdicción*, *Fuego de Saturación*, *Fuego de Supresión*.
+> *Disparo Relámpago*, *Disparo de Interdicción*, *Fuego de Saturación*, *Fuego de Supresión*, *Fuego de Barrera*.
 
 ## Actitud
 
@@ -1094,6 +1094,16 @@ En un ataque de fuego automático el personaje concentra en una sola casilla tod
 
 **Efecto:**
 El personaje realiza un ataque de fuego automático, los objetivos pueden decidir esquivarlo de forma automática empleando una reacción, pero al hacerlo reciben un penalizador de -2 en ataques a distancia contra el personaje y sus aliados hasta el final de su siguiente turno.
+
+### Fuego de Barrera
+
+**Coste:** 4
+
+**Requisitos:**
+- Combate a Distancia 2 · habilidad
+
+**Efecto:**
+Cuando realizas un ataque de fuego automático, los objetivos que reciban impacto ven reducida su velocidad a la mitad en su primera acción de movimiento hasta el final de su siguiente turno.
 
 ### Disparo de Interdicción
 

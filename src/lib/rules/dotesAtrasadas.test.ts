@@ -140,3 +140,17 @@ describe("Fuego de Supresión", () => {
     assert.equal((t().condiciones ?? []).some((c) => c.id.startsWith("dote_fuego_de_supresion")), false);
   });
 });
+
+describe("Fuego de Barrera", () => {
+  const f = resolver(armado(ficha([{ id: "dote_fuego_de_barrera" }]), "fusil_asalto_impetus"));
+  const t = () => fila(f, "ataque_fuego_");
+  const avisa = (modo: string, resultado = ACIERTA) =>
+    efectosSobreObjetivo(t(), { modo }, resultado, () => 1).some((a) => /velocidad baja a la mitad en su primera acción de movimiento/.test(a.titulo));
+
+  test("en fuego automático y con acierto, aviso a «El objetivo»: media velocidad en su primer movimiento", () => {
+    const fAuto = t().ataque!.modos.find((m) => m.etiqueta?.includes("F. Auto"))!.id;
+    assert.equal(avisa(fAuto), true);
+    assert.equal(avisa(fAuto, FALLA), false);
+    assert.equal(avisa(t().ataque!.modos[0].id), false);
+  });
+});
