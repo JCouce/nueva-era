@@ -6617,6 +6617,73 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_fuego_de_saturacion",
+    "label": "Fuego de Saturación",
+    "grupo": "combate_distancia",
+    "coste": 1,
+    "requisitos": [
+      {
+        "tipo": "habilidad",
+        "id": "combate_distancia",
+        "min": 1
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "En un ataque de fuego automático el personaje concentra en una sola casilla todos los proyectiles, aumentando la dificultad de esquiva y el daño en 1.",
+    "efectos": [
+      {
+        "tipo": "bono",
+        "alcance": "familia:ataque_fuego",
+        "valor": 1,
+        "condicion": "Fuego automático concentrado en una sola casilla",
+        "sobre": "danio",
+        "borrador": 0
+      },
+      {
+        "tipo": "objetivo",
+        "lugar": "familia:ataque_fuego",
+        "condicion": "Fuego automático concentrado en una sola casilla",
+        "efecto": {
+          "tipo": "texto",
+          "texto": "Fuego de saturación: la dificultad para esquivar este ataque sube 1.",
+          "cuando": "siempre",
+          "soloEn": {
+            "modo": [
+              "Estándar (F. Auto)",
+              "Compleja (F. Auto)"
+            ]
+          }
+        },
+        "borrador": 1
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "numerico",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "familia:ataque_fuego"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "objetivo_tercero",
+          "id": "familia:ataque_fuego"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_vigilancia_tactica",
     "label": "Vigilancia Táctica",
     "grupo": "exploracion",
@@ -9218,9 +9285,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   226 efectos (216 en el borrador)
-//   construidos: 125
-//   texto: 101
+//   228 efectos (218 en el borrador)
+//   construidos: 126
+//   texto: 102
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

@@ -6205,6 +6205,49 @@
       "candidataUX": null
     },
     {
+      "id": "dote_fuego_de_saturacion",
+      "label": "Fuego de Saturación",
+      "grupo": "combate_distancia",
+      "coste": 1,
+      "requisitos": [
+        {
+          "tipo": "habilidad",
+          "id": "combate_distancia",
+          "min": 1
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "bono",
+          "alcance": "familia:ataque_fuego",
+          "valor": 1,
+          "sobre": "danio",
+          "condicion": "Fuego automático concentrado en una sola casilla"
+        },
+        {
+          "tipo": "objetivo",
+          "lugar": "familia:ataque_fuego",
+          "condicion": "Fuego automático concentrado en una sola casilla",
+          "efecto": {
+            "tipo": "texto",
+            "texto": "Fuego de saturación: la dificultad para esquivar este ataque sube 1.",
+            "cuando": "siempre",
+            "soloEn": {
+              "modo": [
+                "Estándar (F. Auto)",
+                "Compleja (F. Auto)"
+              ]
+            }
+          }
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_vigilancia_tactica",
       "label": "Vigilancia Táctica",
       "grupo": "exploracion",

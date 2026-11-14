@@ -11,7 +11,7 @@ import { equipar } from "./equipo";
 import { lineaAntes } from "./textosDeTirada";
 import { montarTirada, eleccionSinTocar } from "./montaje";
 import { efectosSobreObjetivo } from "./efectosArma";
-import type { Accion } from "./acciones";
+import { resolverDanio, type Accion } from "./acciones";
 import { DOTES } from "../catalog/dotes";
 import type { EspecialidadId } from "../catalog/especialidades";
 import type { DoteComprada } from "./dotesCompradas";
@@ -90,5 +90,35 @@ describe("Disparo de Interdicción", () => {
     const t = fila(f, "ataque_fuego_");
     assert.deepEqual(efectosSobreObjetivo(t, {}, ACIERTA, () => 1), []);
     assert.deepEqual(efectosSobreObjetivo(t, { [casilla(t)!.id]: true }, FALLA, () => 1), []);
+  });
+});
+
+describe("Fuego de Saturación", () => {
+  const f = resolver(armado(ficha([{ id: "dote_fuego_de_saturacion" }]), "fusil_asalto_impetus"));
+  const t = () => fila(f, "ataque_fuego_");
+  const casilla = (x: Accion) =>
+    (x.condiciones ?? []).find((c): c is Toggle => c.tipo === "toggle" && c.id.startsWith("dote_fuego_de_saturacion"))!;
+  const montar = (x: Accion, marcadas: string[] = []) => {
+    const e = eleccionSinTocar(x);
+    return montarTirada(f, x, { ...e, estadoCondiciones: { ...e.estadoCondiciones, ...Object.fromEntries(marcadas.map((id) => [id, true])) } });
+  };
+  const modoFAuto = (x: Accion) => x.ataque!.modos.find((m) => m.etiqueta?.includes("F. Auto"))!.id;
+
+  test("casilla en los disparos: +1 al daño, sin tocar la tirada", () => {
+    const c = casilla(t());
+    assert.match(c.etiqueta, /^Fuego automático concentrado en una sola casilla/);
+    const con = montar(t(), [c.id]);
+    const sin = montar(t());
+    assert.equal(con.modificador, sin.modificador);
+    assert.equal(resolverDanio(10, 2, "Letal", con.danio).total - resolverDanio(10, 2, "Letal", sin.danio).total, 1);
+  });
+
+  test("la dificultad de esquiva +1, aviso a «El objetivo» solo en fuego automático y con la casilla", () => {
+    const c = casilla(t());
+    const avisa = (estado: Record<string, string | boolean>) =>
+      efectosSobreObjetivo(t(), estado, ACIERTA, () => 1).some((a) => /dificultad para esquivar este ataque sube 1/.test(a.titulo));
+    assert.equal(avisa({ [c.id]: true, modo: modoFAuto(t()) }), true);
+    assert.equal(avisa({ [c.id]: true, modo: t().ataque!.modos[0].id }), false);
+    assert.equal(avisa({ modo: modoFAuto(t()) }), false);
   });
 });
