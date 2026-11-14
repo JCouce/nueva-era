@@ -343,7 +343,7 @@ describe("A2b: alcance por aplicado", () => {
     const cambia: CondicionTirada = { id: "a_fortaleza", tipo: "toggle", etiqueta: "Con Fortaleza", valorActivo: 0, aplicado: "fortaleza" };
     const atletismo = ACCIONES.find((a) => a.id === "atletismo")!;
     const t = conExtrasDeFicha(fs, { ...atletismo, condiciones: [cambia] });
-    assert.equal(montar(fs, t, { aum_sincronizacion_potencia: true }).ventaja, "Dos dados en Potencia · Sincronización Neuromotora Profunda");
+    assert.equal(montar(fs, t, { aum_sincronizacion_potencia: true }).ventaja, "Ventaja en Potencia · Sincronización Neuromotora Profunda");
     const m = montar(fs, t, { aum_sincronizacion_potencia: true, a_fortaleza: true });
     assert.equal(m.ventaja, null);
     assert.equal(m.costeFatiga, 0);
@@ -424,7 +424,7 @@ describe("A2b: casillas de la rama cognitiva", () => {
     const f = resolver(conTodas([MIELINIZACION, PREFRONTAL, FOVEO, CONSCIENCIA]));
     const t = tiradaFija(f, "defensa");
     const m = montar(f, t, { aum_consciencia_esquiva: true });
-    assert.equal(m.ventaja, "Esquivar con dos dados · Consciencia Omnidireccional");
+    assert.equal(m.ventaja, "Esquivar con ventaja · Consciencia Omnidireccional");
     assert.equal(m.costeFatiga, 1);
     assert.ok(lineaAntes(t).includes("Flanquearte no da bono"));
   });

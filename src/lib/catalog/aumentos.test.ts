@@ -229,3 +229,23 @@ describe("integridad del catálogo de aumentos", () => {
     }
   });
 });
+
+// Sync Drive 2026-11-14: la fuente dice «ventaja» donde antes decía «dos dados». Los textos
+// cortos de la app (resúmenes y etiquetas de casillas) lo dicen igual; el detalle copia la fuente.
+describe("«ventaja», no «dos dados», en resúmenes y etiquetas", () => {
+  test("ninguna pieza de aumentos dice «dos dados» en su resumen ni en una etiqueta", () => {
+    const textos: string[] = [];
+    const recoger = (x: unknown, clave?: string): void => {
+      if (typeof x === "string") {
+        if (clave === "resumen" || clave === "etiqueta") textos.push(x);
+      } else if (Array.isArray(x)) {
+        for (const y of x) recoger(y);
+      } else if (x && typeof x === "object") {
+        for (const [k, v] of Object.entries(x)) recoger(v, k);
+      }
+    };
+    recoger(AUMENTOS);
+    assert.ok(textos.length > 40);
+    assert.deepEqual(textos.filter((t) => /dos dados/i.test(t)), []);
+  });
+});
