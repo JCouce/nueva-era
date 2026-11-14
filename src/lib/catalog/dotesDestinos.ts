@@ -69,9 +69,8 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // en vuelo, sin dejar bono positivo (usuario, 2026-11-14). Va en la casilla «En vuelo» de la
   // esquiva, con la maniobrabilidad de la pieza (conEsquivaEnVuelo).
   maniobra_vuelo: { tipo: "maniobraVuelo" },
-  // «Saltar, levantarse». Salto Servoasistido (E6): texto.
-  // TODO(revisar): S10 ya cuenta doble el bono del exoesqueleto en las fórmulas de movimiento
-  // (salto incluido, derivados.ts); ¿la dote lo vuelve a duplicar o S10 no debería contar el salto?
+  // «Saltar, levantarse». Salto Servoasistido (E6): aviso. No vuelve a duplicar el bono del
+  // exoesqueleto: S10 ya lo cuenta doble en el salto (derivados.ts; usuario, 2026-11-14).
   atletismo: tirada("atletismo"),
   escalar: tirada("escalar"),
   // «Ocultarse» (id sigilo). Paso de Fantasma (E6): selector del penalizador por terreno difícil o

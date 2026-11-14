@@ -225,8 +225,9 @@ describe("As de Exoarmadura", () => {
 describe("Salto Servoasistido", () => {
   const f = resolver(ficha([{ id: "dote_salto_servoasistido" }]));
 
-  test("aviso en Saltar: el bono de Fuerza del exoesqueleto, doble para la distancia o altura", () => {
-    assert.match(lineaAntes(fija(f, "atletismo")), /exoesqueleto en marcha, su bono de Fuerza se duplica/);
+  // S10 ya lo cuenta doble en el salto: la dote no lo vuelve a duplicar (usuario, 2026-11-14).
+  test("aviso en Saltar: el bono de Fuerza del exoesqueleto, doble, ya en tu movimiento", () => {
+    assert.match(lineaAntes(fija(f, "atletismo")), /exoesqueleto en marcha, su bono de Fuerza cuenta doble.*no se vuelve a duplicar/);
   });
 
   test("y en Resistir daño: 2 m menos de caída con el exoesqueleto", () => {

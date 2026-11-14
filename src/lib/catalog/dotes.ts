@@ -7405,7 +7405,7 @@ export const DOTES: readonly DoteCatalogo[] = [
       {
         "tipo": "texto",
         "lugar": "atletismo",
-        "texto": "Saltando con el exoesqueleto en marcha, su bono de Fuerza se duplica para la distancia o la altura del salto.",
+        "texto": "Saltando con el exoesqueleto en marcha, su bono de Fuerza cuenta doble en la distancia o la altura del salto; ya va así en tu movimiento (no se vuelve a duplicar).",
         "condicion": null,
         "porque": "sin_regla",
         "borrador": 0

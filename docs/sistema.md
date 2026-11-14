@@ -1096,9 +1096,9 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
     Maniobrabilidad, −2, As anula 2). En tierra no hacen nada. As sustituye a Piloto (vale la
     mejor) y la pide. La anulación del −1 a los ataques en vuelo, en la tarjeta (ese −1 tampoco lo
     aplica la app, S94).
-  - *Salto Servoasistido*: texto en Saltar (bono de Fuerza del exoesqueleto doble para el salto) y
-    en Resistir daño (2 m menos de caída). `TODO(revisar)`: S10 ya cuenta doble ese bono en las
-    fórmulas de movimiento, salto incluido.
+  - *Salto Servoasistido*: no vuelve a duplicar el bono de Fuerza del exoesqueleto (S10 ya lo
+    cuenta doble en las fórmulas de movimiento, salto incluido; usuario, 2026-11-14): queda como
+    aviso en Saltar, más los 2 m menos de caída en Resistir daño.
 - **Acciones coordinadas** `[FIRME · DOTES 2026-11-14]`: *Ataque Coordinado* y *Defensa
   Coordinada* son acciones de dote (compleja, Perspicacia + Exploración en Táctica, dificultad
   7). El +1 al ataque (o a la defensa) contra el objetivo, tuyo y de tus aliados, y lo que dura en crítico (tantos turnos como tu Táctica) van
