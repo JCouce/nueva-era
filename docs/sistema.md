@@ -1008,13 +1008,14 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
 (regla del usuario); solo se pregunta ante duda real.
 
 ### 9.1 Qué es una dote `[FIRME · DOTES]`
-- **112 dotes** con nombre, **coste** en puntos, **requisitos** y efecto en prosa,
+- **113 dotes** con nombre, **coste** en puntos, **requisitos** y efecto en prosa,
   ordenadas bajo la habilidad a la que pertenecen: Actitud 16 · Atletismo 22 · Biociencia 9 ·
-  Combate Melee 32 · Combate a Distancia 12 · Exploración 10 · Sigilo 3 · Tecnociencia 8 (todas
-  en el subgrupo **Psiónica**). Cultura e Interpretación, sin dotes todavía. Las 3 últimas de
+  Combate Melee 32 · Combate a Distancia 12 · Exploración 10 · Sigilo 3 · Tecnociencia 9 (8 en el
+  subgrupo **Psiónica**). Cultura e Interpretación, sin dotes todavía. Las 3 últimas de
   Combate a Distancia (*Arquero Poderoso*, *Pistolero*, *Pistolero Infernal*) son de la foto
   del 2026-10-23; el resto de dotes nuevas de esa foto no está transcrito todavía. De la foto
-  del 2026-11-14 (T2.M1 del plan de sync): *Ataque Coordinado*, *Defensa Coordinada*, *Estrategia de Combate* e *Interrogador Perspicaz* (Exploración). Las que dependen
+  del 2026-11-14 (T2.M1 del plan de sync): *Ataque Coordinado*, *Defensa Coordinada*, *Estrategia de Combate* e *Interrogador Perspicaz* (Exploración), y *Diagnóstico de
+  Sistemas* (Tecnociencia). Las que dependen
   de habilidades nuevas (Ocultación, Mimetismo, Juego de Manos, Exoarmadura) esperan a E6.
 - **Acciones coordinadas** `[FIRME · DOTES 2026-11-14]`: *Ataque Coordinado* y *Defensa
   Coordinada* son acciones de dote (compleja, Perspicacia + Exploración en Táctica, dificultad
@@ -1026,6 +1027,11 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
   Perspicacia + Exploración en Investigación, como acción social durante un interrogatorio.
   La fuente no fija dificultad ni resultados: la dificultad es la de la acción social con ese
   interrogado (máster).
+- **Diagnóstico de Sistemas** `[FIRME · DOTES 2026-11-14]`: casilla de ventaja que cobra 1 de
+  fatiga, como *Ojo Clínico*. No hay tirada propia de diagnóstico: la casilla sale en toda
+  tirada de Tecnociencia (hoy solo Hackeo: la tirada libre no lleva casillas y Reparar no tira)
+  y el jugador la marca cuando diagnostica un sistema de su especialidad (Informática o
+  Mecánica). Pendiente: si hace falta una tirada fija de diagnóstico.
 - El grupo solo ordena: no es requisito (*Mata Gigantes*, en Combate Melee, pide Táctica).
 - **Pool de creación** por letra: A 18 · B 15 · C 12 · D 9 · E 6 (`HOJA3`). Lo que sobra al
   aprobar la ficha **se pierde**.

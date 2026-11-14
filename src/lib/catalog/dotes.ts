@@ -7471,6 +7471,78 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_diagnostico_de_sistemas",
+    "label": "Diagnóstico de Sistemas",
+    "grupo": "tecnociencia",
+    "coste": 2,
+    "requisitos": [
+      {
+        "tipo": "uno_de",
+        "opciones": [
+          {
+            "tipo": "especialidad",
+            "habilidad": "tecnociencia",
+            "id": "informatica",
+            "min": 2
+          },
+          {
+            "tipo": "especialidad",
+            "habilidad": "tecnociencia",
+            "id": "mecanica",
+            "min": 2
+          }
+        ]
+      },
+      {
+        "tipo": "atributo",
+        "id": "inteligencia",
+        "min": 1
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "El personaje obtiene ventaja en pruebas de diagnóstico o análisis de fallos en sistemas informáticos, electrónicos o mecánicos mediante el gasto de un punto de fatiga. Para que se aplique la dote con el elemento analizado debe cumplir con los requisitos de la especialidad.",
+    "efectos": [
+      {
+        "tipo": "ventaja",
+        "alcance": "habilidad:tecnociencia",
+        "condicion": "Diagnóstico o análisis de fallos de un sistema de tu especialidad (Informática o Mecánica)",
+        "borrador": 0
+      },
+      {
+        "tipo": "coste",
+        "alcance": "habilidad:tecnociencia",
+        "condicion": "Diagnóstico o análisis de fallos de un sistema de tu especialidad (Informática o Mecánica)",
+        "fatiga": 1,
+        "borrador": 1
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "resolucion",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "habilidad:tecnociencia"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      },
+      {
+        "tipo": "coste",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "habilidad:tecnociencia"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_potencia_psionica",
     "label": "Potencia Psiónica",
     "grupo": "tecnociencia",
@@ -8482,8 +8554,8 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   206 efectos (196 en el borrador)
-//   construidos: 114
+//   208 efectos (198 en el borrador)
+//   construidos: 116
 //   texto: 92
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0

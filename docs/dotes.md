@@ -16,9 +16,9 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **112 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Recuento: **113 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
 > Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Sigilo 3 ·
-> Tecnociencia 0 · Psiónica 8. Ver "Notas de transcripción" al final.
+> Tecnociencia 1 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
 > Distancia): *Arquero Poderoso*, *Pistolero* y *Pistolero Infernal*, transcritas con el mismo
@@ -27,7 +27,8 @@
 > que **todavía no están aquí**: el resto del documento sigue siendo la foto del 2026-10-14.
 >
 > **Añadidas de la foto de Drive del 2026-11-14** (`docs/plan-sync-2026-11-14.md`, T2.M1), con
-> el mismo criterio: *Ataque Coordinado*, *Defensa Coordinada*, *Estrategia de Combate* e *Interrogador Perspicaz*. Las que dependen de habilidades nuevas (Ocultación,
+> el mismo criterio: *Ataque Coordinado*, *Defensa Coordinada*, *Estrategia de Combate*, *Interrogador Perspicaz* (Exploración) y *Diagnóstico de Sistemas*
+> (Tecnociencia). Las que dependen de habilidades nuevas (Ocultación,
 > Mimetismo, Juego de Manos, Exoarmadura) esperan a E6.
 
 ## Actitud
@@ -1257,9 +1258,22 @@ El personaje reduce en 4 los penalizadores por moverse oculto.
 El personaje se mueve en sigilo sin penalizador
 
 
+## Tecnociencia
+
+### Diagnóstico de Sistemas
+
+**Coste:** 2
+
+**Requisitos:**
+- Informática 2 o Mecánica 2 · especialidad (Tecnociencia)
+- Inteligencia 1 · atributo
+
+**Efecto:**
+El personaje obtiene ventaja en pruebas de diagnóstico o análisis de fallos en sistemas informáticos, electrónicos o mecánicos mediante el gasto de un punto de fatiga. Para que se aplique la dote con el elemento analizado debe cumplir con los requisitos de la especialidad.
+
 ## Tecnociencia · Psiónica
 
-*(En la fuente, el título "Tecnociencia" va sin dotes y seguido del título "Psiónica". Decisión del usuario, 2026-10-14: Psiónica es un subgrupo de Tecnociencia.)*
+*(En la fuente, el título "Psiónica" sigue al grupo Tecnociencia con el mismo estilo de título. Decisión del usuario, 2026-10-14: Psiónica es un subgrupo de Tecnociencia. Hasta la foto del 2026-11-14, Tecnociencia no traía dotes propias.)*
 
 ### Potencia Psiónica
 
@@ -1385,7 +1399,8 @@ Para canalizar la energía sin lesionarse, el personaje deberá realizar de form
   Psiónica 8.
 
 **Grupos**
-- **Cultura, Interpretación y Tecnociencia están vacíos**: solo el título del grupo.
+- **Cultura, Interpretación y Tecnociencia están vacíos**: solo el título del grupo. Desde la
+  foto del 2026-11-14, Tecnociencia trae *Diagnóstico de Sistemas*.
 - **Psiónica** aparece justo después de Tecnociencia con el mismo estilo de título de grupo
   en el `.odt` (estilo `T26`, igual que Biociencia, Sigilo, Tecnociencia…). Se ha
   transcrito como subgrupo de Tecnociencia (decisión del usuario, 2026-10-14: Psiónica no es

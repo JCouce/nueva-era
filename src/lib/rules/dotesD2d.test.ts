@@ -80,6 +80,33 @@ describe("D2d: ventaja con casilla", () => {
     assert.deepEqual(tirarDado(Boolean(con.ventaja), dado), { dado: 9, dados: [3, 9] });
   });
 
+  // Sync Drive 2026-11-14 (T2.M1.5): como Ojo Clínico, en toda tirada de Tecnociencia.
+  test("Diagnóstico de Sistemas: ventaja por 1 de fatiga en las tiradas de Tecnociencia (Hackeo)", () => {
+    const f = resolver(ficha([{ id: "dote_diagnostico_de_sistemas" }]));
+    const t = fija(f, "tecnica");
+    const c = casilla(t, (x) => x.ventaja === true)!;
+    assert.match(c.etiqueta, /^Diagnóstico o análisis de fallos .*\(Diagnóstico de Sistemas\)$/);
+    const sin = montar(f, t);
+    const con = montar(f, t, [c.id]);
+    assert.equal(sin.ventaja, null);
+    assert.equal(sin.costeFatiga, 0);
+    assert.equal(con.ventaja, c.etiqueta);
+    assert.equal(con.costeFatiga, 1);
+    assert.equal(con.modificador, sin.modificador);
+    assert.equal(casilla(fija(f, "medicina"), (x) => x.ventaja === true), undefined);
+  });
+
+  test("Diagnóstico de Sistemas: con Informática 2 o con Mecánica 2; sin ninguna, nada", () => {
+    const con = (esp: EspecialidadId[]) => {
+      const base = ficha([{ id: "dote_diagnostico_de_sistemas" }]);
+      const s = { ...base, habilidades: { ...base.habilidades, tecnociencia: { valor: 2, especialidades: esp } } };
+      return casilla(fija(resolver(s), "tecnica"), (x) => x.ventaja === true) !== undefined;
+    };
+    assert.equal(con(["informatica"]), true);
+    assert.equal(con(["mecanica"]), true);
+    assert.equal(con(["fisica"]), false);
+  });
+
   test("Bioma Predilecto: ventaja en Iniciativa y en Subsistencia (ya no en Buscar / percibir)", () => {
     const f = resolver(ficha([{ id: "dote_bioma_predilecto", eleccion: "Selva densa" }]));
     for (const id of ["iniciativa", "iniciativa_arma", "iniciativa_distraccion"])

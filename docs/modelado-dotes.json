@@ -6969,6 +6969,54 @@
       ]
     },
     {
+      "id": "dote_diagnostico_de_sistemas",
+      "label": "Diagnóstico de Sistemas",
+      "grupo": "tecnociencia",
+      "coste": 2,
+      "requisitos": [
+        {
+          "tipo": "uno_de",
+          "opciones": [
+            {
+              "tipo": "especialidad",
+              "habilidad": "tecnociencia",
+              "id": "informatica",
+              "min": 2
+            },
+            {
+              "tipo": "especialidad",
+              "habilidad": "tecnociencia",
+              "id": "mecanica",
+              "min": 2
+            }
+          ]
+        },
+        {
+          "tipo": "atributo",
+          "id": "inteligencia",
+          "min": 1
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "ventaja",
+          "alcance": "habilidad:tecnociencia",
+          "condicion": "Diagnóstico o análisis de fallos de un sistema de tu especialidad (Informática o Mecánica)"
+        },
+        {
+          "tipo": "coste",
+          "alcance": "habilidad:tecnociencia",
+          "condicion": "Diagnóstico o análisis de fallos de un sistema de tu especialidad (Informática o Mecánica)",
+          "fatiga": 1
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_potencia_psionica",
       "label": "Potencia Psiónica",
       "grupo": "tecnociencia",
