@@ -118,11 +118,11 @@ export const ARMADURAS: Armadura[] = [
     label: "Ropa Inteligente",
     resumen: "Los mismos materiales que el traje ultra ligero, con pinta de ropa normal.",
     descripcion:
-      "Usando los mismos materiales que el traje ultra ligero, ofrece una defensa casi tan óptima " +
+      "Usando los mismos materiales que el traje ultra ligero, ofrece una defensa óptima " +
       "pero con apariencia de conjunto de ropa normal — chaqueta, pantalón y calzado, de lo más " +
       "elegante a lo puramente casual. Al igual que el traje, otorga un bonificador en tiradas de " +
       "salvación contra congelación y llamarada de +1.",
-    blindaje: 2,
+    blindaje: 3,
     bonifMaxAgilidad: null,
     ranurasSubsistema: 1,
     topeExoesqueleto: 1,
