@@ -6979,6 +6979,52 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_camaleon_social",
+    "label": "Camaleón Social",
+    "grupo": "cultura",
+    "coste": 2,
+    "requisitos": [
+      {
+        "tipo": "especialidad",
+        "habilidad": "cultura",
+        "id": "sociedad",
+        "min": 2
+      },
+      {
+        "tipo": "aplicado",
+        "id": "expresion",
+        "min": 1
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "Si identificas con éxito un grupo social y su jerarquía, obtienes un bonificador de +1 en tiradas de **actitud** en próximas interacciones.",
+    "efectos": [
+      {
+        "tipo": "bono",
+        "alcance": "habilidad:actitud",
+        "valor": 1,
+        "condicion": "Has identificado con éxito el grupo social y su jerarquía",
+        "borrador": 0
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "numerico",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "habilidad:actitud"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_vigilancia_tactica",
     "label": "Vigilancia Táctica",
     "grupo": "exploracion",
@@ -9580,8 +9626,8 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   235 efectos (225 en el borrador)
-//   construidos: 129
+//   236 efectos (226 en el borrador)
+//   construidos: 130
 //   texto: 106
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0

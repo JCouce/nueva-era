@@ -14,7 +14,7 @@ import { motivoDeBloqueo } from "./habilitacion";
 import { gastarUsoLimitado, type MesaDeFicha } from "./dotesAcciones";
 import { montarTirada, eleccionSinTocar } from "./montaje";
 import { efectosSobreObjetivo } from "./efectosArma";
-import { resolverDanio, type Accion } from "./acciones";
+import { ACCIONES, resolverDanio, type Accion } from "./acciones";
 import { DOTES } from "../catalog/dotes";
 import { MUNICION_GRANADA } from "../catalog/municion";
 import type { EspecialidadId } from "../catalog/especialidades";
@@ -222,5 +222,26 @@ describe("Mente Enciclopédica", () => {
 
   test("sin Cultura 3, no sale", () => {
     assert.equal(deDote({ ...s, habilidades: { ...s.habilidades, cultura: { valor: 2, especialidades: [] } } }), undefined);
+  });
+});
+
+describe("Camaleón Social", () => {
+  const f = resolver(ficha([{ id: "dote_camaleon_social" }]));
+  const casilla = (t: Accion) =>
+    (t.condiciones ?? []).find((c): c is Toggle => c.tipo === "toggle" && c.id.startsWith("dote_camaleon_social"));
+  const fija = (id: string) => conExtrasDeFicha(f, ACCIONES.find((a) => a.id === id)!);
+
+  test("casilla +1 en las tiradas de Actitud: grupo social y jerarquía identificados", () => {
+    for (const id of ["social", "discernir_mentiras", "resistir_distraccion", "iniciativa_distraccion"]) {
+      const t = fija(id);
+      const c = casilla(t)!;
+      assert.match(c.etiqueta, /^Has identificado con éxito el grupo social y su jerarquía/, id);
+      assert.equal(total(f, t, [c.id]) - total(f, t), 1, id);
+    }
+  });
+
+  test("no en las de otra habilidad", () => {
+    assert.equal(casilla(fija("defensa")), undefined);
+    assert.equal(casilla(fija("sigilo")), undefined);
   });
 });

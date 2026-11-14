@@ -62,9 +62,9 @@ const cumple = (s: Sheet, id: string, i = 0) =>
 // ── Catálogo ───────────────────────────────────────────────────────────
 
 describe("catálogo generado", () => {
-  test("129 dotes, ids únicos", () => {
-    assert.equal(DOTES.length, 129);
-    assert.equal(new Set(DOTES.map((d) => d.id)).size, 129);
+  test("130 dotes, ids únicos", () => {
+    assert.equal(DOTES.length, 130);
+    assert.equal(new Set(DOTES.map((d) => d.id)).size, 130);
   });
 
   // di-24 superado (sync Drive 2026-11-14): la foto nueva trae su efecto, así que ya se ve y se
@@ -72,7 +72,7 @@ describe("catálogo generado", () => {
   test("Olfato de Investigador aparece en las secciones y se compra", () => {
     assert.equal(dotePorId("dote_olfato_de_investigador")!.visible, true);
     assert.ok(SECCIONES_DOTES.some((s) => s.dotes.some((d) => d.id === "dote_olfato_de_investigador")));
-    assert.equal(SECCIONES_DOTES.reduce((t, s) => t + s.dotes.length, 0), 129);
+    assert.equal(SECCIONES_DOTES.reduce((t, s) => t + s.dotes.length, 0), 130);
     let s = conHabilidad(ficha(), "exploracion", 4, ["investigacion"]);
     s = conAtributos(s, { inteligencia: 2, percepcion: 2 });
     assert.equal(motivoNoComprable(s, { id: "dote_olfato_de_investigador" }, creacion(s)), null);

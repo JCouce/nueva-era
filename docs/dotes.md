@@ -16,8 +16,8 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **129 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 18 · Cultura 2 · Exploración 10 · Interpretación 0 · Pilotaje 3 · Sigilo 8 ·
+> Recuento: **130 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 18 · Cultura 3 · Exploración 10 · Interpretación 0 · Pilotaje 3 · Sigilo 8 ·
 > Tecnociencia 1 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
@@ -34,7 +34,7 @@
 >
 > **Dotes atrasadas** (estaban en Drive desde fotos anteriores y no se habían transcrito;
 > sync del 2026-11-14, `docs/plan-sync-2026-11-14.md`, «Después del sync»), con el mismo criterio:
-> *Disparo Relámpago*, *Disparo de Interdicción*, *Fuego de Saturación*, *Fuego de Supresión*, *Fuego de Barrera*, *Lanzamiento Doble*, *Políglota*, *Mente Enciclopédica*.
+> *Disparo Relámpago*, *Disparo de Interdicción*, *Fuego de Saturación*, *Fuego de Supresión*, *Fuego de Barrera*, *Lanzamiento Doble*, *Políglota*, *Mente Enciclopédica*, *Camaleón Social*.
 
 ## Actitud
 
@@ -1182,6 +1182,17 @@ Por cada punto en la especialidad de lingüística ganas dos idiomas en lugar de
 **Efecto:**
 Una vez por escena lanzas una tirada de cultura para un *(sic)* prueba de conocimiento con ventaja (dos dados y escoges mejor resultado).
 
+### Camaleón Social
+
+**Coste:** 2
+
+**Requisitos:**
+- Sociedad 2 · especialidad (Cultura)
+- Expresión 1 · atributo aplicado
+
+**Efecto:**
+Si identificas con éxito un grupo social y su jerarquía, obtienes un bonificador de +1 en tiradas de **actitud** en próximas interacciones.
+
 ## Exploración
 
 ### Vigilancia Táctica
@@ -1583,7 +1594,7 @@ Para canalizar la energía sin lesionarse, el personaje deberá realizar de form
 **Grupos**
 - **Cultura, Interpretación y Tecnociencia están vacíos**: solo el título del grupo. Desde la
   foto del 2026-11-14, Tecnociencia trae *Diagnóstico de Sistemas*; Cultura tiene dotes desde las
-  dotes atrasadas (*Políglota*…).
+  dotes atrasadas (*Políglota*, *Mente Enciclopédica* y *Camaleón Social*).
 - **Psiónica** aparece justo después de Tecnociencia con el mismo estilo de título de grupo
   en el `.odt` (estilo `T26`, igual que Biociencia, Sigilo, Tecnociencia…). Se ha
   transcrito como subgrupo de Tecnociencia (decisión del usuario, 2026-10-14: Psiónica no es

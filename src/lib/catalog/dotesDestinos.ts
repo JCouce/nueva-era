@@ -130,6 +130,13 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // casillas y Reparar no tira).
   // Aceptado así (usuario, 2026-11-14).
   "habilidad:tecnociencia": { tipo: "tirada", alcance: { tipo: "habilidad", habilidad: "tecnociencia" }, textos: ["tecnica"] },
+  // Camaleón Social (dote atrasada, sync 2026-11-14): «+1 en tiradas de actitud», toda tirada de
+  // Actitud (también las acciones de dote que la usan).
+  "habilidad:actitud": {
+    tipo: "tirada",
+    alcance: { tipo: "habilidad", habilidad: "actitud" },
+    textos: ["social", "discernir_mentiras", "resistir_distraccion", "iniciativa_distraccion"],
+  },
 
   // ── Texto que solo vive en la tarjeta de la dote ──
   ficha: { tipo: "ficha" },

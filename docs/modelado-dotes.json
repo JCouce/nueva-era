@@ -6454,6 +6454,38 @@
       "candidataUX": null
     },
     {
+      "id": "dote_camaleon_social",
+      "label": "Camaleón Social",
+      "grupo": "cultura",
+      "coste": 2,
+      "requisitos": [
+        {
+          "tipo": "especialidad",
+          "habilidad": "cultura",
+          "id": "sociedad",
+          "min": 2
+        },
+        {
+          "tipo": "aplicado",
+          "id": "expresion",
+          "min": 1
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "bono",
+          "alcance": "habilidad:actitud",
+          "valor": 1,
+          "condicion": "Has identificado con éxito el grupo social y su jerarquía"
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_vigilancia_tactica",
       "label": "Vigilancia Táctica",
       "grupo": "exploracion",

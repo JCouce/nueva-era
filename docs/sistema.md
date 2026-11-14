@@ -1056,9 +1056,9 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
 (regla del usuario); solo se pregunta ante duda real.
 
 ### 9.1 Qué es una dote `[FIRME · DOTES]`
-- **129 dotes** con nombre, **coste** en puntos, **requisitos** y efecto en prosa,
+- **130 dotes** con nombre, **coste** en puntos, **requisitos** y efecto en prosa,
   ordenadas bajo la habilidad a la que pertenecen: Actitud 16 · Atletismo 22 · Biociencia 9 ·
-  Combate Melee 32 · Combate a Distancia 18 · Cultura 2 · Exploración 10 · Pilotaje 3 · Sigilo 8 ·
+  Combate Melee 32 · Combate a Distancia 18 · Cultura 3 · Exploración 10 · Pilotaje 3 · Sigilo 8 ·
   Tecnociencia 9 (8 en el subgrupo **Psiónica**). Interpretación, sin dotes todavía. Las 3 últimas de
   Combate a Distancia (*Arquero Poderoso*, *Pistolero*, *Pistolero Infernal*) son de la foto
   del 2026-10-23; el resto de dotes nuevas de esa foto, en «Dotes atrasadas» (abajo). De la foto
@@ -1143,7 +1143,9 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
     conocimiento de `fuente/habilidades.md`), dificultad del máster, una vez por escena (contador
     de la escena). La ventaja, con la casilla de la ventaja de las acciones de dote (como *Apoyo*):
     sin tirada fija de Cultura, no hay otra fila donde colgarla.
-  <!-- fin dotes atrasadas -->
+  - *Camaleón Social*: casilla +1 en toda tirada de Actitud «Has identificado con éxito el grupo
+    social y su jerarquía»; la identificación (Perspicacia + Sociedad, la prueba habitual) no
+    tiene tirada fija, y cuánto duran las «próximas interacciones» lo decide la mesa.
 - El grupo solo ordena: no es requisito (*Mata Gigantes*, en Combate Melee, pide Táctica).
 - **Pool de creación** por letra: A 18 · B 15 · C 12 · D 9 · E 6 (`HOJA3`). Lo que sobra al
   aprobar la ficha **se pierde**.
