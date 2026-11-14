@@ -1428,7 +1428,7 @@ function casillasEnjambreSobreTi(): CondicionTirada[] {
     etiqueta: "Sobre ti mismo",
     valorActivo: 3,
     noApila: NO_APILA_NANOMEDICINA,
-    nota: "Solo si te lo aplicas tú. Si te cura otro con medicinas, él también gana +3: díselo y que lo sume a mano. No se suma con el Nano-Elixir: vale el mayor.",
+    nota: "+3 en las pruebas con drogas y medicamentos que te aplicas tú. Si te los aplica otro, también se aplica el +3: díselo y que lo sume en su tirada. No se suma con el Nano-Elixir: vale el mayor.",
   } as const;
   return [
     { ...comun, id: "aum_enjambre_sobre_ti_medicina", alcance: { tipo: "tiradaId", id: "medicina" } },
@@ -2032,7 +2032,7 @@ export const IMPLANTES: Implante[] = [
         rareza: "Poco Habitual",
         coste: 22000,
         detalle: [
-          "Gracias a este implante, el personaje puede utilizar drogas y medicamentos con un bonificador de +3 exclusivamente cuando las utilice de modo personal. Si un tercero utiliza medicinas para sanar al personaje con este implante, también gana el mismo bonificador.",
+          "Gracias a este implante, el personaje puede utilizar drogas y medicamentos con un bonificador de +3 en pruebas cuando las utilice de modo personal. Si un tercero utiliza medicinas para sanar al personaje con este implante, también se aplica el bonificador.",
           "El enjambre tiene además una función de purga, el usuario obtiene un bonificador de +1 en tiradas de salvación contra toxinas, venenos y enfermedades. Este función de purga sistémica avanzada aumenta su bonificador en 1 por nivel del enjambre.",
         ],
         modificadores: [],

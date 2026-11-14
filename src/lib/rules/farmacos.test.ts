@@ -348,6 +348,17 @@ describe("Enjambre Nanobot 1: +3 a las medicinas sobre ti mismo (au-07)", () => 
     }
   });
 
+  // Sync Drive 2026-11-14 (M4.2): «+3 en pruebas» con fármacos, «también se aplica» si te los da
+  // otro. Eso último es un aviso: la app no toca la tirada de quien te cura.
+  test("+3 en el Gel también con un nivel alto, y la nota avisa de que vale si te los aplica otro", () => {
+    const f = ficha(conEnjambre(3));
+    const t = fila(f, "farmaco_farmaco_gel_sanador");
+    assert.equal(marcada(f, t).total - sinMarcar(f, t).total, 3);
+    const c = casilla(t);
+    assert.ok(c && c.tipo === "toggle");
+    assert.match(c.nota ?? "", /Si te los aplica otro, también se aplica el \+3: díselo y que lo sume en su tirada/);
+  });
+
   test("con el Nano-Elixir no se suma: vale el +5 y la casilla queda a 0 diciendo por qué", () => {
     const f = ficha(conEnjambre());
     const t = fila(f, "farmaco_farmaco_nano_elixir");

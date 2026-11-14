@@ -2404,6 +2404,10 @@ sobreesfuerzo.
 - *Enjambre Nanobot, sync Drive 2026-11-14* `[FIRME · docs/fuente/aumentos.md]`:
   - **Purga escalable:** +1 por nivel contra toxinas, venenos y enfermedades desde el nivel 1
     (+1/+2/+3/+4), en el selector «Contra…» de Fortaleza. Sustituye al +4 fijo del nivel 3.
+  - **Nivel 1, fármacos:** «+3 en pruebas» con drogas y medicamentos sobre ti; «si un tercero
+    utiliza medicinas para sanar al personaje… también se aplica el bonificador». Sin cambio de
+    motor (au-07 b): la casilla «Sobre ti mismo» sigue igual y su nota avisa de que, si te los
+    aplica otro, él suma el +3 en su tirada.
 - *En la app (A7, inmunidades; usuario, 2026-10-22):* `rules/inmunidades.ts`, con los datos en el
   catálogo (`inmuneA` del nivel del implante o de la operación).
   - **Quién:** Ojo Biónico 2, 3 y 4 contra la **ceguera** (fuente "Ojo Biónico N"; el 1, nada) y
