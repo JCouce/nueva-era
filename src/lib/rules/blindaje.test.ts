@@ -95,8 +95,9 @@ describe("desgloseBlindaje", () => {
     const desglose = desgloseBlindaje(s, "electrico", SIN_ARMADURA_NATURAL);
     assert.deepEqual(desglose, [
       { etiqueta: "Armadura Ligera", valor: 4 },
-      { etiqueta: "Escudo Deflector", valor: 2 },
-      { etiqueta: "Tejido Conductor", valor: 1 },
+      // Con la pieza de origen, para el Shock (conShockEnLineas).
+      { etiqueta: "Escudo Deflector", valor: 2, origen: { tipo: "equipo", id: "escudo_deflector", label: "Escudo Deflector", instanciaId: "d1" } },
+      { etiqueta: "Tejido Conductor", valor: 1, origen: { tipo: "equipo", id: "tejido_conductor", label: "Tejido Conductor", instanciaId: "tc1" } },
     ]);
     const total = desglose.reduce((t, l) => t + l.valor, 0);
     assert.equal(total, blindajeContra(s, "electrico", SIN_ARMADURA_NATURAL));

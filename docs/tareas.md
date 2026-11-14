@@ -1164,7 +1164,7 @@ Tandas, en orden:
     (escrito en la pieza; operaciones genéticas nunca). Crítico: la pieza se apaga entera
     (`FichaResuelta.piezasInutilizadas`: sus aportes no llegan a ninguna tirada y el desglose lo
     explica; sus acciones propias, con el `bloqueada` de siempre y motivo «Shock»). Fracaso/éxito:
-    −2/−1 a mano, con aviso en las tiradas de esas piezas. «Apagón» = afectado por Shock. Resiliencia
+    −2/−1 a mano, con aviso en las tiradas de esas piezas (cambiado en «Avisos del Shock»: lo aplica la app). «Apagón» = afectado por Shock. Resiliencia
     y Estructura solo NPC y equipo. Después, auditoría a contraprueba de la clasificación.
     *(2026-11-14)* Estados `shock` (ajustado) y `shock_equipo` con `afectaPiezas` y, por grado,
     `piezas` (apagadas / penaliza N) y `degrada` (general: al acabar sus rondas pasa a otro grado,
@@ -1183,6 +1183,25 @@ Tandas, en orden:
     Refuerzo, Funda, Linterna, armas mecánicas, Lanzamisiles AT, Electrificante/Térmica y Ropa
     Inteligente; la fuente psiónica del IRM apagado y la Derivación apagada en los poderes; el
     aviso de los efectos de arma no nombra el Shock en el equipo.
+  - [x] **Avisos del Shock** *(2026-11-14; pl-02 cambiado por el usuario: el −N ya no es a mano)*.
+    Penalizada (fracaso −2, éxito −1): cada bono positivo de la pieza pierde N por separado, sin
+    bajar de 0; los negativos y lo no numérico siguen; las tiradas de `origen` la pieza llevan −N
+    («Movilidad Aérea (shock) −2»). Puntos únicos en `rules/shock.ts`: `conShockEnModificadores`
+    (en `resolverFicha`, a los modificadores con `item`: atributos, tiradas, derivados; el doble del
+    Exoesqueleto sale ya de su modificador, `derivados.ts`), `conPiezasAfectadas`/`conPenalizadas`
+    (`fichaResuelta.ts`: ajustes fijos, casillas, bonos por tramo, ajuste de la habilidad alternativa
+    y el −N al uso) y `conShockEnLineas` (Resistir daño; `LineaBlindaje.origen`). Desglose: la línea
+    de la pieza tocada es «<pieza> (shock)» con lo que aporta de verdad; fuera «X: apagada por Shock» y
+    los avisos «a mano». Arma incorporada en un Brazo apagado: bloqueada en `habilitacionEnFicha`
+    por `extremidad.origen` («Apagada por Shock (Brazo Biónico).»), sin la nota de los atributos del
+    brazo (ahora texto con origen) ni el desenfundar gratis; red en `habilitacion-catalogo.test.ts`.
+    Textos de los grados reescritos. `ChipEstado`: ancho fijo (fila en móvil, 16rem desde sm, sin
+    pasar del contenedor), el nombre manda y el resto trunca; pulsarlo abre un modal con
+    `explicacionDeEstado` (`rules/explicacionEstado.ts`; las piezas de esa ficha las pone
+    `estadosParaPintar`); la × sigue en el chip y «Prolongar» pasa al modal. Sin migración.
+    Sin cubrir (sin origen o no es «bono»): velocidad de vuelo, atributos propios del Brazo (y el
+    Exoesqueleto en su base), partes del selector «Contra…», factor de vida, números en textos
+    (Malla «devuelves 2 de plasma»), contadores por unidad.
   - [ ] **Unificación de la habilitación** (paso 1 de la fase 6 de `docs/aportes/plan.md`), en su
     worktree aparte, en paralelo: `Accion.bloqueada`, `PoderDisponible.bloqueo`,
     `soloConEspecialidad`/`tiradaFijaVisible` y los permisos de dote → un solo `habilitacion` que da

@@ -16,7 +16,7 @@ import { accionesDeAtaque, accionesDirectasDeAtaque } from "./combate";
 import { accionesDeHerramientas, accionesDirectasDeHerramientas } from "./herramientas";
 import { aumentosHabilitados, conExtrasDeFicha, conExtrasDirectaDeFicha, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
 import type { Habilitacion } from "./habilitacion";
-import type { PiezaEquipada } from "./equipo";
+import { esArmaIncorporable, ID_BRAZO_BIONICO, type PiezaEquipada } from "./equipo";
 import { defaultSheet, type Sheet } from "./sheet";
 
 const MOTIVO = "Prueba";
@@ -92,5 +92,39 @@ test("ninguna hoja de una pieza apagada se salta la regla", () => {
     }
   }
   assert.ok(probadas > 50, `solo ${probadas} hojas: la red no está mirando`);
+  assert.deepEqual(fallos, []);
+});
+
+// El arma incorporada en un Brazo Biónico apagado (usuario 2026-11-14): cada arma incorporable del
+// catálogo, metida en el brazo, con SOLO el brazo apagado. Las filas que se hacen con el brazo
+// (`extremidad` encendido) salen bloqueadas «Apagada por … (Brazo Biónico).», sin la extremidad ni
+// los textos de él; las demás del arma (lanzarla) siguen activas.
+test("ninguna fila de un arma incorporada en un brazo apagado se salta la regla", () => {
+  const APAGADA_BRAZO: Habilitacion = { estado: "bloqueada", motivo: `Apagada por ${MOTIVO} (Brazo Biónico).`, arbitraje: "duro" };
+  const fallos: string[] = [];
+  let probadas = 0;
+  for (const cat of EQUIPO) {
+    if (!esArmaIncorporable({ catalogoId: cat.id })) continue;
+    const s: Sheet = {
+      ...base(),
+      equipo: [
+        { instanciaId: "brazo", catalogoId: ID_BRAZO_BIONICO, nivel: 4, eleccion: "fuerte", armaIncorporada: "arma" },
+        { instanciaId: "arma", catalogoId: cat.id },
+      ],
+    };
+    const f = resolver(s);
+    const encendido = accionesDeAtaque(s, f.modificadores, f.extrasDotes.permisos).map((t) => conExtrasDeFicha(f, t));
+    const conBrazo = new Set(encendido.filter((t) => t.origen?.instanciaId === "arma" && t.extremidad).map((t) => t.id));
+    const apagada = conApagadas(f, ["brazo"]);
+    for (const t of accionesDeAtaque(s, apagada.modificadores, apagada.extrasDotes.permisos).map((x) => conExtrasDeFicha(apagada, x))) {
+      if (t.origen?.instanciaId !== "arma") continue;
+      if (conBrazo.has(t.id)) {
+        probadas++;
+        if (JSON.stringify(t.habilitacion) !== JSON.stringify(APAGADA_BRAZO)) fallos.push(`${cat.id} → ${t.id} ${JSON.stringify(t.habilitacion)}`);
+        if (t.extremidad || t.textosDeFicha?.some((x) => x.origen?.instanciaId === "brazo")) fallos.push(`${cat.id} → ${t.id} sigue con lo del brazo`);
+      } else if (t.habilitacion?.estado === "bloqueada" && t.habilitacion.motivo === APAGADA_BRAZO.motivo) fallos.push(`${cat.id} → ${t.id} no iba con el brazo`);
+    }
+  }
+  assert.ok(probadas > 20, `solo ${probadas} filas: la red no está mirando`);
   assert.deepEqual(fallos, []);
 });

@@ -9,6 +9,7 @@ import {
   MUNICION_ESPECIAL,
   LOTE_MUNICION_ESPECIAL,
   armasHabilitadasPara,
+  motivoPiezaApagada,
   FARMACOS,
   type FichaResuelta,
   type RecursoInstancia,
@@ -166,6 +167,7 @@ export function RecursosTab({
           actual={recurso.actual}
           max={recurso.max}
           tono="glitch"
+          apagada={motivoPiezaApagada(ficha, recurso.instanciaId)}
           onAjustar={(delta) => onAjustar(recurso.instanciaId, delta)}
         />
       ))}
@@ -298,6 +300,7 @@ export function RecursosTab({
                 etiquetaRecarga={etiquetaRecarga}
                 precio={creditos !== undefined ? precio : null}
                 sinFondos={sinFondos}
+                apagada={motivoPiezaApagada(ficha, recurso.instanciaId)}
                 onAjustar={(delta) => onAjustar(recurso.instanciaId, delta)}
                 onRecargar={() => onRecargar(recurso.instanciaId)}
               />
@@ -355,6 +358,7 @@ export function RecursosTab({
               key={recurso.instanciaId}
               titulo={cat.label}
               recurso={recurso}
+              apagada={motivoPiezaApagada(ficha, recurso.instanciaId)}
               onAjustar={(delta) => onAjustar(recurso.instanciaId, delta)}
             />
           ))}
@@ -374,6 +378,7 @@ function EstadoCard({
   max,
   tono,
   danio,
+  apagada = null,
   onAjustar,
 }: {
   titulo: string;
@@ -381,16 +386,19 @@ function EstadoCard({
   max: number;
   tono: TonoVital;
   danio?: DanioVida;
+  // La pieza del recurso apagada por el Shock (motivoPiezaApagada): atenuada, sin ajustes.
+  apagada?: string | null;
   onAjustar: (delta: number) => void;
 }) {
   return (
-    <HudCard className="p-3">
+    <HudCard className={`p-3 ${apagada ? "border-dashed opacity-60" : ""}`}>
       <BarraVital label={titulo} actual={actual} max={max} tono={tono} danio={danio} />
+      <MotivoApagada motivo={apagada} />
       <div className="mt-2 flex items-center gap-1.5">
-        <BotonDelta onClick={() => onAjustar(-1)} disabled={actual <= 0}>
+        <BotonDelta onClick={() => onAjustar(-1)} disabled={Boolean(apagada) || actual <= 0}>
           −
         </BotonDelta>
-        <BotonDelta onClick={() => onAjustar(1)} disabled={actual >= max}>
+        <BotonDelta onClick={() => onAjustar(1)} disabled={Boolean(apagada) || actual >= max}>
           +
         </BotonDelta>
       </div>
@@ -533,18 +541,25 @@ function MaterialCard({
   );
 }
 
+// «Apagada por Shock en el equipo.» bajo la barra de una pieza apagada.
+function MotivoApagada({ motivo }: { motivo: string | null | undefined }) {
+  return motivo ? <p className="mt-1.5 font-mono text-[11px] text-danger">{motivo}</p> : null;
+}
+
 function DurabilidadCard({
   titulo,
   recurso,
+  apagada = null,
   onAjustar,
 }: {
   titulo: string;
   recurso: RecursoInstancia;
+  apagada?: string | null;
   onAjustar: (delta: number) => void;
 }) {
   const vacio = recurso.actual === 0;
   return (
-    <HudCard className="p-3">
+    <HudCard className={`p-3 ${apagada ? "border-dashed opacity-60" : ""}`}>
       <div className="flex items-center justify-between gap-2">
         <p className="font-display text-sm font-semibold uppercase text-foreground">{titulo}</p>
         <p
@@ -554,11 +569,12 @@ function DurabilidadCard({
           <span className="text-sm text-muted">/{recurso.max} PG</span>
         </p>
       </div>
+      <MotivoApagada motivo={apagada} />
       <div className="mt-2 flex items-center gap-1.5">
-        <BotonDelta onClick={() => onAjustar(-1)} disabled={recurso.actual <= 0}>
+        <BotonDelta onClick={() => onAjustar(-1)} disabled={Boolean(apagada) || recurso.actual <= 0}>
           −
         </BotonDelta>
-        <BotonDelta onClick={() => onAjustar(1)} disabled={recurso.actual >= recurso.max}>
+        <BotonDelta onClick={() => onAjustar(1)} disabled={Boolean(apagada) || recurso.actual >= recurso.max}>
           +
         </BotonDelta>
       </div>
@@ -604,6 +620,7 @@ function RecursoCard({
   etiquetaRecarga,
   precio,
   sinFondos,
+  apagada = null,
   onAjustar,
   onRecargar,
 }: {
@@ -615,12 +632,14 @@ function RecursoCard({
   // null: NPC, edición libre, sin precio que enseñar.
   precio: number | null;
   sinFondos: boolean;
+  // Pieza apagada por el Shock: atenuada y sin −/+ (no se usa). Recargar es comprar, eso sigue.
+  apagada?: string | null;
   onAjustar: (delta: number) => void;
   onRecargar: () => void;
 }) {
   const vacio = recurso.actual === 0;
   return (
-    <HudCard className="p-3">
+    <HudCard className={`p-3 ${apagada ? "border-dashed opacity-60" : ""}`}>
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="font-display text-sm font-semibold uppercase text-foreground">{titulo}</p>
@@ -633,12 +652,13 @@ function RecursoCard({
           <span className="text-sm text-muted">/{recurso.max}</span>
         </p>
       </div>
+      <MotivoApagada motivo={apagada} />
       <div className="mt-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          <BotonDelta onClick={() => onAjustar(-1)} disabled={recurso.actual <= 0}>
+          <BotonDelta onClick={() => onAjustar(-1)} disabled={Boolean(apagada) || recurso.actual <= 0}>
             −
           </BotonDelta>
-          <BotonDelta onClick={() => onAjustar(1)} disabled={recurso.actual >= recurso.max}>
+          <BotonDelta onClick={() => onAjustar(1)} disabled={Boolean(apagada) || recurso.actual >= recurso.max}>
             +
           </BotonDelta>
         </div>

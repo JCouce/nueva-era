@@ -18,6 +18,7 @@
 // que el documento no dice explícitamente: S14 (los umbrales de un mismo
 // recurso no se acumulan, solo el más profundo aporta su penalizador) y S15
 // (cómo se interpreta el "mínimo 1" de Moribundo/Exhausto).
+import type { PiezasDeEstado } from "./shock";
 import type { AlcanceModificador, ModificadorConFuente, OrigenModificador, RecursoUmbral } from "./modificadores";
 import { esEstadoDeAumento, estadoParaPintar, estadoPorId } from "../catalog/estados";
 import { ESTADO_ESTABILIZADO_ID, reduccionDeGradoEstabilizado } from "../catalog/psionica";
@@ -452,6 +453,9 @@ export type EstadoActivoDescrito = EstadoActivo & {
   quitarJugador?: string;
   // El botón con que lo alarga (ps-07, «Prolongar un turno») y la fatiga que cuesta.
   prolongar?: { etiqueta: string; coste: number };
+  // Las piezas de la ficha que toca (Shock, Shock en el equipo; rules/shock.ts), para explicarlo
+  // (explicacionDeEstado). Lo pone estadosParaPintar con la ficha; sin ella (NPC sin ficha), no va.
+  piezas?: PiezasDeEstado;
 };
 
 // "3 rondas, en combate" / "hasta el final de la escena" (A5a).

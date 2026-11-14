@@ -214,7 +214,13 @@ resumen.
   `PoderPreparado.habilitacion` / `habilitacionAlUsar` (la de la hoja y la de
   confirmar con lo elegido). Lo que depende de la ficha lo da
   `habilitacionEnFicha` (`fichaResuelta.ts`): la pieza de origen apagada por el
-  Shock (`piezasInutilizadas`) y S99; ahí se enchufa un productor nuevo. Se
+  Shock (`piezasInutilizadas`), la pieza de su `extremidad` apagada (el arma
+  incorporada en un Brazo Biónico apagado) y S99; ahí se enchufa un productor nuevo.
+  **Todo aporte numérico de una pieza lleva su `origen`/`item` con `instanciaId`**:
+  es lo que deja al Shock (pl-02) reducir sus bonos positivos y poner «<pieza>
+  (shock)» en el desglose (`conShockEnModificadores`, `conPiezasAfectadas`,
+  `conShockEnLineas`). Un número que una pieza mete sin origen (en un texto, en las
+  `partes` de una opción, calculado aparte de la ficha) el Shock no lo ve. Se
   junta con lo que trae la hoja en un solo sitio, `conHabilitacion` (lo de la
   ficha primero). Las listas del motor no devuelven las ocultas;
   la pantalla solo pinta según el `estado` (`motivoDeBloqueo`, `esVisible`).

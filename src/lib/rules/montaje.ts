@@ -40,6 +40,7 @@ import {
   type OpcionCondicion,
 } from "./condiciones";
 import type { OrigenAporte } from "./origen";
+import { etiquetaShock } from "./shock";
 import {
   alcanzaA,
   bonoAlcance,
@@ -459,8 +460,8 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
     ...desgloseAlcance(mods, ctx),
     ...desgloseCondiciones(condiciones, estado),
     ...desgloseBonosTramo(bonosTramo, estado),
-    // Lo que una pieza apagada (Shock) ya no aporta, a 0 y diciendo por qué.
-    ...(tirada.piezasApagadas ?? []).map((p) => ({ etiqueta: `${p.origen.label}: apagada por ${p.motivo}`, valor: 0 })),
+    // Lo que una pieza apagada (Shock) ya no aporta, a 0: «Ojo Biónico (shock)».
+    ...(tirada.piezasApagadas ?? []).map((p) => ({ etiqueta: etiquetaShock(p.origen.label), valor: 0 })),
     ...(circunstancial !== 0 ? [{ etiqueta: "Modificador circunstancial", valor: circunstancial }] : []),
   ];
 

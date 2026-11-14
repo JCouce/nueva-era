@@ -105,9 +105,9 @@ export function brazoBionico(sheet: Sheet): BrazoBionico | null {
 }
 
 // El blindaje del brazo para "Resistir daño" (R12), sin mirar atributos: con el nivel 1, null.
-export function blindajeDelBrazo(sheet: Pick<Sheet, "equipo">): { valor: number; fuente: string } | null {
+export function blindajeDelBrazo(sheet: Pick<Sheet, "equipo">): { valor: number; fuente: string; origen: OrigenAporte } | null {
   const e = extremidadEquipada(sheet);
-  return e?.extremidad.blindaje ? { valor: e.extremidad.blindaje, fuente: e.fuente } : null;
+  return e?.extremidad.blindaje ? { valor: e.extremidad.blindaje, fuente: e.fuente, origen: origenDeBrazo({ instanciaId: e.pieza.instanciaId }) } : null;
 }
 
 // El ítem de lo que pone el brazo en una tirada (fase 2): la pieza, con el nombre del catálogo.

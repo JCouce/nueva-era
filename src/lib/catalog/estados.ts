@@ -56,8 +56,9 @@ export type GradoEstado = {
   // siguiente da los efectos del fracaso y luego se acaba (pl-01, usuario 2026-11-14).
   degrada?: { gradoId: string; rondas: number };
   // Lo que este grado le hace a las piezas que el estado afecta (Estado.afectaPiezas):
-  // `apagadas`, no funcionan (FichaResuelta.piezasInutilizadas); `penaliza`, −N a su bono y a
-  // usarlas, que se aplica a mano con un aviso en sus tiradas (pl-02, rules/shock.ts).
+  // `apagadas`, no funcionan (FichaResuelta.piezasInutilizadas); `penaliza`, −N a cada bono
+  // suyo (sin bajar de 0) y a las tiradas para usarlas, que aplica la app (pl-02, usuario
+  // 2026-11-14; rules/shock.ts).
   piezas?: { apagadas: true } | { penaliza: number };
 };
 
@@ -732,8 +733,8 @@ export const ESTADOS: Estado[] = [
         label: "Fracaso crítico",
         modificadores: [],
         detalle: [
-          "Los implantes quedan apagados mientras dure (salvo excepciones) y Parálisis con " +
-            "parámetros de fracaso crítico durante 1 turno.",
+          "Tus implantes se apagan: no funcionan mientras dure.",
+          "Parálisis de fracaso crítico durante 1 turno.",
           "Al turno siguiente pasa a los efectos del fracaso; después se acaba.",
         ],
         duracionTurnos: 1,
@@ -745,9 +746,8 @@ export const ESTADOS: Estado[] = [
         label: "Fracaso",
         modificadores: [],
         detalle: [
-          "Los bonos de los implantes −2 y −2 en las tiradas para usarlos (a mano: la tirada lo " +
-            "avisa).",
-          "Parálisis con parámetros de fracaso durante 1 turno.",
+          "Tus implantes funcionan peor: −2 a su bono y −2 al usarlos.",
+          "Parálisis de fracaso durante 1 turno.",
         ],
         duracionTurnos: 1,
         piezas: { penaliza: 2 },
@@ -757,9 +757,8 @@ export const ESTADOS: Estado[] = [
         label: "Éxito",
         modificadores: [],
         detalle: [
-          "Los bonos de los implantes −1 y −1 en las tiradas para usarlos (a mano: la tirada lo " +
-            "avisa).",
-          "Parálisis con parámetros de éxito durante 1 turno.",
+          "Tus implantes funcionan peor: −1 a su bono y −1 al usarlos.",
+          "Parálisis de éxito durante 1 turno.",
         ],
         duracionTurnos: 1,
         piezas: { penaliza: 1 },
@@ -790,8 +789,7 @@ export const ESTADOS: Estado[] = [
         label: "Fracaso crítico",
         modificadores: [],
         detalle: [
-          "Los sistemas electrónicos y dispositivos quedan apagados mientras dure (salvo " +
-            "excepciones).",
+          "Tus piezas electrónicas se apagan: no funcionan mientras dure.",
           "Al turno siguiente pasa a los efectos del fracaso; después se acaba.",
         ],
         duracionTurnos: 1,
@@ -802,7 +800,7 @@ export const ESTADOS: Estado[] = [
         id: "fracaso",
         label: "Fracaso",
         modificadores: [],
-        detalle: ["Sus bonos −2 y −2 en las tiradas para usarlos (a mano: la tirada lo avisa)."],
+        detalle: ["Tus piezas electrónicas funcionan peor: −2 a su bono y −2 al usarlas."],
         duracionTurnos: 1,
         piezas: { penaliza: 2 },
       },
@@ -810,7 +808,7 @@ export const ESTADOS: Estado[] = [
         id: "exito",
         label: "Éxito",
         modificadores: [],
-        detalle: ["Sus bonos −1 y −1 en las tiradas para usarlos (a mano: la tirada lo avisa)."],
+        detalle: ["Tus piezas electrónicas funcionan peor: −1 a su bono y −1 al usarlas."],
         duracionTurnos: 1,
         piezas: { penaliza: 1 },
       },

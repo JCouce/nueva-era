@@ -1,5 +1,6 @@
 "use client";
 
+import { EtiquetaDesglose } from "@/components/EtiquetaDesglose";
 import { useState } from "react";
 import {
   CATEGORIAS_DANIO,
@@ -38,7 +39,9 @@ function LineaBlindaje({ etiqueta, valor, nota }: { etiqueta: string; valor: num
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3 font-mono text-[11px]">
-        <span className="truncate text-muted">{etiqueta}</span>
+        <span className="truncate text-muted">
+          <EtiquetaDesglose etiqueta={etiqueta} />
+        </span>
         <span className={`shrink-0 tabular-nums ${valor > 0 ? "text-info" : "text-muted"}`}>
           {signo(valor)}
         </span>

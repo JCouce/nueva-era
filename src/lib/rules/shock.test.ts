@@ -6,13 +6,18 @@ import { equipoPorId } from "../catalog/equipo";
 import { ACCIONES, type Accion } from "./acciones";
 import { accionesDeAtaque, accionesDirectasDeAtaque } from "./combate";
 import { accionesDeAumentos, usoDeAccionAumento } from "./aumentosAcciones";
-import { bloqueoDeAccionAumento, conExtrasDeFicha, conExtrasDirectaDeFicha, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
+import { bloqueoDeAccionAumento, conExtrasDeFicha, conExtrasDirectaDeFicha, estadosParaPintar, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
+import { resolverGolpe } from "./resistirDanio";
+import { explicacionDeEstado } from "./explicacionEstado";
+import { lineaAntes } from "./textosDeTirada";
+import { estadoPorId } from "../catalog/estados";
 import { eleccionSinTocar, montarTirada, type TiradaMontada } from "./montaje";
 import { descontarDuracion, type EstadoActivo } from "./estados";
 import { operacionesDe } from "./estadosFicha";
 import { aplicarOperacionEstado } from "./vidaPorEstados";
 import { planDeshacerEstados } from "./registro";
-import { afectacionDePiezas, shockDePieza } from "./shock";
+import { afectacionDePiezas, conShockEnModificadores, shockDePieza, trozosDeEtiqueta } from "./shock";
+import type { ModificadorConFuente } from "./modificadores";
 import type { Habilitacion } from "./habilitacion";
 
 // Las piezas van directas a sheet.equipo (los implantes no pasan por equipar).
@@ -30,6 +35,7 @@ const ficha = con(base, OJO, NEURO, ARMADURA, CAMUFLAJE, LASER, FUSIL, MIRA);
 
 const shock = (gradoId: string, rondas = 1): EstadoActivo => ({ estadoId: "shock", gradoId, rondasRestantes: rondas });
 const shockEquipo = (gradoId: string, rondas = 1): EstadoActivo => ({ estadoId: "shock_equipo", gradoId, rondasRestantes: rondas });
+const bloqueadaPor = (motivo: string): Habilitacion => ({ estado: "bloqueada", motivo, arbitraje: "duro" });
 const resolver = (s: Sheet, estados: EstadoActivo[]) => resolverFicha(s, { estados, vitalidad: VITALIDAD_DE_FICHA });
 
 // Todas las tiradas de la ficha: las fijas y las de sus armas, con lo de la ficha encima.
@@ -121,7 +127,8 @@ describe("pieza apagada: ninguno de sus aportes llega a ninguna tirada", () => {
       for (const o of origenesDe(t)) assert.ok(!o || !apagadas.has(o), `${t.label} lleva un aporte de ${o}`);
       const m = montar(apagado, t);
       for (const l of m.desglose.filter((l) => /Ojo Biónico|Mira Telescópica|Neuroprótesis/.test(l.etiqueta))) {
-        assert.match(l.etiqueta, /: apagada por /, `${t.label}: ${l.etiqueta}`);
+        // «Ojo Biónico (shock)» a 0 (antes «Ojo Biónico: apagada por Shock»; usuario 2026-11-14).
+        assert.match(l.etiqueta, / \(shock\)$/, `${t.label}: ${l.etiqueta}`);
         assert.equal(l.valor, 0);
       }
     }
@@ -131,15 +138,13 @@ describe("pieza apagada: ninguno de sus aportes llega a ninguna tirada", () => {
     const antes = montar(sinShock, ataque(sinShock, "fusil"));
     const despues = montar(apagado, ataque(apagado, "fusil"));
     assert.ok(antes.desglose.some((l) => l.etiqueta.includes("Ojo Biónico") && l.valor > 0));
-    assert.ok(despues.desglose.some((l) => l.etiqueta === "Ojo Biónico: apagada por Shock" && l.valor === 0));
-    assert.ok(despues.desglose.some((l) => l.etiqueta === "Mira Telescópica: apagada por Shock en el equipo"));
+    assert.ok(despues.desglose.some((l) => l.etiqueta === "Ojo Biónico (shock)" && l.valor === 0));
+    assert.ok(despues.desglose.some((l) => l.etiqueta === "Mira Telescópica (shock)" && l.valor === 0));
     assert.ok(despues.total < antes.total);
     // Igual que sin las piezas: la ficha sin ellas tira lo mismo.
     const sinPiezas = resolver({ ...ficha, equipo: ficha.equipo.filter((p) => !["ojo", "mira", "neuro"].includes(p.instanciaId)) }, []);
     assert.equal(despues.total, montar(sinPiezas, ataque(sinPiezas, "fusil")).total);
   });
-
-  const bloqueadaPor = (motivo: string): Habilitacion => ({ estado: "bloqueada", motivo, arbitraje: "duro" });
 
   test("sus acciones propias salen bloqueadas con el motivo", () => {
     assert.deepEqual(ataque(apagado, "laser").habilitacion, bloqueadaPor("Apagada por Shock en el equipo."));
@@ -197,21 +202,170 @@ describe("servidor: bloqueoDeAccionAumento (usarAccionAumentoAction)", () => {
   });
 });
 
-describe("pieza penalizada: aviso a mano, sin tocar el número", () => {
-  test("fracaso: el ataque donde aporta el Ojo avisa del −2 y suma lo mismo", () => {
+// pl-02 cambiado (usuario 2026-11-14): ya no es «a mano». Cada bono positivo de la pieza pierde N
+// sin bajar de 0, por separado; los negativos no cambian; la tirada que la usa lleva −N.
+describe("pieza penalizada: −N a cada bono (suelo 0) y −N al usarla", () => {
+  test("fracaso: el bono del Ojo en el ataque del fusil baja 2, sin avisos «a mano»", () => {
     const sin = resolver(ficha, []);
     const con = resolver(ficha, [shock("fracaso")]);
     const t = ataque(con, "fusil");
-    const aviso = t.textosDeFicha?.find((x) => x.fuente === "Shock (fracaso)");
-    assert.equal(aviso?.texto, "−2 al bono de Ojo Biónico y a usarla, a mano");
-    assert.equal(montar(con, t).total, montar(sin, ataque(sin, "fusil")).total);
+    assert.ok(!t.textosDeFicha?.some((x) => /a mano/.test(x.texto)));
+    // El +2 del Ojo 3 al ataque a distancia (modificador con `item`) pasa a +0.
+    assert.ok(montar(sin, ataque(sin, "fusil")).desglose.some((l) => l.etiqueta === "Ojo Biónico 3" && l.valor === 2));
+    assert.ok(montar(con, t).desglose.some((l) => l.etiqueta === "Ojo Biónico (shock)" && l.valor === 0));
+    // Menos que sin Shock (no −2 justo: la Mira, que no se apila con el Ojo, recupera su sitio).
+    assert.ok(montar(con, t).total < montar(sin, ataque(sin, "fusil")).total);
+    // Su casilla de cobertura (+1) pasa a +0, y lo dice.
+    const casilla = (f: FichaResuelta) => ataque(f, "fusil").condiciones!.find((c) => c.origen?.instanciaId === "ojo" && c.tipo === "toggle");
+    const antes = casilla(sin);
+    assert.ok(antes?.tipo === "toggle" && antes.valorActivo === 1);
+    const tocada = casilla(con)!;
+    assert.ok(tocada.tipo === "toggle" && tocada.valorActivo === 0);
+    assert.match(tocada.etiqueta, /Ojo Biónico 3 \(shock\)$/);
   });
 
-  test("éxito en el equipo: la pistola láser avisa del −1 al usarla", () => {
+  test("conShockEnModificadores: cada bono por separado, suelo 0; negativos y factores intactos", () => {
+    const item = { tipo: "equipo" as const, id: "x", label: "Pieza X", instanciaId: "px" };
+    const p = new Map([["px", { origen: item, valor: 2, fuente: "Shock en el equipo (fracaso)", estado: { tipo: "estado" as const, id: "shock_equipo", label: "Shock en el equipo" } }]]);
+    const mods: ModificadorConFuente[] = [
+      { tipo: "atributo", id: "fuerza", valor: 3, origen: "equipo", fuente: "Pieza X 3", item },
+      { tipo: "tirada", alcance: { tipo: "todas" }, valor: 1, origen: "equipo", fuente: "Pieza X 3", item },
+      { tipo: "derivado", id: "carrera", valor: -3, origen: "equipo", fuente: "Pieza X 3", item },
+      { tipo: "multiplicadorVida", valor: 1.5, origen: "equipo", fuente: "Pieza X 3", item },
+      { tipo: "atributo", id: "agilidad", valor: 2, origen: "equipo", fuente: "Otra" },
+    ];
+    assert.deepEqual(
+      conShockEnModificadores(mods, p).map((m) => [m.valor, m.fuente]),
+      [
+        [1, "Pieza X (shock)"],
+        [0, "Pieza X (shock)"],
+        [-3, "Pieza X 3"],
+        [1.5, "Pieza X 3"],
+        [2, "Otra"],
+      ],
+    );
+  });
+
+  test("éxito en el equipo: la pistola láser lleva «Pistola Láser (shock) −1» al dispararla", () => {
+    const sin = resolver(ficha, []);
     const f = resolver(ficha, [shockEquipo("exito")]);
     const t = ataque(f, "laser");
     assert.equal(t.habilitacion, undefined);
-    assert.ok(t.textosDeFicha?.some((x) => x.texto === "−1 al bono de Pistola Láser y a usarla, a mano" && x.fuente === "Shock en el equipo (éxito)"));
+    const m = montar(f, t);
+    assert.ok(m.desglose.some((l) => l.etiqueta === "Pistola Láser (shock)" && l.valor === -1));
+    assert.equal(m.total, montar(sin, ataque(sin, "laser")).total - 1);
+    assert.ok(!t.textosDeFicha?.some((x) => /a mano/.test(x.texto)));
+  });
+
+  test("atributo: el +Fuerza del Exoesqueleto pierde N sin bajar de 0 y baja la Fuerza en toda la ficha", () => {
+    const exo = (nivel: number): Sheet => con(base, { instanciaId: "exo", catalogoId: "exoesqueleto", nivel });
+    const sin1 = resolver(exo(1), []);
+    const fr1 = resolver(exo(1), [shockEquipo("fracaso")]);
+    assert.equal(fr1.atributos.fuerza, sin1.atributos.fuerza - 1); // +1 → +0, no −1
+    assert.ok(fr1.desgloses.atributos.fuerza.fuentes.some((x) => x.etiqueta === "Exoesqueleto (shock)" && x.valor === 0));
+    assert.equal(fr1.movimiento.bonoExoesqueleto, 0); // el doble de movimiento y carga baja con él
+    assert.ok(fr1.aplicados.potencia <= sin1.aplicados.potencia);
+    const sin3 = resolver(exo(3), []);
+    const ex3 = resolver(exo(3), [shockEquipo("exito")]);
+    assert.equal(ex3.atributos.fuerza, sin3.atributos.fuerza - 1); // +3 → +2
+    assert.equal(ex3.movimiento.bonoExoesqueleto, 4);
+    assert.equal(ex3.cargaMaxima, sin3.cargaMaxima - 2 * 20);
+  });
+
+  test("Volar: la Maniobrabilidad −3 (negativa) no cambia y lleva «Movilidad Aérea (shock) −2»", () => {
+    const s = con(base, { instanciaId: "vuelo", catalogoId: "movilidad_aerea", nivel: 1 });
+    const sin = resolver(s, []);
+    const f = resolver(s, [shockEquipo("fracaso")]);
+    const volar = (x: FichaResuelta) => conExtrasDeFicha(x, x.accionesMovimiento[0]);
+    const m = montar(f, volar(f));
+    assert.ok(m.desglose.some((l) => l.etiqueta === "Maniobrabilidad (Movilidad Aérea)" && l.valor === -3));
+    assert.ok(m.desglose.some((l) => l.etiqueta === "Movilidad Aérea (shock)" && l.valor === -2));
+    assert.equal(m.total, montar(sin, volar(sin)).total - 2);
+  });
+
+  test("bono por tramo de la Mira Telescópica 3: cada tramo pierde N por separado, sin bajar de 0", () => {
+    const s = con(base, FUSIL, { instanciaId: "mira3", catalogoId: "mira_telescopica", nivel: 3, instaladoEnId: "fusil" });
+    const sin = ataque(resolver(s, []), "fusil").bonosTramo!.find((b) => b.origen?.instanciaId === "mira3")!;
+    const con2 = ataque(resolver(s, [shockEquipo("fracaso")]), "fusil").bonosTramo!.find((b) => b.origen?.instanciaId === "mira3")!;
+    assert.equal(con2.fuente, "Mira Telescópica (shock)");
+    for (const [tramo, v] of Object.entries(sin.porTramo)) assert.equal(con2.porTramo[tramo], v! > 0 ? Math.max(0, v! - 2) : v, tramo);
+  });
+
+  test("Resistir daño: «Escudo Deflector (shock)» con lo que absorbe de verdad (apagado 0, penalizado −N)", () => {
+    const s = con(base, ARMADURA, { instanciaId: "def", catalogoId: "escudo_deflector", nivel: 3, instaladoEnId: "a1" });
+    const linea = (estados: EstadoActivo[]) =>
+      resolverGolpe(resolver(s, estados), { tipo: "cinetico", critico: false, danio: 10, reactivo: false, conBrazo: false, marcadas: [], rompeBlindaje: 0, categoria: null }).desglose.find((l) =>
+        l.etiqueta.startsWith("Escudo Deflector"),
+      );
+    assert.deepEqual([linea([])?.etiqueta, linea([])?.valor], ["Escudo Deflector", 3]);
+    assert.deepEqual([linea([shockEquipo("exito")])?.etiqueta, linea([shockEquipo("exito")])?.valor], ["Escudo Deflector (shock)", 2]);
+    assert.deepEqual([linea([shockEquipo("fracaso")])?.etiqueta, linea([shockEquipo("fracaso")])?.valor], ["Escudo Deflector (shock)", 1]);
+    assert.deepEqual([linea([shockEquipo("fracaso_critico")])?.etiqueta, linea([shockEquipo("fracaso_critico")])?.valor], ["Escudo Deflector (shock)", 0]);
+    // La armadura (inmune) no cambia.
+    const armadura = (estados: EstadoActivo[]) =>
+      resolverGolpe(resolver(s, estados), { tipo: "cinetico", critico: false, danio: 10, reactivo: false, conBrazo: false, marcadas: [], rompeBlindaje: 0, categoria: null }).desglose[0];
+    assert.deepEqual(armadura([shockEquipo("fracaso_critico")]), armadura([]));
+  });
+});
+
+describe("arma incorporada en un Brazo Biónico apagado (usuario 2026-11-14)", () => {
+  const s = con(
+    base,
+    { instanciaId: "brazo", catalogoId: "aum_brazo_bionico", nivel: 4, eleccion: "fuerte", armaIncorporada: "esp" },
+    { instanciaId: "esp", catalogoId: "espada_ligera" },
+  );
+  const golpe = (f: FichaResuelta) => tiradas(f).find((t) => t.origen?.instanciaId === "esp" && t.grupo === "Ataques")!;
+
+  test("bloqueada con el motivo de la pieza; sin el brazo encendido, activa", () => {
+    assert.equal(golpe(resolver(s, [])).habilitacion, undefined);
+    assert.deepEqual(golpe(resolver(s, [shock("fracaso_critico")])).habilitacion, bloqueadaPor("Apagada por Shock (Brazo Biónico)."));
+  });
+
+  test("sin textos que digan lo contrario: ni los atributos del brazo ni desenfundar gratis", () => {
+    const encendido = golpe(resolver(s, []));
+    assert.ok(encendido.textosDeFicha?.some((x) => /Fuerza \d+ y la Agilidad \d+ del brazo/.test(x.texto)));
+    assert.match(lineaAntes(encendido), /Desenfundar: acción gratuita \(Brazo Biónico 4/);
+    const apagado = golpe(resolver(s, [shock("fracaso_critico")]));
+    assert.ok(!apagado.textosDeFicha?.some((x) => /del brazo/.test(x.texto)));
+    assert.equal(apagado.extremidad, undefined);
+    assert.doesNotMatch(lineaAntes(apagado), /gratuita/);
+    assert.doesNotMatch(apagado.nota ?? "", /del brazo/);
+  });
+});
+
+describe("explicacionDeEstado: lo que dice el modal del chip", () => {
+  const de = (s: Sheet, estados: EstadoActivo[], id: string) => explicacionDeEstado(estadosParaPintar(resolver(s, estados)).find((e) => e.estadoId === id)!);
+
+  test("Shock en el equipo, fracaso: las piezas de esta ficha que funcionan peor", () => {
+    const x = de(ficha, [shockEquipo("fracaso")], "shock_equipo");
+    assert.equal(x.titulo, "Shock en el equipo");
+    assert.equal(x.grado, "Fracaso");
+    assert.deepEqual(x.efecto, ["Tus piezas electrónicas funcionan peor: −2 a su bono y −2 al usarlas."]);
+    assert.equal(x.duracion, "1 ronda");
+    assert.equal(x.piezas, "Funcionan peor (−2 a su bono y −2 al usarlas): Camuflaje Trifásico, Pistola Láser, Mira Telescópica.");
+  });
+
+  test("Shock del cuerpo, fracaso crítico: las apagadas", () => {
+    assert.equal(de(ficha, [shock("fracaso_critico")], "shock").piezas, "Apagadas: Ojo Biónico, Neuroprótesis Simpática.");
+  });
+
+  test("sin nada a lo que le afecte, lo dice; con éxito crítico, sin lista", () => {
+    assert.equal(de(base, [shockEquipo("fracaso")], "shock_equipo").piezas, "No llevas nada a lo que le afecte.");
+    assert.equal(de(ficha, [shockEquipo("exito_critico")], "shock_equipo").piezas, null);
+  });
+
+  test("un estado que no toca piezas: solo su explicación", () => {
+    const x = de(base, [{ estadoId: "aturdido", gradoId: "fracaso", rondasRestantes: 2 }], "aturdido");
+    assert.equal(x.titulo, "Aturdido");
+    assert.equal(x.piezas, null);
+    assert.ok(x.efecto.length > 0);
+    assert.equal(x.duracion, "2 rondas");
+  });
+
+  test("los textos de los grados ya no dicen «a mano»", () => {
+    for (const id of ["shock", "shock_equipo"]) {
+      for (const g of estadoPorId(id)!.grados) for (const d of g.detalle) assert.doesNotMatch(d, /a mano/, `${id}/${g.id}`);
+    }
   });
 });
 
@@ -246,5 +400,13 @@ describe("degradación y parálisis", () => {
     );
     assert.ok(plan.ok);
     if (plan.ok) assert.deepEqual(plan.plan.personajes[0].estados, []);
+  });
+});
+
+describe("trozosDeEtiqueta: la marca «(shock)» aparte, para resaltarla", () => {
+  test("al final, en medio y sin marca", () => {
+    assert.deepEqual(trozosDeEtiqueta("Mira Telescópica (shock)"), [{ texto: "Mira Telescópica " }, { texto: "(shock)", shock: true }]);
+    assert.deepEqual(trozosDeEtiqueta("Cobertura (shock) · Ojo"), [{ texto: "Cobertura " }, { texto: "(shock)", shock: true }, { texto: " · Ojo" }]);
+    assert.deepEqual(trozosDeEtiqueta("Reflejos"), [{ texto: "Reflejos" }]);
   });
 });

@@ -198,15 +198,10 @@ export function alerta(sheet: Sheet, mods: ModificadorConFuente[]): number {
 // docs/sistema.md: las 5 fórmulas de movimiento cuentan como "proezas de
 // fuerza". El +N normal a la Fuerza llega como modificador de atributo
 // (exceptoSaludYSalvaciones); movimiento() y cargaMaxima() lo quitan y suman
-// este doble en su lugar.
-function bonoFuerzaExoesqueleto(sheet: Sheet): number {
-  for (const pieza of sheet.equipo) {
-    const cat = equipoPorId(pieza.catalogoId);
-    if (cat?.familia === "movimiento" && cat.tope === "exoesqueleto" && pieza.nivel) {
-      return pieza.nivel * 2; // nivel N da +N a la Fuerza; aquí cuenta doble
-    }
-  }
-  return 0;
+// este doble en su lugar. Sale de ese mismo modificador (no del nivel de la pieza): con el
+// Shock que la penaliza (pl-02) ya llega reducido y el doble baja con él.
+function bonoFuerzaExoesqueleto(mods: ModificadorConFuente[]): number {
+  return 2 * mods.reduce((t, m) => (m.tipo === "atributo" && m.id === "fuerza" && m.exceptoSaludYSalvaciones ? t + m.valor : t), 0);
 }
 
 // Movimiento: todas las fórmulas cuelgan de Potencia + Atletismo.
@@ -222,7 +217,7 @@ function bonoFuerzaExoesqueleto(sheet: Sheet): number {
 // con base 0 = 15 + 200). La carrera los suma dentro del corte, como antes de E3:
 // con 16 + base no se llega a cortar en ninguna ficha posible.
 export function movimiento(sheet: Sheet, mods: ModificadorConFuente[], formula: FormulaMovimiento) {
-  const bonoExoesqueleto = bonoFuerzaExoesqueleto(sheet);
+  const bonoExoesqueleto = bonoFuerzaExoesqueleto(mods);
   const base =
     aplicado(sheet, "potencia", sinExceptoSaludYSalvaciones(mods)) +
     bonoExoesqueleto +
@@ -255,7 +250,7 @@ export function movimiento(sheet: Sheet, mods: ModificadorConFuente[], formula: 
 // en la FichaResuelta; 1 sin especie. Con × 1,2 todos los tramos dan entero
 // (Fuerza × 24, 18, 12, 6, 0), así que no se redondea.
 export function cargaMaxima(sheet: Sheet, mods: ModificadorConFuente[], multiplicador: number): number {
-  const fuerza = atributoEfectivo(sheet, "fuerza", sinExceptoSaludYSalvaciones(mods)) + bonoFuerzaExoesqueleto(sheet);
+  const fuerza = atributoEfectivo(sheet, "fuerza", sinExceptoSaludYSalvaciones(mods)) + bonoFuerzaExoesqueleto(mods);
   if (fuerza > 0) return fuerza * 20 * multiplicador;
   if (fuerza === 0) return 15 * multiplicador;
   // Suelo en 0, mismo criterio que S6 para el movimiento: el documento no

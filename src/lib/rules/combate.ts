@@ -33,6 +33,8 @@ import { nivelesHasta, acumulaPorClave, ultimoQueDefine, type PiezaEquipada } fr
 import { bonoFormulaFuerza, etiquetaTipoDanio, formulaConSuma, nombreArmaModificada, perfilGolpe, type PerfilGolpe } from "./armasModificadas";
 import type { ModificacionArmaId } from "../catalog/armasModificadas";
 import type { MotorMetadata } from "./motor";
+import type { TextoEnTirada } from "./especie";
+import { conTextosDeFicha } from "./textosTirada";
 import { textoCortoDeEfecto, type EfectoArma, type EfectoEnTirada } from "./efectosArma";
 import { escudoRoto, gastoDelModo, MOTIVO_ESCUDO_ROTO, recursoDe } from "./recursos";
 import { bloqueadaPor, conHabilitacion, esVisible, habilitacionDeFamilia } from "./habilitacion";
@@ -1317,11 +1319,21 @@ function conBrazo(t: Accion, pieza: PiezaEquipada, brazo: BrazoBionico): Accion 
   const ataque = { catalogoId: pieza.catalogoId, familiaArma: t.familiaArma, empleoArma: t.empleoArma, danioDeFuerza };
   const incorporada = extremidadIncorporada(brazo, pieza.instanciaId, ataque);
   if (incorporada) {
-    const nota = `${NOTA_ARMA_INCORPORADA} Con la Fuerza ${brazo.fuerza} y la Agilidad ${brazo.agilidad} del brazo (${brazo.fuente}).`;
+    // Lo que hace el brazo (sus atributos, desenfundar gratis) va con su origen: con el brazo
+    // apagado por el Shock, conPiezasAfectadas lo quita y la fila sale bloqueada
+    // (habilitacionEnFicha), sin textos que digan lo contrario.
+    const nota = t.nota ? `${t.nota} · ${NOTA_ARMA_INCORPORADA}` : NOTA_ARMA_INCORPORADA;
+    const conBrazoTexto: TextoEnTirada = {
+      en: { tipo: "tiradaId", id: t.id },
+      texto: `Con la Fuerza ${brazo.fuerza} y la Agilidad ${brazo.agilidad} del brazo.`,
+      fuente: brazo.fuente,
+      soloEnCritico: false,
+      ...(incorporada.origen && { origen: incorporada.origen }),
+    };
     // «Su desenfundado es gratuito» (T5c): rebaja de esta fila sola.
     const gratis = { accion: "desenfundar" as const, op: "sustituye" as const, a: ["gratuita" as const], fuente: brazo.fuente, ...(incorporada.origen && { origen: incorporada.origen }) };
     const tiposDeAccionBase = t.tiposDeAccionBase?.map((b) => (b.accion === "desenfundar" ? { ...b, rebajas: [...(b.rebajas ?? []), gratis] } : b));
-    return { ...t, extremidad: incorporada, nota: t.nota ? `${t.nota} · ${nota}` : nota, ...(tiposDeAccionBase && { tiposDeAccionBase }) };
+    return { ...conTextosDeFicha(t, [conBrazoTexto]), extremidad: incorporada, nota, ...(tiposDeAccionBase && { tiposDeAccionBase }) };
   }
   const casilla = casillaBrazo(brazo, ataque);
   return casilla ? { ...t, condiciones: [...(t.condiciones ?? []), casilla] } : t;

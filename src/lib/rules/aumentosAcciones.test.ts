@@ -356,8 +356,11 @@ describe("A4b: Densificar", () => {
 
   test("marcada: +3 en los tipos en los que cuenta el blindaje", () => {
     for (const tipo of conTipos) {
-      const d = desgloseBlindaje(enj(3), tipo, SIN_ARMADURA_NATURAL, true);
-      assert.deepEqual(d, [{ etiqueta: "Densificar · Enjambre Nanobot 3", valor: 3 }], tipo);
+      const ficha = enj(3);
+      const d = desgloseBlindaje(ficha, tipo, SIN_ARMADURA_NATURAL, true);
+      // Con la pieza de origen, para el Shock (conShockEnLineas).
+      const origen = { tipo: "aumento", id: "aum_enjambre_nanobot", label: "Enjambre Nanobot", instanciaId: ficha.equipo[0].instanciaId };
+      assert.deepEqual(d, [{ etiqueta: "Densificar · Enjambre Nanobot 3", valor: 3, origen }], tipo);
       assert.equal(casillaBlindajeReactivo(enj(3), tipo, false)!.bloqueada, null, tipo);
     }
     assert.deepEqual(desgloseBlindaje(enj(3), "cinetico", SIN_ARMADURA_NATURAL, false), []);

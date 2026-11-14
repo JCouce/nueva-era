@@ -315,18 +315,18 @@ export function notasAlertaPasivaDeAumentos(sheet: Pick<Sheet, "equipo">): strin
 export function armaduraNaturalDeAumentos(
   sheet: Pick<Sheet, "equipo">,
   tipo: TipoDanio,
-): { fuente: string; valor: number; nota: string }[] {
+): { fuente: string; valor: number; nota: string; origen?: OrigenAporte }[] {
   return aportesDeAumentos(sheet).flatMap((a) => {
     const an = a.efectos.armaduraNatural;
-    return an && an.tipos.includes(tipo) ? [{ fuente: a.fuente, valor: an.valor, nota: an.nota }] : [];
+    return an && an.tipos.includes(tipo) ? [{ fuente: a.fuente, valor: an.valor, nota: an.nota, ...(a.origen && { origen: a.origen }) }] : [];
   });
 }
 
 // El blindaje reactivo que se puede pagar (Densificar, Enjambre 3+; A4b), o null. Si hubiera
 // más de uno, el primero: hoy solo existe el del Enjambre.
-export function blindajeReactivoDeAumentos(sheet: Pick<Sheet, "equipo">): (BlindajeReactivo & { fuente: string }) | null {
+export function blindajeReactivoDeAumentos(sheet: Pick<Sheet, "equipo">): (BlindajeReactivo & { fuente: string; origen?: OrigenAporte }) | null {
   for (const a of aportesDeAumentos(sheet)) {
-    if (a.efectos.blindajeReactivo) return { ...a.efectos.blindajeReactivo, fuente: a.fuente };
+    if (a.efectos.blindajeReactivo) return { ...a.efectos.blindajeReactivo, fuente: a.fuente, ...(a.origen && { origen: a.origen }) };
   }
   return null;
 }

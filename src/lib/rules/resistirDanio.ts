@@ -15,7 +15,7 @@
 // El id interno sigue siendo "bloquear_danio" (MotorMetadata del catálogo, favorita guardada
 // `fija:bloquear_danio` en las fichas): renombrarlo exigiría migrar las favoritas sin ganar nada.
 import { ACCIONES, type Resultado } from "./acciones";
-import { ID_SELECTOR_CONTRA, type AmenazaId } from "./aumentosTiradas";
+import { blindajeReactivoDeAumentos, ID_SELECTOR_CONTRA, type AmenazaId } from "./aumentosTiradas";
 import {
   blindajeDeArmadura,
   cambiaEnCritico,
@@ -33,6 +33,7 @@ import type { EstadoActivo } from "./estados";
 import { conExtrasDeFicha, type FichaResuelta } from "./fichaResuelta";
 import { montarTirada, SIN_ELECCION, tirarMontada } from "./montaje";
 import type { Sheet } from "./sheet";
+import { conShockEnLineas } from "./shock";
 import { textosSinDado } from "./textosTirada";
 import { ajustarDanioCategoria } from "./vitalidad";
 import { equipoPorId } from "../catalog/equipo";
@@ -146,16 +147,22 @@ export type GolpeResuelto = {
   golpe: GolpeRecibido | null;
 };
 
-type FichaParaResistir = Pick<FichaResuelta, "ficha" | "especie" | "blindaje" | "textosTirada"> & Partial<Pick<FichaResuelta, "fichaSinApagadas">>;
+type FichaParaResistir = Pick<FichaResuelta, "ficha" | "especie" | "blindaje" | "textosTirada"> &
+  Partial<Pick<FichaResuelta, "fichaSinApagadas" | "piezasInutilizadas" | "piezasPenalizadas">>;
 
 const MOTIVO_FUERA_DE_TIPO = "No cuenta con este tipo de daño.";
 
 export function resolverGolpe(ficha: FichaParaResistir, e: EntradaResistir): GolpeResuelto {
-  // Sin las piezas apagadas por el Shock (S73): un Escudo Deflector o una Malla apagados no paran
-  // ni devuelven nada. El blindaje perdido de la armadura vive en la ficha y va igual.
+  // Sin las piezas apagadas por el Shock (S73): una Malla apagada no devuelve nada, y sin el brazo
+  // no hay casilla de bloquear con él. El blindaje perdido de la armadura vive en la ficha y va igual.
   const sheet = ficha.fichaSinApagadas ?? ficha.ficha;
   const conBrazo = e.conBrazo && Boolean(casillaBlindajeBrazo(sheet, e.tipo));
-  const desglose = desgloseBlindaje(sheet, e.tipo, ficha.blindaje.armaduraNatural, e.reactivo, conBrazo, ficha.blindaje.contencion);
+  // El desglose, con la ficha entera y lo que aporta de verdad cada pieza tocada (pl-02): un
+  // Escudo Deflector apagado sale «Escudo Deflector (shock)» a 0; penalizado, con su −N.
+  const desglose = conShockEnLineas(
+    desgloseBlindaje(ficha.ficha, e.tipo, ficha.blindaje.armaduraNatural, e.reactivo && Boolean(blindajeReactivoDeAumentos(sheet)), conBrazo, ficha.blindaje.contencion),
+    { inutilizadas: ficha.piezasInutilizadas, penalizadas: ficha.piezasPenalizadas },
+  );
   const blindaje = desglose.reduce((t, l) => t + l.valor, 0);
   const danio = Math.max(0, Math.round(e.danio));
   const pasa = Math.max(0, danio - blindaje);

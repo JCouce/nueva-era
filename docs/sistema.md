@@ -880,15 +880,32 @@ imponen penalizadores por umbral:
   crítico, nada) **1 turno**, en **la misma entrada del registro**: un Deshacer quita los dos.
   Igual a un NPC desde la consola. Mecanismo general: `Estado.arrastra` y `operacionesDe`
   (`rules/estadosFicha.ts`), que usan `cambiarEstadosEnTx` y `cambiarEstadosDeNpcsEnTx`.
-- **Pieza afectada (pl-02, literal de la fuente)**: fracaso crítico, la pieza **se apaga**
-  (`FichaResuelta.piezasInutilizadas`, instancia → «Shock» o «Shock en el equipo»): sus aportes no
-  llegan a ninguna tirada ni derivado (la ficha se resuelve sin ella, `fichaSinApagadas`; lo que
-  la fila trae de ella se quita en `conPiezasAfectadas`), el desglose de las tiradas a las que
-  llegaba lo dice con una línea a 0 («Ojo Biónico: apagada por Shock») y sus acciones propias
-  (Disparar con un arma de energía, Activar Camuflaje, Volar, Activar Neuroprótesis…) salen
-  bloqueadas: «Apagada por Shock.». Fracaso y éxito: **−2 / −1 al bono y a usarla, a mano**
-  (decisión del usuario): la app no lo calcula; las tiradas donde aporta una pieza afectada, o
-  que la usan, enseñan el aviso «−2 al bono de X y a usarla, a mano (Shock (fracaso))».
+- **Pieza afectada (pl-02, literal de la fuente; decisión cambiada el 2026-11-14: lo aplica la
+  app, ya no «a mano»)**: fracaso crítico, la pieza **se apaga** (`FichaResuelta.piezasInutilizadas`,
+  instancia → «Shock» o «Shock en el equipo»): sus aportes no llegan a ninguna tirada ni derivado
+  (la ficha se resuelve sin ella, `fichaSinApagadas`; lo que la fila trae de ella se quita en
+  `conPiezasAfectadas`), el desglose de las tiradas a las que llegaba lo dice con una línea a 0
+  («Ojo Biónico (shock)») y sus acciones propias (Disparar con un arma de energía, Activar
+  Camuflaje, Volar, Activar Neuroprótesis…) salen bloqueadas: «Apagada por Shock.». La hoja que se
+  hace siempre con una pieza apagada (el arma **incorporada** en un Brazo Biónico apagado) sale
+  bloqueada «Apagada por Shock (Brazo Biónico).», sin los textos del brazo (sus atributos,
+  desenfundar gratis). Fracaso y éxito (**−2 / −1**): **cada bono numérico positivo** de la pieza,
+  esté donde esté, pierde N **por separado y sin bajar de 0** (el +Fuerza del Exoesqueleto pasa a
+  +0 y baja la Fuerza, la Potencia y el doble de movimiento y carga en toda la ficha); los valores
+  **negativos** (Maniobrabilidad −3 de Movilidad Aérea) y lo no numérico (ventaja, crítico fijo,
+  textos) no cambian. Las tiradas **destinadas a su uso** (las de `origen` la pieza: Volar, disparar
+  el arma de energía…) llevan **−N**: línea «Movilidad Aérea (shock) −2». En los desgloses la
+  línea de la pieza tocada es «<pieza> (shock)» con lo que aporta de verdad (también en Resistir
+  daño: «Escudo Deflector (shock) +0»). Puntos únicos: `conShockEnModificadores` (resolverFicha,
+  modificadores con `item`), `conPiezasAfectadas` (ajustes fijos, casillas, bonos por tramo y el −N
+  al uso), `conShockEnLineas` (Resistir daño). Las tarjetas de estado abren un modal con lo que
+  hace el grado y las piezas de esa ficha que toca (`explicacionDeEstado`).
+  *Sin cubrir (no llevan origen o no son «bono»)*: la velocidad de vuelo (50 m…), los atributos
+  propios del Brazo Biónico (Fuerza/Agilidad del brazo, que no son un bono sino un valor que
+  sustituye; el +Fuerza del Exoesqueleto en la base del brazo tampoco se reduce), los bonos del
+  selector «Contra…» de las salvaciones (sus `partes` no traen pieza), el factor de vida
+  (Hipertrofia) y los números que van dentro de un texto (Malla Plasmática: «devuelves 2 de
+  plasma»).
 - **«Apagón» = afectado por Shock (pl-03, eq-28)**: el del Soporte Vital es estar afectado por el
   Shock en el equipo. Su rebaja propia (bonos a +1, la térmica fuera) y lo que conserva el
   Inyector 2 al caer son **T7b**: hoy se apagan o se penalizan como cualquier otra pieza.
@@ -3006,7 +3023,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S70 | ***Negociación Analítica*: casilla en el modal de Convencer / mentir** («Negociando: Perspicacia en lugar de Expresión»): marcada, la tirada usa Perspicacia (con su valor y su línea en el desglose). La fila sigue enseñando Expresión: el cambio se ve al marcarla en el modal. Si hubiese a la vez estilo Sutil, manda la casilla. | Decisión del usuario (D2d): selector en el modal antes de tirar. |
 | S71 | ***Ojo Clínico*: la fatiga se paga al tirar con la casilla marcada** (1 punto, sin temporal), se acierte o no; sin `onPagarFatiga` (consola del máster), a mano. La ventaja no se acumula: con varias casillas de ventaja, dos d12 igual. | §9.5 ("la fatiga solo paga la ventaja", "la ventaja no se acumula"); el momento del pago es del redactor. |
 | S72 | **Pool de creación en negativo: se permite, pero bloquea el envío a revisión.** Bajar la letra de una categoría tras gastar (o que otra categoría se lleve su letra) deja el pool en negativo; el cambio de letra no se impide, para poder reordenar prioridades, y el exceso es una falta ("Te has pasado N puntos en …") en Atributos, Habilidades, Psiónica y Dotes. El máster puede aprobar igual. | Decisión del usuario (2026-10-15). |
-| S73 | **Shock: dos grados, cuerpo y equipo (opción B).** El máster aplica el Shock con dos grados: el de **Fortaleza** (cuerpo) decide la parálisis y los implantes; el de **Estructura** (equipo), todos los sistemas electrónicos que lleva encima a la vez, no pieza a pieza. La app no tira: el grado lo pone el máster. Pieza afectada: **literal de la fuente** (fracaso crítico apagada; fracaso −2, éxito −1 a mano, con aviso); la propuesta de la mesa de perder el bono entero queda descartada. «Apagón» = afectado por Shock. Un "averiado" pieza a pieza (sabotaje, Sistema de Emergencia) iría aparte (pl-04, más adelante). Construido en T7a: §7.1. | **FIRME**: decisión del usuario en el cuestionario de cierre (pl-01, pl-02, pl-03, eq-28; 2026-11-14), fiel a `fuente/reglas-base.md` (Shock). Ya no espera a Murillo. |
+| S73 | **Shock: dos grados, cuerpo y equipo (opción B).** El máster aplica el Shock con dos grados: el de **Fortaleza** (cuerpo) decide la parálisis y los implantes; el de **Estructura** (equipo), todos los sistemas electrónicos que lleva encima a la vez, no pieza a pieza. La app no tira: el grado lo pone el máster. Pieza afectada: **literal de la fuente** (fracaso crítico apagada; fracaso −2, éxito −1 a cada bono positivo, sin bajar de 0, y a usarla); la propuesta de la mesa de perder el bono entero queda descartada. **Cambiado el 2026-11-14 (usuario): el −N ya no es a mano, lo aplica la app** (§7.1). «Apagón» = afectado por Shock. Un "averiado" pieza a pieza (sabotaje, Sistema de Emergencia) iría aparte (pl-04, más adelante). Construido en T7a: §7.1. | **FIRME**: decisión del usuario en el cuestionario de cierre (pl-01, pl-02, pl-03, eq-28; 2026-11-14), fiel a `fuente/reglas-base.md` (Shock). Ya no espera a Murillo. |
 | S74 | **Estados de la ficha y vida máxima (E1a).** Los estados que pone el máster (`Character.estados`) mueven la vida y la fatiga máximas también fuera de combate. La vida actual no se recorta al máximo con estados (`parseSheet` reconcilia contra el máximo en reposo, sin estados): lo que baja al poner el estado es S75; curar topa en el máximo en reposo. *(Superado por S75: "la vida actual no se recorta" y "un estado puesto o quitado dentro del combate no mueve la foto `pgMax`".)* Una duración de **0 rondas** vale (la usa el catálogo: se cae al cerrar la vuelta, S77). | Decisión del usuario (2026-10-16: "los estados mueven la vida máxima también fuera de combate"); el tope de curar, del redactor. |
 | S75 | **Vida perdida al bajar el máximo.** Cuando poner un estado (o cambiarle el grado) **baja** la vida máxima, la vida actual baja lo mismo y se guarda; igual la fatiga. No se recupera al quitarse el estado ni al caerse por rondas: es castigo. Si el máximo sube o no cambia, la actual no se toca. Suelo 0; llegar a 0 no hace nada automático (la inconsciencia la marca el máster). En combate baja también la foto del jugador (`pgActual`/`fatigaActual`), y la foto recalcula `pgMax`/`fatigaMax` con los estados nuevos cada vez que cambian (poner, quitar, caerse por rondas). Deshacer la acción en el registro del máster (E1b) devuelve lo restado, hasta el máximo. **Activables de aumento (A5a-A5b):** sus estados no cuentan para la bajada, pero si al cambiar quedan la vida o la fatiga por encima del máximo nuevo, se recortan a él; y mientras están puestos suben el tope al que se cura (§11, A5b). Motor: `rules/vidaPorEstados.ts`. | Decisión del usuario (2026-10-16; activables, 2026-10-22). |
 | S76 | **Terminar escena (E1c).** "Terminar escena" del máster quita los estados con duración "fin de escena" a todos los personajes **en juego** (aprobados), en una sola acción del registro que se deshace entera (si a alguno le han vuelto a poner uno de esos estados, no se deshace ninguno). Quitar no resta vida (S75); las fotos de combate abiertas recalculan su máximo. Desde E1d también limpia los estados de escena de los **NPC** del combate abierto, sin registro (deshacer no se los devuelve). Recompensas: quitar XP o créditos que dejaría a alguien en negativo **no se hace para nadie** y se explica (antes se recortaba a 0). Motor: `quitarEstadosDeEscena` (`rules/vidaPorEstados.ts`), `planAjusteRecurso` (`rules/registro.ts`). | Decisión del usuario (2026-10-16); "solo aprobados" y "NPC fuera", del redactor. |

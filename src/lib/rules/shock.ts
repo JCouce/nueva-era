@@ -6,14 +6,18 @@
 // sistema.md). Lo que hace el grado puesto:
 //   - `apagadas` (fracaso crítico): la pieza no funciona. Va a FichaResuelta.piezasInutilizadas, sus
 //     aportes no llegan a ninguna tirada y sus acciones propias salen bloqueadas.
-//   - `penaliza` (fracaso −2, éxito −1): se aplica a mano (decisión del usuario, pl-02); las
-//     tiradas donde aporta la pieza, o que la usan, lo avisan.
+//   - `penaliza` (fracaso −2, éxito −1; usuario 2026-11-14, pl-02): cada bono numérico positivo de
+//     la pieza pierde N sin bajar de 0 (bonoConShock), esté donde esté, y las tiradas que la usan
+//     (las de `origen` la pieza) llevan −N. Lo aplica la app: resolverFicha a los modificadores
+//     con `item`, conPiezasAfectadas a lo que trae la tirada y conShockEnLineas a los desgloses
+//     sin dado (Resistir daño).
 // «Apagón» (Soporte Vital) es lo mismo que estar afectado por el Shock (pl-03, eq-28).
 import { equipoPorId, type Equipo } from "../catalog/equipo";
-import { estadoPorId } from "../catalog/estados";
-import { nivelesHasta, ultimoQueDefine } from "./equipo";
+import { estadoPorId, type GradoEstado } from "../catalog/estados";
+import { nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import { estadosConEfecto, type EstadoActivo } from "./estados";
 import { inmunidadesDe } from "./inmunidades";
+import type { ModificadorConFuente } from "./modificadores";
 import type { OrigenAporte } from "./origen";
 import type { Sheet } from "./sheet";
 
@@ -56,51 +60,81 @@ export function shockDePieza(cat: Equipo, nivel?: number): AfectaShock {
   return porDefecto(cat);
 }
 
-// Una pieza tocada por un estado que la penaliza (fracaso, éxito): el aviso de sus tiradas.
-// `estado`: el estado que la penaliza, de origen del aviso.
+// Una pieza tocada por un estado que la penaliza (fracaso, éxito). `valor`: lo que pierde cada
+// bono y lo que se resta al usarla. `estado`: el estado que la penaliza, de origen de la línea del
+// uso.
 export type PiezaPenalizada = { origen: OrigenAporte; valor: number; fuente: string; estado: OrigenAporte };
 
 export type AfectacionDePiezas = {
   // instanciaId → el estado que la apaga («Shock», «Shock en el equipo»).
   inutilizadas: ReadonlyMap<string, string>;
-  // instanciaId → −N a mano.
+  // instanciaId → −N a cada bono y a usarla.
   penalizadas: ReadonlyMap<string, PiezaPenalizada>;
 };
 
 export const SIN_AFECTACION: AfectacionDePiezas = { inutilizadas: new Map(), penalizadas: new Map() };
 
+// Lo que hace cada estado puesto (sin los que anula una inmunidad, A7) a las piezas: la lista de
+// piezas de la ficha que toca, con el grado. Lo comparten afectacionDePiezas y la explicación del
+// estado (piezasDeEstado).
+type Toque = { estadoId: string; estadoLabel: string; grado: string; piezas: NonNullable<GradoEstado["piezas"]>; tocadas: { pieza: PiezaEquipada; cat: Equipo }[] };
+
+function toques(sheet: Pick<Sheet, "equipo">, estados: readonly EstadoActivo[]): Toque[] {
+  const conEfecto = estadosConEfecto([...estados], inmunidadesDe(sheet));
+  return conEfecto.flatMap((e) => {
+    const estado = estadoPorId(e.estadoId);
+    const grado = estado?.grados.find((g) => g.id === e.gradoId);
+    if (!estado?.afectaPiezas || !grado?.piezas) return [];
+    const tocadas = sheet.equipo.flatMap((pieza) => {
+      const cat = equipoPorId(pieza.catalogoId);
+      return cat && shockDePieza(cat, pieza.nivel) === estado.afectaPiezas ? [{ pieza, cat }] : [];
+    });
+    return [{ estadoId: estado.id, estadoLabel: estado.label, grado: grado.label, piezas: grado.piezas, tocadas }];
+  });
+}
+
+const origenDeTocada = (cat: Equipo, instanciaId: string): OrigenAporte => ({
+  tipo: cat.familia === "implante" || cat.familia === "operacionGenetica" ? "aumento" : "equipo",
+  id: cat.id,
+  label: cat.label,
+  instanciaId,
+});
+
 // Con los estados que hacen efecto (sin los que anula una inmunidad, A7). Si dos estados tocan la
 // misma pieza (no pasa hoy: cada pieza es de cuerpo o de equipo), apagar gana a penalizar.
 export function afectacionDePiezas(sheet: Pick<Sheet, "equipo">, estados: readonly EstadoActivo[]): AfectacionDePiezas {
-  const conEfecto = estadosConEfecto([...estados], inmunidadesDe(sheet));
-  const tocan = conEfecto.flatMap((e) => {
-    const estado = estadoPorId(e.estadoId);
-    const grado = estado?.grados.find((g) => g.id === e.gradoId);
-    return estado?.afectaPiezas && grado?.piezas ? [{ estado, grado: grado.label, afecta: estado.afectaPiezas, piezas: grado.piezas }] : [];
-  });
+  const tocan = toques(sheet, estados);
   if (tocan.length === 0) return SIN_AFECTACION;
   const inutilizadas = new Map<string, string>();
   const penalizadas = new Map<string, PiezaPenalizada>();
-  for (const pieza of sheet.equipo) {
-    const cat = equipoPorId(pieza.catalogoId);
-    if (!cat) continue;
-    const afecta = shockDePieza(cat, pieza.nivel);
-    for (const t of tocan) {
-      if (t.afecta !== afecta) continue;
+  for (const t of tocan) {
+    for (const { pieza, cat } of t.tocadas) {
       if ("apagadas" in t.piezas) {
-        inutilizadas.set(pieza.instanciaId, t.estado.label);
+        inutilizadas.set(pieza.instanciaId, t.estadoLabel);
         penalizadas.delete(pieza.instanciaId);
       } else if (!inutilizadas.has(pieza.instanciaId)) {
         penalizadas.set(pieza.instanciaId, {
-          origen: { tipo: cat.familia === "implante" || cat.familia === "operacionGenetica" ? "aumento" : "equipo", id: cat.id, label: cat.label, instanciaId: pieza.instanciaId },
+          origen: origenDeTocada(cat, pieza.instanciaId),
           valor: t.piezas.penaliza,
-          fuente: `${t.estado.label} (${t.grado.toLowerCase()})`,
-          estado: { tipo: "estado", id: t.estado.id, label: t.estado.label },
+          fuente: `${t.estadoLabel} (${t.grado.toLowerCase()})`,
+          estado: { tipo: "estado", id: t.estadoId, label: t.estadoLabel },
         });
       }
     }
   }
   return { inutilizadas, penalizadas };
+}
+
+// Las piezas de la ficha que toca un estado puesto, para explicarlo (explicacionDeEstado): las que
+// apaga o las que penaliza (con cuánto), por nombre. null si el estado no toca piezas con el grado
+// puesto (éxito crítico, otro estado) o la inmunidad lo anula.
+export type PiezasDeEstado = { apagadas: string[] } | { penaliza: number; peor: string[] };
+
+export function piezasDeEstado(sheet: Pick<Sheet, "equipo">, estados: readonly EstadoActivo[], estadoId: string): PiezasDeEstado | null {
+  const t = toques(sheet, estados).find((x) => x.estadoId === estadoId);
+  if (!t) return null;
+  const nombres = [...new Set(t.tocadas.map((x) => x.cat.label))];
+  return "apagadas" in t.piezas ? { apagadas: nombres } : { penaliza: t.piezas.penaliza, peor: nombres };
 }
 
 // La ficha sin las piezas apagadas: con ella se calcula todo lo que esas piezas aportan sin pasar
@@ -110,8 +144,54 @@ export function sinPiezasInutilizadas<S extends Pick<Sheet, "equipo">>(sheet: S,
   return { ...sheet, equipo: sheet.equipo.filter((p) => !inutilizadas.has(p.instanciaId)) };
 }
 
-// «Apagada por Shock.»: el `bloqueada` de las acciones propias de una pieza apagada.
-export const motivoApagada = (motivo: string) => `Apagada por ${motivo}.`;
+// «Apagada por Shock.»: el `bloqueada` de las acciones propias de una pieza apagada. Con `pieza`,
+// la hoja no es de la pieza pero va con ella (el arma incorporada en un Brazo Biónico apagado):
+// «Apagada por Shock (Brazo Biónico).».
+export const motivoApagada = (motivo: string, pieza?: string) => `Apagada por ${motivo}${pieza ? ` (${pieza})` : ""}.`;
 
-// «Shock (fracaso): −2 al bono de Neuroprótesis Simpática y a usarla, a mano.»
-export const avisoPenalizada = (p: PiezaPenalizada) => `−${p.valor} al bono de ${p.origen.label} y a usarla, a mano`;
+// «Movilidad Aérea (shock)»: la línea de desglose de lo que aporta de verdad una pieza tocada
+// (0 si está apagada, el bono reducido si está penalizada) y la del −N al usarla.
+export const MARCA_SHOCK = "(shock)";
+export const etiquetaShock = (pieza: string) => `${pieza} ${MARCA_SHOCK}`;
+
+// Una etiqueta de desglose partida en trozos, con la marca «(shock)» aparte para que la pantalla la
+// resalte (usuario 2026-11-14: en azul). Sin marca, un solo trozo.
+export function trozosDeEtiqueta(etiqueta: string): { texto: string; shock?: true }[] {
+  const partes = etiqueta.split(MARCA_SHOCK);
+  return partes.flatMap((texto, i) => [
+    ...(texto ? [{ texto }] : []),
+    ...(i < partes.length - 1 ? [{ texto: MARCA_SHOCK, shock: true as const }] : []),
+  ]);
+}
+
+// Un bono de una pieza penalizada: los positivos pierden N sin bajar de 0; los negativos (la
+// Maniobrabilidad −3 de Movilidad Aérea) y el 0 no cambian.
+export const bonoConShock = (valor: number, penaliza: number) => (valor > 0 ? Math.max(0, valor - penaliza) : valor);
+
+// Los modificadores con `item` de una pieza penalizada, cada bono positivo con su −N (por separado)
+// y la fuente «<pieza> (shock)»: los de atributo bajan el atributo en toda la ficha (el +Fuerza del
+// Exoesqueleto baja la Potencia), los de tirada su tirada, los de derivado su derivado. El factor
+// de vida (multiplicadorVida) no es un bono que se sume: no cambia.
+export function conShockEnModificadores(mods: ModificadorConFuente[], penalizadas: ReadonlyMap<string, PiezaPenalizada>): ModificadorConFuente[] {
+  if (penalizadas.size === 0) return mods;
+  return mods.map((m) => {
+    const p = m.item?.instanciaId ? penalizadas.get(m.item.instanciaId) : undefined;
+    if (!p || m.tipo === "multiplicadorVida" || m.tipo === "anulaPenalizadores" || m.valor <= 0) return m;
+    return { ...m, valor: bonoConShock(m.valor, p.valor), fuente: etiquetaShock(m.item!.label) };
+  });
+}
+
+// Una línea de desglose sin dado (Resistir daño: blindaje, absorción) con lo que aporta de verdad
+// si su pieza está tocada: apagada, 0; penalizada, el bono reducido. Sin origen, tal cual.
+export function conShockEnLineas<L extends { etiqueta: string; valor: number; origen?: OrigenAporte }>(
+  lineas: L[],
+  afectacion: Partial<AfectacionDePiezas>,
+): L[] {
+  return lineas.map((l) => {
+    const id = l.origen?.instanciaId;
+    if (!id) return l;
+    if (afectacion.inutilizadas?.has(id)) return { ...l, etiqueta: etiquetaShock(l.origen!.label), valor: 0 };
+    const p = afectacion.penalizadas?.get(id);
+    return p && l.valor > 0 ? { ...l, etiqueta: etiquetaShock(l.origen!.label), valor: bonoConShock(l.valor, p.valor) } : l;
+  });
+}

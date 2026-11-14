@@ -1,5 +1,6 @@
 "use client";
 
+import { EtiquetaDesglose } from "./EtiquetaDesglose";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   DIFICULTADES,
@@ -181,7 +182,9 @@ export function ControlCondicion({
 function LineaDesglose({ etiqueta, valor }: { etiqueta: string; valor: number }) {
   return (
     <div className="flex items-baseline justify-between gap-3 font-mono text-[11px]">
-      <span className="truncate text-muted">{etiqueta}</span>
+      <span className="truncate text-muted">
+        <EtiquetaDesglose etiqueta={etiqueta} />
+      </span>
       <span className={`shrink-0 tabular-nums ${valor > 0 ? "text-info" : valor < 0 ? "text-danger" : "text-muted"}`}>
         {signo(valor)}
       </span>

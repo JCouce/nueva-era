@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Fuente } from "@/lib/rules";
+import { EtiquetaDesglose } from "./EtiquetaDesglose";
 
 function signo(n: number) {
   return n >= 0 ? `+${n}` : `${n}`;
@@ -51,7 +52,9 @@ export function Desglose({
               key={i}
               className="flex items-center justify-between gap-3 font-mono text-[10px] uppercase leading-relaxed"
             >
-              <span className="text-muted">{f.etiqueta}</span>
+              <span className="text-muted">
+                <EtiquetaDesglose etiqueta={f.etiqueta} />
+              </span>
               <span className={f.valor >= 0 ? "text-info" : "text-danger"}>
                 {signo(f.valor)}
               </span>

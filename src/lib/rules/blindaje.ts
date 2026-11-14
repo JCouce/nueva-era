@@ -17,6 +17,7 @@ import { blindajeDelBrazo } from "./brazoBionico";
 import { ajustarRecurso, MOTIVO_ESCUDO_ROTO, reconciliarRecursos } from "./recursos";
 import type { Sheet } from "./sheet";
 import type { EstadoActivo } from "./estados";
+import { origenDePieza, type OrigenAporte } from "./origen";
 import { absorcionDeGradoContencion, ESTADO_CONTENCION_ID } from "../catalog/psionica";
 
 import { TIPOS_DANIO, cambiaEnCritico, type TipoDanio } from "../catalog/tiposDanio";
@@ -92,13 +93,13 @@ function armaduraConIgnifuga(sheet: Sheet): Armadura | null {
   return lleva ? equipada.armadura : null;
 }
 
-function absorcionEscudoDeflector(sheet: Sheet): number {
+function absorcionEscudoDeflector(sheet: Sheet): { valor: number; origen: OrigenAporte } | null {
   const pieza = sheet.equipo.find((p) => p.catalogoId === "escudo_deflector");
-  if (!pieza?.nivel) return 0;
+  if (!pieza?.nivel) return null;
   const cat = equipoPorId(pieza.catalogoId) as Subsistema | undefined;
-  if (!cat) return 0;
+  if (!cat) return null;
   const definitivo = ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel), "absorcion");
-  return definitivo?.absorcion ?? 0;
+  return { valor: definitivo?.absorcion ?? 0, origen: origenDePieza("equipo", cat, pieza.instanciaId) };
 }
 
 // El escudo melee equipado (Rodela, Escudo, sus variantes de metamaterial o
@@ -125,14 +126,17 @@ export function tieneEscudoMelee(sheet: Sheet): boolean {
 // blindaje de la armadura CONTRA fuego, en vez de sumar un extra) y Anticorrosivo no
 // tiene ningún efecto de blindaje, solo cambia la categoría de daño (Hallazgo #4) y
 // una salvación ya construida — no generalizar a partir de un solo caso real.
-function bonoTejidoConductor(sheet: Sheet, tipo: TipoDanio): number {
-  if (tipo !== "electrico") return 0;
+function bonoTejidoConductor(sheet: Sheet, tipo: TipoDanio): { valor: number; origen: OrigenAporte } | null {
+  if (tipo !== "electrico") return null;
   const pieza = sheet.equipo.find((p) => p.catalogoId === "tejido_conductor");
-  return (pieza?.nivel ?? 0) >= 2 ? 1 : 0;
+  const cat = pieza && equipoPorId(pieza.catalogoId);
+  return pieza && cat && (pieza.nivel ?? 0) >= 2 ? { valor: 1, origen: origenDePieza("equipo", cat, pieza.instanciaId) } : null;
 }
 
 // `nota`: a qué golpes vale, si no es a todos (armadura natural de los aumentos, R6).
-export type LineaBlindaje = { etiqueta: string; valor: number; nota?: string };
+// `origen`: la pieza que lo da, para que el Shock (conShockEnLineas, rules/shock.ts) la deje en lo
+// que aporta de verdad. Sin él (armadura natural de especie, Contención), no es de una pieza.
+export type LineaBlindaje = { etiqueta: string; valor: number; nota?: string; origen?: OrigenAporte };
 
 // Armadura natural de especie (Arköru 1, Matriz Biometálica, §14.7), ya resuelta en
 // la FichaResuelta: se suma a la armadura puesta y, como ella, no cuenta contra
@@ -206,21 +210,21 @@ export function desgloseBlindaje(
   // Aumentos (A2a, R6): +1 contra Cinético por pieza (Osteotendinosa, Matriz Ósea), con su
   // nota. Aparte de la de especie, que no cambia.
   for (const a of armaduraNaturalDeAumentos(sheet, tipo)) {
-    lineas.push({ etiqueta: `Armadura natural · ${a.fuente}`, valor: a.valor, nota: a.nota });
+    lineas.push({ etiqueta: `Armadura natural · ${a.fuente}`, valor: a.valor, nota: a.nota, ...(a.origen && { origen: a.origen }) });
   }
 
   const deflector = absorcionEscudoDeflector(sheet);
-  if (deflector > 0) lineas.push({ etiqueta: "Escudo Deflector", valor: deflector });
+  if (deflector && deflector.valor > 0) lineas.push({ etiqueta: "Escudo Deflector", ...deflector });
 
   const conductor = bonoTejidoConductor(sheet, tipo);
-  if (conductor > 0) lineas.push({ etiqueta: "Tejido Conductor", valor: conductor });
+  if (conductor) lineas.push({ etiqueta: "Tejido Conductor", ...conductor });
 
   const r = reactivo ? blindajeReactivoDeAumentos(sheet) : null;
   // Su nota va junto a la casilla (casillaBlindajeReactivo), no repetida en el desglose.
-  if (r) lineas.push({ etiqueta: `${r.etiqueta} · ${r.fuente}`, valor: r.valor });
+  if (r) lineas.push({ etiqueta: `${r.etiqueta} · ${r.fuente}`, valor: r.valor, ...(r.origen && { origen: r.origen }) });
 
   const brazo = conBrazo ? blindajeDelBrazo(sheet) : null;
-  if (brazo) lineas.push({ etiqueta: `Bloqueado con el brazo · ${brazo.fuente}`, valor: brazo.valor });
+  if (brazo) lineas.push({ etiqueta: `Bloqueado con el brazo · ${brazo.fuente}`, valor: brazo.valor, origen: brazo.origen });
 
   return [...lineas, ...deContencion];
 }

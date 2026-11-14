@@ -123,7 +123,7 @@ import { fatigaEfectiva, fatigaEnJuego } from "./vitalidad";
 import { accionesDeMovimiento } from "./movimiento";
 import { alcanzaA, descartadosPorNoApila, type AlcanceModificador, type ModificadorConFuente } from "./modificadores";
 import { aplicadosPosibles, conTextosDeFicha, contextoDe, junta, textosDe, textosSinDado, type ObjetivoEnTirada } from "./textosTirada";
-import { afectacionDePiezas, avisoPenalizada, motivoApagada, sinPiezasInutilizadas, type PiezaPenalizada } from "./shock";
+import { afectacionDePiezas, bonoConShock, conShockEnModificadores, etiquetaShock, MARCA_SHOCK, motivoApagada, piezasDeEstado, sinPiezasInutilizadas, type PiezaPenalizada } from "./shock";
 import type { OrigenAporte } from "./origen";
 import type { Sheet } from "./sheet";
 import { condicionApuntado, ID_APUNTADO, ID_APUNTAR, tieneEspecialidad, type Accion, type AccionDirecta } from "./acciones";
@@ -161,8 +161,10 @@ export type FichaResuelta = {
   // (conExtrasDeFicha, accionesDeAumentos) y el desglose de las tiradas a las que llegaban lo
   // dice (`aportesApagados`).
   piezasInutilizadas: ReadonlyMap<string, string>;
-  // Piezas que el grado puesto penaliza (fracaso −2, éxito −1): el −N se aplica a mano; sus
-  // tiradas lo avisan (conExtrasDeFicha).
+  // Piezas que el grado puesto penaliza (fracaso −2, éxito −1; pl-02, usuario 2026-11-14): cada
+  // bono positivo suyo pierde N sin bajar de 0 (los modificadores con `item`, ya aquí abajo en
+  // `modificadores`; lo que trae la tirada, conPiezasAfectadas; Resistir daño, conShockEnLineas) y
+  // las tiradas que la usan llevan −N.
   piezasPenalizadas: ReadonlyMap<string, PiezaPenalizada>;
   // La ficha sin las piezas apagadas: con ella se resuelve lo que no llega por un aporte con
   // origen (blindaje y absorción al resistir daño, vuelo, exoesqueleto…). `ficha` sigue entera.
@@ -404,15 +406,20 @@ export function resolverFicha(
   // Estabilizado (Estabilización, mitigar): reduce los estados que tenía al ponérselo y, desde
   // nv4, quita heridas y fatiga.
   const estabilizado = estabilizacionPuesta(conEfecto);
-  // = [...modificadoresActivos(sheet), ...estados], sin volver a resolver la especie.
-  const sinTope: ModificadorConFuente[] = [
-    ...(especie?.modificadores ?? []),
-    ...dotes.modificadores,
-    ...modificadoresDeEquipo(enUso),
-    ...deAumentos,
-    ...modificadoresDeEstados(conEfecto, activables.reduceEstados, estabilizado),
-    ...activables.modificadores,
-  ];
+  // = [...modificadoresActivos(sheet), ...estados], sin volver a resolver la especie. Los bonos de
+  // las piezas penalizadas por el Shock, ya con su −N (conShockEnModificadores): el punto único
+  // por el que atributos, aplicados, derivados y tiradas los leen reducidos.
+  const sinTope: ModificadorConFuente[] = conShockEnModificadores(
+    [
+      ...(especie?.modificadores ?? []),
+      ...dotes.modificadores,
+      ...modificadoresDeEquipo(enUso),
+      ...deAumentos,
+      ...modificadoresDeEstados(conEfecto, activables.reduceEstados, estabilizado),
+      ...activables.modificadores,
+    ],
+    afectacion.penalizadas,
+  );
   // Tope de Agilidad de la armadura (S93): detrás de todo lo demás, para que aplicados,
   // movimiento y tiradas usen ya la Agilidad topada.
   const tope = topeAgilidadAplicado(sheet, sinTope);
@@ -561,14 +568,19 @@ export function aumentosHabilitados(ficha: FichaResuelta): AccionesDeAumentos {
 // fatiga, marcados automáticos, y los guardados con sus inmunidades (describirEstados).
 // T4: el Sigilo con lo que la ocultación suma a cada sentido («14 · visual 17 · …») y el Camuflaje
 // con el nivel de la pieza.
+// Shock (usuario 2026-11-14): los que tocan piezas, con las de esta ficha (`piezas`), para que el
+// modal del chip diga cuáles apaga o hacen funcionar peor (explicacionDeEstado).
 export function estadosParaPintar(
-  ficha: Pick<FichaResuelta, "estados" | "estadosDerivados" | "inmunidades"> & Partial<Pick<FichaResuelta, "ocultacion">>,
+  ficha: Pick<FichaResuelta, "estados" | "estadosDerivados" | "inmunidades"> & Partial<Pick<FichaResuelta, "ocultacion" | "ficha">>,
 ): EstadoActivoDescrito[] {
   const o = ficha.ocultacion ?? null;
+  const sheet = ficha.ficha;
   return describirEstados(ficha.estados, ficha.estadosDerivados, ficha.inmunidades).map((e) => {
-    if (e.valor !== undefined && estadoPorId(e.estadoId)?.valor?.porSentido) return { ...e, valorTexto: textoSigiloPorSentido(e.valor, o) };
-    if (e.estadoId === ESTADO_CAMUFLAJE_ID && o) return { ...e, valorTexto: `nivel ${o.nivel}` };
-    return e;
+    const piezas = sheet && estadoPorId(e.estadoId)?.afectaPiezas ? piezasDeEstado(sheet, ficha.estados, e.estadoId) : null;
+    const conPiezas = piezas ? { ...e, piezas } : e;
+    if (e.valor !== undefined && estadoPorId(e.estadoId)?.valor?.porSentido) return { ...conPiezas, valorTexto: textoSigiloPorSentido(e.valor, o) };
+    if (e.estadoId === ESTADO_CAMUFLAJE_ID && o) return { ...conPiezas, valorTexto: `nivel ${o.nivel}` };
+    return conPiezas;
   });
 }
 
@@ -684,13 +696,20 @@ function conExtrasSinPiezas(
 
 // Shock (S73, rules/shock.ts) sobre una tirada ya con lo de la ficha:
 //   - Lo que la propia fila trae de una pieza apagada (casillas y ajustes de una mejora, la
-//     extremidad del Brazo, textos…) se quita. (Que la fila de una pieza apagada salga bloqueada
-//     lo decide habilitacionEnFicha.)
+//     extremidad del Brazo, textos, la rebaja de desenfundar del arma incorporada…) se quita. (Que
+//     la fila de una pieza apagada, o la que se hace con ella, salga bloqueada lo decide
+//     habilitacionEnFicha.)
 //   - Cada pieza apagada que llegaba a la tirada (por la fila o por `aportesApagados`) deja una
-//     línea en el desglose: `piezasApagadas`, que pinta montarTirada.
-//   - Cada pieza penalizada que llega (o que es la de la fila: «a usarla») deja un aviso con el
-//     −N, que se aplica a mano (pl-02).
-export function conPiezasAfectadas(ficha: PiezasDeFicha, t: Accion): Accion {
+//     línea a 0 en el desglose: `piezasApagadas`, que pinta montarTirada («Ojo Biónico (shock)»).
+//   - Lo que la fila trae de una pieza penalizada (pl-02, usuario 2026-11-14): cada bono positivo
+//     con su −N sin bajar de 0 y «<pieza> (shock)» en su línea (ajustes fijos y bonos por tramo;
+//     las casillas con número, «(shock)» detrás de su etiqueta). Sus modificadores con `item`
+//     ya llegan reducidos de resolverFicha.
+//   - La tirada de una pieza penalizada (su `origen`: Volar, disparar el arma de energía…) lleva
+//     el −N al usarla: un ajuste fijo «<pieza> (shock)».
+type PiezasDeTirada = PiezasDeFicha & Partial<Pick<FichaResuelta, "rebajasTipoAccion">>;
+
+export function conPiezasAfectadas(ficha: PiezasDeTirada, t: Accion): Accion {
   const inutilizadas = ficha.piezasInutilizadas;
   const penalizadas = ficha.piezasPenalizadas;
   if (!inutilizadas?.size && !penalizadas?.size) return t;
@@ -713,9 +732,19 @@ export function conPiezasAfectadas(ficha: PiezasDeFicha, t: Accion): Accion {
   // Solo los campos que cambian, para no dejar claves a undefined en la tirada.
   const cambia = <K extends keyof Accion>(k: K, v: Accion[K]): Partial<Accion> => (v === t[k] ? {} : { [k]: v });
   const unico = <T extends { origen?: OrigenAporte }>(x: T | undefined) => (x && vale(x.origen) ? x : undefined);
+  // La rebaja de una pieza apagada (desenfundar gratis el arma incorporada en el Brazo) fuera, y
+  // los tipos de acción vueltos a resolver sin ella.
+  const conRebajas = (() => {
+    if (!t.tiposDeAccionBase?.length) return {};
+    const base = t.tiposDeAccionBase.map((b) => (b.rebajas ? { ...b, rebajas: filtra(b.rebajas) } : b));
+    if (base.every((b, i) => b.rebajas === t.tiposDeAccionBase![i].rebajas)) return {};
+    const r = conTiposDeAccion({ tiposDeAccionBase: base, condiciones: t.condiciones }, ficha.rebajasTipoAccion ?? []);
+    return { tiposDeAccionBase: base, ...r };
+  })();
+  const t0: Accion = { ...t, ...conRebajas };
   const sin: Accion = {
-    ...t,
-    ...cambia("condiciones", filtra(t.condiciones)),
+    ...t0,
+    ...cambia("condiciones", filtra(t0.condiciones)),
     ...cambia("ajustesFijos", filtra(t.ajustesFijos)),
     ...cambia("bonosTramo", filtra(t.bonosTramo)),
     ...cambia("efectos", filtra(t.efectos)),
@@ -737,37 +766,58 @@ export function conPiezasAfectadas(ficha: PiezasDeFicha, t: Accion): Accion {
   if (!t.libre) {
     for (const a of ficha.aportesApagados ?? []) if (llega(a.en) && !apagadas.has(a.origen.instanciaId!)) apagadas.set(a.origen.instanciaId!, a);
   }
-
-  // Las penalizadas que tocan esta tirada: la de la fila y las que le aportan algo.
-  const tocan = new Map<string, PiezaPenalizada>();
-  const mira = (o: OrigenAporte | undefined) => {
-    const p = o?.instanciaId ? penalizadas?.get(o.instanciaId) : undefined;
-    if (p) tocan.set(o!.instanciaId!, p);
-  };
-  if (penalizadas?.size) {
-    mira(sin.origen);
-    for (const x of [...(sin.condiciones ?? []), ...(sin.ajustesFijos ?? []), ...(sin.bonosTramo ?? []), ...(sin.efectos ?? []), ...(sin.textosDeFicha ?? [])]) mira(x.origen);
-    for (const o of [sin.extremidad?.origen, sin.ignoraBlindaje?.origen, sin.criticoFijo?.origen, sin.falloCritico?.origen, sin.habilidadAlternativa?.origen, sin.origenVentaja, sin.origenSubeGrado]) mira(o);
-    for (const m of ficha.modificadores ?? []) {
-      if (!m.item) continue;
-      if ((m.tipo === "tirada" && !t.libre && alcanzaA(m.alcance, ctx)) || (m.tipo === "atributo" && llega({ tipo: "aplicado", aplicados: aplicadosDelAtributo(m.id) }))) mira(m.item);
-    }
-  }
-  const avisos: TextoEnTirada[] = [...tocan.values()].map((p) => ({
-    en: { tipo: "tiradaId", id: t.id },
-    texto: avisoPenalizada(p),
-    fuente: p.fuente,
-    soloEnCritico: false,
-    origen: p.estado,
-  }));
-  return {
-    ...conTextosDeFicha(sin, avisos),
-    ...(apagadas.size > 0 && { piezasApagadas: [...apagadas.values()] }),
-  };
+  const conApagadas: Accion = { ...sin, ...(apagadas.size > 0 && { piezasApagadas: [...apagadas.values()] }) };
+  return penalizadas?.size ? conPenalizadas(conApagadas, penalizadas) : conApagadas;
 }
 
-const aplicadosDelAtributo = (id: AtributoId): AplicadoId[] =>
-  APLICADOS.filter((a) => (a.de as readonly string[]).includes(id)).map((a) => a.id);
+// Lo de las piezas penalizadas sobre la tirada (ver conPiezasAfectadas).
+function conPenalizadas(t: Accion, penalizadas: ReadonlyMap<string, PiezaPenalizada>): Accion {
+  const de = (o: OrigenAporte | undefined) => (o?.instanciaId ? penalizadas.get(o.instanciaId) : undefined);
+  const reduce = <T extends { origen?: OrigenAporte }>(xs: T[] | undefined, f: (x: T, p: PiezaPenalizada) => T): T[] | undefined => {
+    if (!xs?.some((x) => de(x.origen))) return xs;
+    return xs.map((x) => {
+      const p = de(x.origen);
+      return p ? f(x, p) : x;
+    });
+  };
+  const ajustesFijos = reduce(t.ajustesFijos, (a, p) => (a.valor > 0 ? { ...a, valor: bonoConShock(a.valor, p.valor), fuente: etiquetaShock(p.origen.label) } : a));
+  const bonosTramo = reduce(t.bonosTramo, (b, p) => {
+    const porTramo = Object.fromEntries(Object.entries(b.porTramo).map(([k, v]) => [k, v === undefined ? v : bonoConShock(v, p.valor)]));
+    return Object.values(b.porTramo).some((v) => (v ?? 0) > 0) ? { ...b, porTramo, fuente: etiquetaShock(p.origen.label) } : b;
+  });
+  const condiciones = reduce(t.condiciones, (c, p): CondicionTirada => {
+    // La casilla ya suele nombrar su pieza («… · Ojo Biónico 3»): entonces solo «(shock)» detrás.
+    const etiqueta = c.etiqueta.includes(p.origen.label) ? `${c.etiqueta} ${MARCA_SHOCK}` : `${c.etiqueta} · ${etiquetaShock(p.origen.label)}`;
+    if (c.tipo === "toggle") {
+      if (c.valorActivo <= 0 && (c.valorInactivo ?? 0) <= 0) return c;
+      return {
+        ...c,
+        etiqueta,
+        valorActivo: bonoConShock(c.valorActivo, p.valor),
+        ...(c.valorInactivo !== undefined && { valorInactivo: bonoConShock(c.valorInactivo, p.valor) }),
+      };
+    }
+    if (c.tipo === "opcion") {
+      if (!c.opciones.some((o) => o.valor > 0)) return c;
+      return { ...c, etiqueta, opciones: c.opciones.map((o) => (o.valor > 0 ? { ...o, valor: bonoConShock(o.valor, p.valor), partes: undefined } : o)) };
+    }
+    return c;
+  });
+  const alt = t.habilidadAlternativa;
+  const pAlt = de(alt?.origen);
+  const habilidadAlternativa =
+    alt?.ajuste && pAlt && alt.ajuste.valor > 0 ? { ...alt, ajuste: { ...alt.ajuste, valor: bonoConShock(alt.ajuste.valor, pAlt.valor), fuente: etiquetaShock(pAlt.origen.label) } } : alt;
+  // Al usarla: −N a la tirada cuya pieza es ella.
+  const usada = de(t.origen);
+  const uso = usada ? [{ valor: -usada.valor, fuente: etiquetaShock(usada.origen.label), origen: usada.estado }] : [];
+  return {
+    ...t,
+    ...(ajustesFijos !== t.ajustesFijos || uso.length > 0 ? { ajustesFijos: [...(ajustesFijos ?? []), ...uso] } : {}),
+    ...(bonosTramo !== t.bonosTramo && { bonosTramo }),
+    ...(condiciones !== t.condiciones && { condiciones }),
+    ...(habilidadAlternativa !== alt && { habilidadAlternativa }),
+  };
+}
 
 type FichaParaHabilitar = Pick<
   FichaResuelta,
@@ -782,15 +832,30 @@ type FichaParaHabilitar = Pick<
 // productor nuevo que dependa de la ficha se añade aquí, en el orden de prioridad de su motivo:
 //   1. La pieza que da la hoja (su `origen.instanciaId`) está apagada (S73, piezasInutilizadas):
 //      bloqueada, «Apagada por <estado>.». Vale para cualquier hoja de pieza: arma, mejora,
-//      subsistema, herramienta, movimiento, implante (sus acciones y tiradas).
+//      subsistema, herramienta, movimiento, implante (sus acciones y tiradas). Y la que se hace
+//      siempre con la extremidad de una pieza apagada (`extremidad.origen`: el arma incorporada
+//      en el Brazo Biónico): «Apagada por <estado> (<pieza>).».
 //   2. S99: Rastreo y compañía sin su especialidad ni nada que les enganche, ocultas.
 export function habilitacionEnFicha(ficha: FichaParaHabilitar, hoja: Accion | AccionDirecta): Habilitacion {
   const pieza = hoja.origen?.instanciaId;
   const apagada = pieza ? ficha.piezasInutilizadas?.get(pieza) : undefined;
+  // La hoja se hace siempre con una extremidad de otra pieza (el arma incorporada en el Brazo
+  // Biónico, A6b): si esa pieza está apagada, no se puede (usuario 2026-11-14).
+  const conExtremidad = "extremidad" in hoja ? hoja.extremidad?.origen : undefined;
+  const extremidadApagada = conExtremidad?.instanciaId ? ficha.piezasInutilizadas?.get(conExtremidad.instanciaId) : undefined;
   return juntarHabilitacion(
     apagada ? bloqueadaPor(motivoApagada(apagada), "duro") : null,
+    extremidadApagada ? bloqueadaPor(motivoApagada(extremidadApagada, conExtremidad!.label), "duro") : null,
     "soloConEspecialidad" in hoja && hoja.soloConEspecialidad && !enganchaTiradaFija(ficha, hoja) ? SIN_ESPECIALIDAD : null,
   );
+}
+
+// Una pieza apagada por el Shock (S73) con recurso propio (colchón de la Malla, cargas de Movilidad
+// Aérea, batería de un arma de energía): el motivo, para que Recursos pinte su barra apagada y sin
+// ajustes. null si funciona.
+export function motivoPiezaApagada(ficha: Pick<FichaResuelta, "piezasInutilizadas">, instanciaId: string): string | null {
+  const motivo = ficha.piezasInutilizadas.get(instanciaId);
+  return motivo ? motivoApagada(motivo) : null;
 }
 
 // Lo que comprueba el servidor antes de usar una acción de aumento (usarAccionAumentoAction): lo
@@ -879,18 +944,12 @@ function conTiposDeAccion(
 // (no hay crítico). El tipo de acción (T5c: Inyectarse en «Usar [fármaco]»), a la nota y su
 // selector a las condiciones. Sin nada que añadir, devuelve la misma acción.
 export function conExtrasDirectaDeFicha(
-  ficha: FichaParaHabilitar & Partial<Pick<FichaResuelta, "rebajasTipoAccion" | "piezasPenalizadas">>,
+  ficha: FichaParaHabilitar & Partial<Pick<FichaResuelta, "rebajasTipoAccion">>,
   d: AccionDirecta,
 ): AccionDirecta {
+  // Shock (rules/shock.ts): la de una pieza apagada sale bloqueada por habilitacionEnFicha. Sin
+  // dado no hay tirada a la que restar el −N de una penalizada.
   d = conHabilitacion(d, habilitacionEnFicha(ficha, d));
-  // Shock (rules/shock.ts): la de una pieza penalizada, con el aviso del −N en la nota. La de una
-  // apagada sale bloqueada por habilitacionEnFicha.
-  const id = d.origen?.instanciaId;
-  const penalizada = id ? ficha.piezasPenalizadas?.get(id) : undefined;
-  if (penalizada) {
-    const r = conExtrasDirectaDeFicha({ ...ficha, piezasPenalizadas: undefined }, d);
-    return { ...r, nota: junta(r.nota, [`${avisoPenalizada(penalizada)} (${penalizada.fuente})`]) };
-  }
   const textos = textosDe(ficha.textosTirada, contextoDe({ ...d, habilidad: null }), false);
   const tipos = d.tiposDeAccionBase?.length ? conTiposDeAccion(d, ficha.rebajasTipoAccion ?? []) : null;
   if (textos.length === 0 && !tipos) return d;
