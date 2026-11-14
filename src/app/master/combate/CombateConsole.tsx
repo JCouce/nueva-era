@@ -40,6 +40,7 @@ import { useAvisosMando } from "@/components/mando/useAvisosMando";
 import type { AccionesMando, ObjetivoMando } from "@/components/mando/tipos";
 import { darCreditosAction, darXpAction, deshacerRegistroAction, limpiarEstadosAction } from "../actions";
 import { NpcAccionesPanel } from "./NpcAccionesPanel";
+import { enlaceDeCombatiente } from "@/lib/navegacionCombate";
 import { ContadorRondas, type EnCola } from "./ContadorRondas";
 import {
   crearCombateAction,
@@ -69,6 +70,8 @@ type CombatienteView = {
   fatigaMax: number;
   iniciativa: number | null;
   characterId: string | null;
+  // La plantilla de la que salió un NPC (null si se borró del todo), para ir a ella desde la fila.
+  npcTemplateId: string | null;
   derrotado: boolean;
   estados: EstadoActivoDescrito[];
   // A7: los de su ficha (jugador) o los de la foto (NPC).
@@ -699,7 +702,8 @@ function FilaCola({
       : "border-border";
   const control = `grid min-h-11 place-items-center border border-border px-2.5 font-mono text-xs uppercase tracking-wide text-muted transition hover:border-accent hover:text-accent disabled:opacity-40 ${FOCO}`;
   const barra = `grid min-h-11 content-center border border-transparent px-1.5 py-1 text-left transition hover:border-border hover:bg-elevated ${FOCO}`;
-  const conControles = preparando || c.sheet !== null;
+  const enlace = enlaceDeCombatiente(c);
+  const conControles = preparando || c.sheet !== null || enlace !== null;
 
   return (
     <li className={`relative border bg-surface ${borde} ${c.derrotado ? "opacity-50" : ""}`}>
@@ -813,6 +817,12 @@ function FilaCola({
             >
               Acciones
             </button>
+          )}
+          {/* A la ficha del jugador o a la plantilla del NPC; desde allí, «← Volver al combate». */}
+          {enlace && (
+            <Link href={enlace.href} aria-label={`${enlace.label} de ${c.nombre}`} className={control}>
+              {enlace.label}
+            </Link>
           )}
         </div>
       )}
