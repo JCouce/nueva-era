@@ -2113,7 +2113,7 @@ sobreesfuerzo.
 ### 11.1 Las dos ramas `[FIRME · AUM]`
 | | Operaciones genéticas | Implantes |
 |---|---|---|
-| Cuántas | 26 | 11: 9 en la app y 2 **en proceso** (Chasis Osteomuscular y Módulo de Respaldo: después de la partida, usuario 2026-11-14) |
+| Cuántas | 26 | 11: 10 en la app y 1 **en proceso** (Módulo de Respaldo: después de la partida, usuario 2026-11-14) |
 | Niveles | No: cada operación es una pieza | 1-4, 1-3 o 1-2; precio y rareza **por nivel** |
 | Rareza | "Operación \<Rareza\>" (Poco Habitual · Extraña · Muy Extraña) | "Objeto \<Rareza\>" (de Común a Muy Extraña) |
 | Precio | 15.000-45.000 créditos | De 1.500 (MQE 1) a 240.000 (IRM 4) |
@@ -2154,8 +2154,8 @@ sobreesfuerzo.
   pieza) con «Incompatible con <pieza>.»: Tienda, NPC y servidor pasan por ahí. Una ficha que
   ya tiene las dos solo lleva el **aviso** «incompatible con …» en Equipo
   (`aumentosIncompatibles`, junto al requisito roto); no se quita nada ni se apaga ningún
-  efecto (usuario, 2026-11-14; S108). Declaradas hoy: la del Ojo y la del Metabolismo (E5a); el
-  Chasis declarará la suya al darse de alta (E5b).
+  efecto (usuario, 2026-11-14; S108). Declaradas hoy: la del Ojo, la del Metabolismo (E5a) y la del
+  Chasis (E5b).
 - *En la app (A1, atributos y derivados):* cada operación da sus +1 como `Modificador`
   "atributo" con origen `"aumento"` y la pieza de fuente (`modificadoresDeAumentos`,
   `rules/aumentos.ts`), y entran en `modificadoresActivos` y en `resolverFicha` (también al
@@ -2588,6 +2588,37 @@ sobreesfuerzo.
     y sordera; −1 a los penalizadores por heridas y fatiga. **Nivel 2**: +2 y −2. La frase final
     («el primer nivel ambos efectos que divide su movimiento básico dejará de hacerlo») está rota:
     solo texto, sin interpretar (`TODO(revisar)`); la media velocidad de los umbrales sigue.
+- *Chasis Osteomuscular (E5b, sync Drive 2026-11-14)* `[FIRME · docs/fuente/aumentos.md + usuario
+  2026-11-14]`. Sustituye a Refuerzo Protésico, que nunca llegó a la app. Supuestos y decisiones: S111.
+  - **General** (18 000 / 36 000 / 72 000 / 144 000): sin software, **sin sabotaje** (`sabotaje: false`;
+    hacking y rastreo remoto no están en la app); el **Shock del cuerpo** sí, por la regla general de
+    los implantes (fracaso, −2 a cada bono; fracaso crítico, apagado). **Incompatible** con
+    Osteotendinosa, Matriz Ósea, Hipertrofia, Sincronización Neuromotora y Regeneración Tisular
+    (`incompatibleCon`, E4).
+  - **Por nivel N**: **Fuerza +N** (Modificador `atributo`, como las operaciones: cuenta para los
+    requisitos de dote y la base del Brazo Biónico); **armadura natural N** contra todo lo que para el
+    blindaje (`NivelImplante.armaduraNatural`, línea «Armadura natural · Chasis Osteomuscular N» en
+    Resistir daño; suma al blindaje fijo contra el que compite el del Brazo); **golpe desarmado letal**
+    en toda la Pelea y, desde el 2, **+1/+2/+3 al daño** (`NivelImplante.desarmado`, `golpeDesarmado`),
+    que se suma al de la armadura; al ser letal, bloquear desarmado no lleva el −3 (Bloqueo).
+  - **Desde el 2**: **+N contra el derribo** (casilla «¿Para evitar un derribo? (Chasis Osteomuscular)»
+    en «Saltar, levantarse», la salvación del derribo, eq-09) y **+N contra el aturdimiento** en el
+    «Contra…» de Fortaleza, con la nota «solo por impactos (físico)».
+  - **Integración táctica** (desde el 2; usuario 2026-11-14): se elige al comprar el nivel, entre
+    **Proyector de Pulso** y **Camuflaje Trifásico** (`VarianteImplante.subsistemaIntegrado`, guardado en
+    `PiezaEquipada.eleccion` como el modelo del Brazo; «Subsistema integrado» en la Tienda). El
+    subsistema tiene el **nivel del Chasis** (2, 3, 4) y las mismas filas que el de la armadura con una
+    pieza «virtual» (`rules/integracionTactica.ts`), pero **cada uso o activación cuesta 2 de fatiga**,
+    sin cargas: Proyector, cada disparo (los tres modos, con las dos habilidades) y «Activar Aguijón»
+    (golpear y bloquear con el Aguijón activo no gastan); Camuflaje, «Activar Camuflaje Trifásico
+    integrado». No ocupa ranura ni cuenta como subsistema de la armadura. El origen de todo es el
+    implante: el Shock del cuerpo lo apaga o lo penaliza. El **Camuflaje integrado** solo funciona sin
+    armadura o con Traje Ultra Ligero, Ropa Inteligente o Ropa Reforzada; con otra, «Activar…» sale
+    **bloqueada** con el motivo y no oculta nada (ni activo ni pasivo).
+  - **Nivel 4**: casilla «Fuerza del chasis (ventaja, 2 de fatiga)» en las tiradas de **Potencia o
+    Fortaleza**, salvaciones incluidas; acción sin dado «Duplicar la capacidad de carga» (2 de fatiga),
+    que **no** cambia la carga de la ficha (`TODO(revisar)`). «Una vez por descanso», texto en las dos.
+  - Nivel 3: «muy evidente a simple vista», texto.
 - *En la app (A7, inmunidades; usuario, 2026-10-22):* `rules/inmunidades.ts`, con los datos en el
   catálogo (`inmuneA` del nivel del implante o de la operación).
   - **Quién:** Ojo Biónico 2, 3 y 4 contra la **ceguera** (fuente "Ojo Biónico N"; el 1, nada) y
@@ -3525,6 +3556,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S108 | **Incompatibilidades entre aumentos (E4, sync Drive 2026-11-14)** (§11.1): (1) **Ficha que ya tiene las dos piezas (usuario)**: solo un aviso «incompatible con …» en Equipo, como el requisito roto (A0); no se quita nada, no se bloquea su uso y las dos siguen dando sus efectos. (2) Supuesto: **subir de nivel** un implante que convive con su incompatible también se rechaza (es una compra). (3) El NPC del máster (modo libre) respeta el bloqueo, como los requisitos (§11.1). | Decisión del usuario (1); construcción (2) y (3). |
 | S109 | **Implantes nuevos (E5a, sync Drive 2026-11-14)** (§11.1): Metabolismo Sintético, Control Anímico y Control Sensorial. Decisiones del usuario (2026-11-14): (1) los tres, cerrados por el diseñador; (2) Metabolismo: el «+1 por nivel» sube también la fatiga máxima (+1 … +4), apnea ×2 … ×5 y salvaciones +1 … +4; (3) límites por descanso, texto; «durante N turnos» = activable con N rondas que corren en combate (patrón Neuroprótesis); (4) comer no existe: la comida, texto; (5) Metabolismo incompatible con Biogénesis, Angiogénesis y Regeneración Tisular. Supuestos al construirlo, `TODO(revisar)`: (6) **«habilidades sociales» = Actitud**, la que la app ya trata como social (Proyección); la lectura más estrecha. (7) **«Inteligencia en lugar de Voluntad»** = la salvación se tira con **Perspicacia** (Inteligencia + Percepción), el aplicado con Inteligencia que no comparte nada con Voluntad; podría ser Expresión o el atributo solo. (8) **Parálisis y fatiga inducida** se salvan con Fortaleza (la fuente no lo dice de la parálisis; la causan el daño tóxico y el shock). (9) **Efecto sugestivo**: amenaza nueva del «Contra…» de Voluntad; la sugestión coercitiva cuenta también como efecto sugestivo. (10) Control Anímico y Control Sensorial, sin descripción: sabotaje y Shock del cuerpo por la regla general de los implantes. (11) La reducción de penalizadores de un implante penalizado por el Shock no baja (como la de la Neuroprótesis); apagado, no cuenta. (12) Control Sensorial 2, frase final rota: no se interpreta. (13) La inmunidad de un activable (Control Anímico 2) también la miran el panel del máster y los NPC con sus estados. | Decisiones del usuario (1)-(5); construcción (6)-(13). |
 | S110 | **Habilidades nuevas (E6, sync Drive 2026-11-14)** (§3, §6, §9.1, §12): decisiones del usuario (2026-11-14): (1) **Migración 1:1** de Sigilo en la v24: Esconderse → Ocultación, Hurto → Juego de Manos, con los mismos totales (test de oro); los ids de las acciones (`sigilo`, `hurto`) se quedan, así que las favoritas no cambian. (2) **Nada se pierde en silencio**: `parseSheet` manda al aviso de especialidades (`avisoEspecialidades`, sin duplicar) la especialidad que no es del catálogo de su habilidad, en vez de descartarla. (3) **Mimetismo empieza vacío**: nadie la tiene. (4) **Pilotaje como cualquier habilidad** (coste de creación y XP); entra sin entrenar y no cuesta nada a las fichas que ya había. (5) **Afectados por el cambio de regla** (quien volaba con Tecnociencia, quien tiene Imitación sin Mimetismo o Movimiento Sigiloso sin Ocultación): solo el aviso de requisito roto que ya existe; sin compensaciones. Supuestos al construirlo (los (6)-(9) y los de §9.1, cerrados por el usuario en (12)-(19)): (6) **Esconder arma** sigue en Ocultación (la migración es 1:1), aunque la fuente pone «ocultar objetos pequeños en la ropa» en Juego de Manos. (7) El bono de *Imitación* sigue en Convencer / mentir. (8) **Pasar desapercibido** (Mimetismo) es una tirada normal con la alerta por Empatía en la nota, como Juego de manos: no guarda estado como Ocultarse; cuenta como enfrentada para Leer Mente y le llegan los aumentos de Expresión; no recibe lo que es «de habilidades sociales» (= Actitud, S109). (9) **Maniobra simple** en la misma fila «Volar»: se tira el dado igualmente (gasta la carga), pero no cuenta. (10) *Movimiento Sigiloso Mejorado* y *Constante* piden la anterior de la cadena, como dice la fuente (antes no se transcribió). (11) Los de las dotes nuevas, en §9.1. Decisiones del usuario sobre esos supuestos (2026-11-14): (12) **Esconder arma** pasa a **Juego de Manos** (cierra (6)); sin migración: las fichas no guardan nada ligado a su especialidad. (13) El bono de *Imitación* se queda solo en Convencer / mentir (cierra (7)). (14) **Pasar desapercibido** no guarda estado (cierra (8)). (15) *Paso de Fantasma* solo anula el penalizador por terreno difícil o ruidoso, hasta 3 y sin dejar bono positivo: selector propio de la dote con el penalizador que pone el máster (`OPCIONES_DE_TRAMO.terreno_ruidoso`). (16) *Piloto* / *As de Exoarmadura* solo anulan la dificultad de maniobra de la esquiva en vuelo (hasta 2 / 3, topado en la maniobrabilidad de la pieza, sin bono positivo; en tierra nada): `FichaResuelta.compensaManiobraVuelo` → `conEsquivaEnVuelo`. (17) *Finta de Manos*: requisito Combate Melee 1. (18) *Salto Servoasistido* no vuelve a duplicar el bono de Fuerza del exoesqueleto (S10 ya lo cuenta doble en el salto): aviso, más los 2 m menos de caída. (19) **Volar con maniobra simple** no tira (cierra (9)): acción sin dado «Volar» que gasta la carga (1; 2 con Máxima Potencia); la compleja, la tirada «Volar: maniobra compleja». | Decisiones del usuario (1)-(5) y (12)-(19); construcción, revisables (10)-(11). |
+| S111 | **Chasis Osteomuscular (E5b, sync Drive 2026-11-14)** (§11.1): decisiones del usuario (2026-11-14): (1) **integración táctica**: solo Proyector de Pulso o Camuflaje Trifásico, elegido y guardado en la pieza; nivel del subsistema = el del Chasis; mismas piezas del catálogo de subsistemas, pero cada uso o activación con **2 de fatiga** en vez de cargas (Proyector: cada disparo y «Activar Aguijón», sin contador de disparos ni cargas; Camuflaje: activarlo); (2) el Camuflaje integrado solo con Traje Ultra Ligero, Ropa Inteligente, Ropa Reforzada o sin armadura; con otra, bloqueado con motivo; (3) no ocupa ranura de la armadura; (4) límites por descanso, texto. Supuestos al construirlo, `TODO(revisar)`: (5) la elección es el patrón de los modelos del Brazo (`variantes` del nivel, en `PiezaEquipada.eleccion`, sin campos nuevos ni migración): **al subir de nivel se vuelve a elegir** y se puede cambiar de subsistema; (6) «de hasta nivel N» = **el nivel del Chasis**, sin comprar el subsistema aparte ni elegir uno menor; (7) la **pasiva** del Camuflaje integrado vale siempre (no tiene carga que mirar); con armadura pesada, ni pasiva ni activa; si ya estaba activo al ponérsela, el estado sigue (lo quita el jugador o el máster): no suma al Sigilo, pero deja marcada «Tengo cobertura» en la esquiva; (8) cualquier armadura equipada bloquea, no solo la que cuenta para el blindaje; (9) la **armadura natural** cuenta contra todos los tipos donde cuenta el blindaje (no Mental ni Fuego sin Ignífuga); (10) «aturdimiento por impactos» = la opción Aturdimiento del «Contra…» con nota, no una amenaza nueva; el derribo, casilla en «Saltar, levantarse» como Inamovibles (las dos casillas se suman si las marcas); (11) el letal y el +N del **golpe desarmado van metidos en la fila** de la Pelea, como los de la armadura y el Refuerzo de Combate: la fila se genera con la ficha entera, así que el Shock no los baja (fracaso) ni los quita (fracaso crítico); el resto del Chasis, sí; (12) N4: la **ventaja** va en cualquier tirada de Potencia o Fortaleza, salvaciones incluidas (la marca el jugador); **duplicar la carga** solo cobra la fatiga y lo dice; (13) la Fuerza del Chasis cuenta como permanente: requisitos de dote y base del Brazo Biónico. | Decisiones del usuario (1)-(4); construcción (5)-(13). |
 
 ## Conflictos detectados
 

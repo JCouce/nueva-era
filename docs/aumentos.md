@@ -17,10 +17,10 @@
 >   Biónico) van en lista.
 > - **Reglas generales** que el documento pone al principio de los implantes: van aparte.
 >
-> **Recuento: 26 operaciones genéticas y 11 implantes.** De los 11, **9 están cerrados y en la
+> **Recuento: 26 operaciones genéticas y 11 implantes.** De los 11, **10 están cerrados y en la
 > app** (IRM, MQE, Brazo, Ojo, Neuroprótesis, Enjambre y, desde el sync Drive 2026-11-14,
-> Metabolismo Sintético, Control Anímico y Control Sensorial: tanda E5a) y **2 EN PROCESO**
-> (Chasis Osteomuscular y Módulo de Respaldo: se construyen después de la partida, usuario
+> Metabolismo Sintético, Control Anímico y Control Sensorial —tanda E5a— y Chasis Osteomuscular
+> —tanda E5b—) y **1 EN PROCESO** (Módulo de Respaldo: se construye después de la partida, usuario
 > 2026-11-14). Refuerzo Protésico, Sistema de Emergencia y Soporte Vital desaparecieron de la
 > fuente el 2026-11-14 (los sustituyen Chasis, Módulo y Metabolismo). Ver "Notas de
 > transcripción" al final.
@@ -690,12 +690,6 @@ Además, disminuye en 1 los penalizadores obtenidos por heridas y fatiga.
 **Efecto:**
 El personaje dobla el bonificador en tiradas de salvación y la disminución del penalizador por daño y fatiga, además el primer nivel ambos efectos que divide su movimiento básico dejará de hacerlo. *(sic: frase rota; la app no la interpreta, TODO(revisar))*
 
-## EN PROCESO — no se modela
-
-> **Pendiente, usuario 2026-11-14**: Chasis Osteomuscular y Módulo de Respaldo están cerrados en
-> la fuente, pero se construyen después de la partida (tanda E5b de
-> `docs/plan-sync-2026-11-14.md`). Se dejan transcritos para tenerlos a mano.
-
 ### Chasis Osteomuscular (Nivel 1-4)
 
 **Descripción:**
@@ -737,6 +731,12 @@ La modificación a estos niveles suele hacerse muy evidente a simple vista alter
 El cuerpo del usuario opera prácticamente como un exoesqueleto interno de aleación de titanio-carbono y polímeros de alto rendimiento, donde la carne restante sirve meramente como soporte vital auxiliar.
 Otorga un aumento efectivo de **+4 en Fuerza**, **4 puntos de Armadura Natural** y eleva el **daño** desarmado en **3 niveles**. El bonificador contra **derribo** y **aturdimiento** físico alcanza un imponente **+4**. El límite de **subsistemas** corporales integrados llega a **nivel 4**.
 Una vez por descanso, el usuario puede gastar **2 puntos de fatiga** para duplicar durante un turno su capacidad de carga o para realizar una prueba de **potencia** o **fortaleza** que implique soportar o vencer una resistencia con ventaja: Realizar o evitar **agarres** y **derribos**, soportar impactos cinéticos extremos, resistir efectos de aturdimiento físico y llevar a cabo proezas de fuerza bruta como romper objetos.
+
+## EN PROCESO — no se modela
+
+> **Pendiente, usuario 2026-11-14**: Módulo de Respaldo está cerrado en la fuente, pero se construye
+> después de la partida (tanda E5b de `docs/plan-sync-2026-11-14.md`). Se deja transcrito para
+> tenerlo a mano. (El Chasis Osteomuscular salió de aquí el 2026-11-14: tanda E5b.)
 
 ### Módulo de Respaldo (Nivel 1-4)
 
@@ -782,8 +782,8 @@ Además, el sistema puede actuar de forma inmediata ante un estado de shock o de
 
 ## Notas de transcripción
 
-**Recuento:** 26 operaciones genéticas y 11 implantes; 2 de los implantes están EN PROCESO
-(Chasis Osteomuscular y Módulo de Respaldo, pendientes por decisión del usuario, 2026-11-14).
+**Recuento:** 26 operaciones genéticas y 11 implantes; 1 de los implantes está EN PROCESO
+(Módulo de Respaldo, pendiente por decisión del usuario, 2026-11-14).
 No hay ninguna pieza sin coste ni sin rareza.
 
 **Cosas de la fuente que no son erratas pero conviene tener presentes**
@@ -814,5 +814,7 @@ No hay ninguna pieza sin coste ni sin rareza.
 5. **Enjambre Nanobot 4**: frase rota ("y es cuando acierta al blindaje destruye…").
 6. **Control Sensorial 2** (cerrado desde el 2026-11-14): frase rota «además el primer nivel
    ambos efectos que divide su movimiento básico dejará de hacerlo». La app no la interpreta.
-7. **Ortografía**: hemorrogia, efeco, sientido, capcidad, infilitración, usario,
+7. **Chasis Osteomuscular 2** (cerrado desde el 2026-11-14): «En el caso del El camuflaje
+   subdérmico».
+8. **Ortografía**: hemorrogia, efeco, sientido, capcidad, infilitración, usario,
    desprendese, atudimiento, sobeesfuerzo, "un tirada", "cambio de" (por "a cambio de").
