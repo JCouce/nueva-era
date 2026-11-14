@@ -5,7 +5,9 @@ import { defaultSheet, parseSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
 import { ajustarRecurso, ajustarGranada, ajustarMunicionEspecial, comprarRecarga, dispararPulso, reconciliarRecursos, recursoDe } from "./recursos";
 import { accionesDeAtaque as accionesDeAtaqueCon, accionesDirectasDeAtaque, generaAccionPropia, ID_MODO_CAMUFLAJE, MOTIVO_SIN_CARGAS, NOTA_MALLA_ANULA_CAMUFLAJE } from "./combate";
-import { restaDeSigilo } from "./sigilo";
+import { estadoPorUso, restaDeSigilo } from "./sigilo";
+import { ESTADO_AGUIJON_ID } from "../catalog/estados";
+import type { EstadoActivo } from "./estados";
 import { efectosQueSaltan, efectosSobreObjetivo, type EfectoEnTirada } from "./efectosArma";
 import { valorBonosTramo, type CondicionTirada } from "./condiciones";
 import { EQUIPO, type Equipo } from "../catalog/equipo";
@@ -402,20 +404,41 @@ describe("gasto por modo (docs/prompt-gasto-recursos.md, Fase 1)", () => {
     assert.equal(parseSheet(JSON.parse(JSON.stringify(buena))).equipo.find((p) => p.instanciaId === "pp1")!.disparosPulso, 2);
   });
 
-  // Sync Drive 2026-11-14: «1 carga × nivel en turnos»; fuera la «Duración: Nivel».
-  test("Aguijón: 1 carga lo mantiene N turnos (nivel), sin la duración de efecto de antes", () => {
+  // Sync Drive 2026-11-14: «1 carga × nivel en turnos»; fuera la «Duración: Nivel». La carga la
+  // gasta «Activar Aguijón», que pone «Aguijón activo» N rondas (usuario, 2026-11-14).
+  test("Aguijón: 1 carga lo mantiene N rondas (nivel), sin la duración de efecto de antes", () => {
     for (const nivel of [1, 3]) {
       const fila = accionesDeAtaque(conProyectorPulso(nivel)).find((t) => t.label === "Golpear con Proyector de Pulso (Aguijón)")!;
-      assert.match(fila.nota ?? "", new RegExp(`1 carga lo mantiene ${nivel} turno\\(s\\)`));
-      assert.doesNotMatch(fila.nota ?? "", /Duración/);
+      assert.match(fila.nota ?? "", new RegExp(`1 carga lo mantiene ${nivel} ronda\\(s\\)`));
+      assert.doesNotMatch(fila.nota ?? "", /Duración|devuélvela/);
     }
   });
 
-  test("Golpear con Proyector de Pulso (Aguijón) gasta 1 carga", () => {
-    const sheet = conProyectorPulso(1);
-    const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Proyector de Pulso (Aguijón)")!;
-    assert.equal(fila.recursoInstanciaId, "pp1");
-    assert.equal(fila.ataque?.modos[0].gasto, 1);
+  test("Activar Aguijón gasta 1 carga y pone «Aguijón activo» con tantas rondas como el nivel", () => {
+    for (const nivel of [1, 3]) {
+      const activar = accionesDirectasDeAtaque(reconciliarRecursos(conProyectorPulso(nivel))).find((a) => a.id === "activar_aguijon_pp1")!;
+      assert.deepEqual(activar.gastoRecurso, { instanciaId: "pp1", cantidad: 1 });
+      assert.deepEqual(estadoPorUso(activar, null), { estadoId: ESTADO_AGUIJON_ID, gradoId: "activo", rondasRestantes: nivel });
+      assert.equal(activar.habilitacion, undefined);
+    }
+    const sinCargas = ajustarRecurso(reconciliarRecursos(conProyectorPulso(1)), "pp1", -10);
+    assert.ok(accionesDirectasDeAtaque(sinCargas).find((a) => a.id === "activar_aguijon_pp1")!.habilitacion);
+  });
+
+  test("Golpear y bloquear con el Aguijón: con el estado no gastan; sin él, bloqueados", () => {
+    const sheet = conDotes(reconciliarRecursos(conProyectorPulso(2)), "dote_bloqueo");
+    const fila = (estados: EstadoActivo[], label: string) => {
+      const f = resolverFicha(sheet, { estados, vitalidad: VITALIDAD_DE_FICHA });
+      return conExtrasDeFicha(f, accionesDeAtaque(sheet).find((t) => t.label === label)!);
+    };
+    const activo: EstadoActivo = { estadoId: ESTADO_AGUIJON_ID, gradoId: "activo", rondasRestantes: 2 };
+    for (const label of ["Golpear con Proyector de Pulso (Aguijón)", "Bloquear con Proyector de Pulso (Aguijón)"]) {
+      const sin = fila([], label);
+      assert.equal(motivoDeBloqueo(sin.habilitacion!), "Activa el Aguijón primero (1 carga).", label);
+      const con = fila([activo], label);
+      assert.equal(motivoDeBloqueo(con.habilitacion), null, label);
+      assert.equal(gastoTotal(con, con.ataque?.modos[0].id ?? null, {}), 0, label);
+    }
   });
 
   test("Bloquear con Proyector de Pulso (Aguijón) es gratis: sin recursoInstanciaId", () => {

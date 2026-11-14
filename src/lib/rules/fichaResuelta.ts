@@ -831,7 +831,7 @@ type FichaParaHabilitar = Pick<
   FichaResuelta,
   "ficha" | "modificadores" | "indiceCondiciones" | "textosTirada" | "extrasDotes" | "ventajasFijas" | "fallosCriticos"
 > &
-  Partial<Pick<FichaResuelta, "piezasInutilizadas">>;
+  Partial<Pick<FichaResuelta, "piezasInutilizadas" | "estados">>;
 
 // Lo que depende de la ficha en la habilitación de una hoja (fase 6 de docs/aportes/plan.md),
 // sin lo que la hoja ya trae de quien la genera: eso lo junta conHabilitacion. Lo llaman
@@ -855,6 +855,9 @@ export function habilitacionEnFicha(ficha: FichaParaHabilitar, hoja: Accion | Ac
     apagada ? bloqueadaPor(motivoApagada(apagada), "duro") : null,
     extremidadApagada ? bloqueadaPor(motivoApagada(extremidadApagada, conExtremidad!.label), "duro") : null,
     "soloConEspecialidad" in hoja && hoja.soloConEspecialidad && !enganchaTiradaFija(ficha, hoja) ? SIN_ESPECIALIDAD : null,
+    "requiereEstado" in hoja && hoja.requiereEstado && !ficha.estados?.some((e) => e.estadoId === hoja.requiereEstado!.estadoId)
+      ? bloqueadaPor(hoja.requiereEstado.motivo, "duro")
+      : null,
   );
 }
 

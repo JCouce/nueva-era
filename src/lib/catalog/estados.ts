@@ -1126,6 +1126,33 @@ export const ESTADOS_DE_OCULTACION: Estado[] = [
   },
 ];
 
+// Estados que pone una pieza de equipo al activarse (sync Drive 2026-11-14). «Aguijón activo»:
+// «Activar Aguijón» del Proyector de Pulso gasta 1 carga y lo pone con N rondas (N = nivel); las
+// rondas solo corren en combate y fuera se quita a mano. Mientras dura, golpear y bloquear con el
+// Aguijón no gastan y sin él no se pueden usar (Accion.requiereEstado, habilitacionEnFicha). No
+// están en ESTADOS: no salen en el selector del máster.
+export const ESTADO_AGUIJON_ID = "aguijon_activo";
+
+export const ESTADOS_DE_EQUIPO: Estado[] = [
+  {
+    id: ESTADO_AGUIJON_ID,
+    label: "Aguijón activo",
+    resumen:
+      "El Proyector de Pulso tiene el emisor replegado en un pincho de energía: golpear y bloquear " +
+      "con el Aguijón no gastan carga mientras dure.",
+    quitarJugador: "Replegar el Aguijón",
+    grados: [
+      {
+        id: "activo",
+        label: "Aguijón activo",
+        modificadores: [],
+        detalle: ["1 carga lo mantiene tantas rondas como el nivel del Proyector."],
+        duracionTurnos: null,
+      },
+    ],
+  },
+];
+
 // Fármacos con bajón (fa-03, usuario 2026-11-14). El Ultra Estimulante y el Xovromium dejan un
 // recordatorio sin efecto mecánico («Bajo …»: sus bonos siguen en las casillas de las tiradas,
 // td-14) que se acaba con su botón: 2 de fatiga y el bajón. El Rechazo lo pone la tirada fallada
@@ -1305,6 +1332,7 @@ export function estadoPorId(id: string): Estado | null {
     ESTADOS_DE_PODER.find((e) => e.id === id) ??
     ESTADOS_DE_OCULTACION.find((e) => e.id === id) ??
     ESTADOS_DE_FARMACO.find((e) => e.id === id) ??
+    ESTADOS_DE_EQUIPO.find((e) => e.id === id) ??
     null
   );
 }

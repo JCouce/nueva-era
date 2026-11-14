@@ -255,6 +255,9 @@ export type Accion = {
   // modificador base y se pintan como una línea más del desglose. `noApila`: grupo de no
   // apilamiento, como el de las casillas (el +5 del Nano-Elixir, au-07): vale el mayor.
   ajustesFijos?: { valor: number; fuente: string; origen?: OrigenAporte; noApila?: string }[];
+  // Solo se puede usar con este estado puesto en la ficha (el Aguijón del Proyector de Pulso con
+  // «Aguijón activo»); sin él, bloqueada con `motivo` (habilitacionEnFicha, fichaResuelta.ts).
+  requiereEstado?: { estadoId: string; motivo: string };
   // Bonos que dependen del tramo ya elegido en la condición "tramo" (la mira
   // telescópica solo ayuda a media y larga): no se funden en el valor de esa
   // opción, salen como su propia línea del desglose — ver condiciones.ts.

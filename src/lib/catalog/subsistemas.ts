@@ -623,7 +623,7 @@ export const SUBSISTEMAS: Subsistema[] = [
       {
         label: "Aguijón",
         descripcion:
-          "Acción simple, 1 carga lo mantiene Nivel turnos, dificultad 0, daño 4 + Fuerza + Nivel, " +
+          "Acción simple, 1 carga lo mantiene Nivel turnos («Activar Aguijón»), dificultad 0, daño 4 + Fuerza + Nivel, " +
           "alcance melee, Sutil. Efecto: Shock (4 + Nivel); crítico: Hemorragia.",
       },
     ],

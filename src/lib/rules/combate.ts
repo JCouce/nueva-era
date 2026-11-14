@@ -41,7 +41,7 @@ import { sinMejorasNoAdmitidas } from "./compatibilidadArma";
 import { bloqueadaPor, conHabilitacion, esVisible, habilitacionDeFamilia } from "./habilitacion";
 import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type AccionDirecta } from "./acciones";
 import { RUIDO_DISPARO, modosDeOcultacion, textoSigiloAlAtacar, type SigiloAlAtacar } from "./sigilo";
-import { ESTADO_CAMUFLAJE_ID } from "../catalog/estados";
+import { ESTADO_AGUIJON_ID, ESTADO_CAMUFLAJE_ID } from "../catalog/estados";
 import { atributoEfectivo, aplicado } from "./derivados";
 import { criticoDesarmado, golpeDesarmadoConArmadura } from "./golpeDesarmado";
 import { ID_RETROCESO_ENTROPICO, retrocesoEntropico } from "./retrocesoEntropico";
@@ -1105,7 +1105,6 @@ function tiradaLanzarArmaMelee(
 const GASTO_MODO_PULSO: Record<string, number> = {
   pulso_cargado: 1,
   barrido: 2,
-  aguijon: 1,
 };
 
 // Sabor, no regla — texto libre nuestro (2026-09-24, a petición del usuario)
@@ -1302,17 +1301,15 @@ function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: P
     habilidad: "combate_melee",
     especialidadArma: ESPECIALIDAD_ATAQUE_ESPECIAL.proyector_pulso_aguijon,
     familiaArma: "ataque_melee", // sin empleo, como el disparo
-    // Sync Drive 2026-11-14: «1 carga × nivel en turnos» (fuera la «Duración: Nivel» de antes).
-    // TODO(revisar): la app no cuenta turnos de la pieza, así que cada golpe sigue gastando 1
-    // carga; si se golpea otra vez dentro de esos turnos, la carga se devuelve a mano en Recursos.
+    // Sync Drive 2026-11-14: «1 carga × nivel en turnos» (fuera la «Duración: Nivel» de antes). La
+    // carga la gasta «Activar Aguijón» (usuario, 2026-11-14): golpear no gasta y pide el estado.
     nota: [
       "Repliega el emisor a un pincho corto de energía y lo descarga a bocajarro, casi sin gesto — Sutil.",
-      `1 carga lo mantiene ${nivel} turno(s): si vuelves a golpear dentro de ellos, no gasta otra (devuélvela en Recursos).`,
+      `Con el Aguijón activo (1 carga lo mantiene ${nivel} ronda(s)), golpear no gasta.`,
     ].join(" · "),
     efectosObjetivo: efectosDelProyector(pieza),
     ...conSigilo(sigiloProyectorPulso(sheet, pieza, null)),
-    recursoInstanciaId: pieza.instanciaId,
-    recursoUnidad: "cargas",
+    requiereEstado: REQUIERE_AGUIJON,
     ...(modoAdicional && { condiciones: [modoAdicional] }),
     ataque: {
       modos: [
@@ -1322,7 +1319,6 @@ function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: P
           danio: atributoEfectivo(sheet, "fuerza", mods) + 4 + nivel,
           formulaDanio: `Fue+${4 + nivel}`,
           categoriaDanio: "Grave",
-          gasto: GASTO_MODO_PULSO.aguijon,
         },
       ],
     },
@@ -1339,8 +1335,31 @@ function tiradaBloqueoAguijon(pieza: PiezaEquipada, sutil: boolean): Accion {
     habilidad: "combate_melee",
     especialidadArma: ESPECIALIDAD_ATAQUE_ESPECIAL.proyector_pulso_aguijon,
     familiaArma: "bloquear_melee",
-    nota: "Reacción gratuita e ilimitada, como Esquivar — activa mientras se lleva el arma.",
+    nota: "Reacción gratuita e ilimitada, como Esquivar — con el Aguijón activo.",
     condiciones: [CONDICION_ATACANTES_ADICIONALES],
+    requiereEstado: REQUIERE_AGUIJON,
+  };
+}
+
+// Golpear y bloquear con el Aguijón piden el estado «Aguijón activo» (usuario, 2026-11-14).
+const REQUIERE_AGUIJON = { estadoId: ESTADO_AGUIJON_ID, motivo: "Activa el Aguijón primero (1 carga)." };
+
+// «Activar Aguijón» (sync Drive 2026-11-14, «1 carga × nivel en turnos»; usuario 2026-11-14): gasta
+// 1 carga y pone «Aguijón activo» con tantas rondas como el nivel, como «Activar camuflaje».
+function accionActivarAguijon(sheet: Sheet, pieza: PiezaEquipada): AccionDirecta {
+  const nivel = pieza.nivel ?? 1;
+  const recurso = recursoDe(sheet, pieza.instanciaId);
+  return {
+    id: `activar_aguijon_${pieza.instanciaId}`,
+    label: "Activar Aguijón (Proyector de Pulso)",
+    grupo: "Acciones",
+    confirmarLabel: "Activar",
+    nota:
+      `Gasta 1 carga${recurso ? ` (quedan ${recurso.actual}/${recurso.max})` : ""} y te pone «Aguijón activo» ${nivel} ronda(s): ` +
+      "mientras dure, golpear y bloquear con el Aguijón no gastan. Las rondas corren en combate; fuera, quítalo a mano.",
+    estadoAlUsar: { estadoId: ESTADO_AGUIJON_ID, fijo: { gradoId: "activo", turnos: nivel } },
+    gastoRecurso: { instanciaId: pieza.instanciaId, cantidad: 1 },
+    ...(recurso?.actual === 0 && { habilitacion: bloqueadaPor(MOTIVO_SIN_CARGAS, "duro") }),
   };
 }
 
@@ -1721,6 +1740,8 @@ export function accionesDirectasDeAtaque(sheet: Sheet): AccionDirecta[] {
       if (detonacion) acciones.push({ ...detonacion, origen: origenDePieza("equipo", cat, pieza.instanciaId) });
     } else if (cat?.familia === "subsistema" && pieza.catalogoId === "camuflaje_trifasico") {
       acciones.push({ ...accionActivarCamuflaje(sheet, pieza, cat), origen: origenDePieza("equipo", cat, pieza.instanciaId) });
+    } else if (cat?.familia === "subsistema" && pieza.catalogoId === "proyector_pulso") {
+      acciones.push({ ...accionActivarAguijon(sheet, pieza), origen: origenDePieza("equipo", cat, pieza.instanciaId) });
     }
   }
   return acciones;
