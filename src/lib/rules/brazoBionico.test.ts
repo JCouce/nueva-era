@@ -376,6 +376,43 @@ describe("Brazo Biónico: blindaje del golpe bloqueado (R12)", () => {
     // Con el nivel 1, marcada no suma.
     assert.equal(desgloseBlindaje(conBrazo(ficha(), 1), "cinetico", SIN_ARMADURA_NATURAL, false, true).length, 0);
   });
+  // Sync Drive 2026-11-14 (M2.4, lectura A): «no se apila con armaduras ni con otros aumentos (se
+  // aplica el mayor)». Compite con armadura + armadura natural; aporta lo que les falte.
+  describe("no se apila con la armadura ni con la armadura natural: cuenta el mayor", () => {
+    const total = (s: Sheet, natural = SIN_ARMADURA_NATURAL) =>
+      desgloseBlindaje(s, "cinetico", natural, false, true).reduce((t, l) => t + l.valor, 0);
+    const lineaBrazo = (s: Sheet) => desgloseBlindaje(s, "cinetico", SIN_ARMADURA_NATURAL, false, true).find((l) => l.etiqueta.startsWith("Bloqueado con el brazo"))!;
+
+    test("armadura 4 + Osteotendinosa 1 con brazo 3 → 5 (el brazo aporta 0)", () => {
+      const s = con(con(conBrazo(ficha(), 2), "armadura_ligera"), OSTEO);
+      assert.equal(total(s), 5);
+      assert.equal(lineaBrazo(s).valor, 0);
+      assert.match(lineaBrazo(s).nota ?? "", /Blindaje 3: no se apila .*\(5\), cuenta el mayor/);
+    });
+
+    test("Ropa Reforzada 1 + Osteotendinosa 1 con brazo 3 → 3 (aporta +1)", () => {
+      const s = con(con(conBrazo(ficha(), 2), "ropa_reforzada"), OSTEO);
+      assert.equal(total(s), 3);
+      assert.equal(lineaBrazo(s).valor, 1);
+    });
+
+    test("también contra la armadura natural de especie", () => {
+      assert.equal(total(conBrazo(ficha(), 2), { valor: 2, fuente: "Arköru" }), 3);
+      assert.equal(total(conBrazo(ficha(), 4, "fuerte"), { valor: 2, fuente: "Arköru" }), 8);
+    });
+
+    test("el Escudo Deflector suma encima", () => {
+      const s = con(con(con(conBrazo(ficha(), 2), "ropa_reforzada"), OSTEO), "escudo_deflector", 1);
+      assert.equal(total(s), 4);
+      const armado = con(con(con(conBrazo(ficha(), 2), "armadura_ligera"), OSTEO), "escudo_deflector", 1);
+      assert.equal(total(armado), 6);
+    });
+
+    test("sin nada más, el brazo entero", () => {
+      assert.equal(lineaBrazo(conBrazo(ficha(), 3, "fuerte")).valor, 6);
+      assert.equal(lineaBrazo(conBrazo(ficha(), 3, "fuerte")).nota, undefined);
+    });
+  });
 });
 
 describe("Brazo Biónico: no toca la ficha", () => {

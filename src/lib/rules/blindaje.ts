@@ -173,8 +173,13 @@ export function blindajeNoCuenta(tipo: TipoDanio): string | null {
 //
 // `reactivo` (A4b): la casilla de blindaje reactivo marcada (Densificar del Enjambre 3+). Sin
 // la pieza, o contra Mental o Fuego, no suma nada.
-// `conBrazo` (A6a, R12): la casilla "Bloqueado con el brazo biónico" marcada. Suma el blindaje
-// del brazo (nivel 2+) a este golpe, donde cuente el blindaje; con el nivel 1, nada.
+// `conBrazo` (A6a, R12): la casilla "Bloqueado con el brazo biónico" marcada. El blindaje del brazo
+// (nivel 2+) «no se apila con armaduras ni con otros aumentos (se aplica el mayor)»: compite con
+// la suma del blindaje fijo del cuerpo (armadura, armadura natural de especie y de aumentos) y
+// aporta solo lo que le falta a esa suma para llegar a su valor (lectura A, usuario 2026-11-14).
+// El Escudo Deflector, el blindaje reactivo y la Contención suman aparte. Con el nivel 1, nada.
+// TODO(revisar): el Tejido Conductor (+1 contra eléctrico) también suma aparte; el plan no lo
+// nombra.
 // `contencion` (P1 de psiónica): la absorción de la Contención puesta, que vale también contra
 // el fuego; contra el mental, no.
 export function desgloseBlindaje(
@@ -199,18 +204,22 @@ export function desgloseBlindaje(
   const lineas: LineaBlindaje[] = [];
   const armadura = lineaDeArmadura(sheet, (l) => l);
   if (armadura) lineas.push(armadura);
+  // El blindaje fijo del cuerpo, contra el que compite el del brazo: armadura y armadura natural.
+  let fijo = armadura?.valor ?? 0;
 
   if (armaduraNatural.valor > 0) {
     lineas.push({
       etiqueta: armaduraNatural.fuente ? `Armadura natural · ${armaduraNatural.fuente}` : "Armadura natural",
       valor: armaduraNatural.valor,
     });
+    fijo += armaduraNatural.valor;
   }
 
   // Aumentos (A2a, R6): +1 contra Cinético por pieza (Osteotendinosa, Matriz Ósea), con su
   // nota. Aparte de la de especie, que no cambia.
   for (const a of armaduraNaturalDeAumentos(sheet, tipo)) {
     lineas.push({ etiqueta: `Armadura natural · ${a.fuente}`, valor: a.valor, nota: a.nota, ...(a.origen && { origen: a.origen }) });
+    fijo += a.valor;
   }
 
   const deflector = absorcionEscudoDeflector(sheet);
@@ -224,7 +233,17 @@ export function desgloseBlindaje(
   if (r) lineas.push({ etiqueta: `${r.etiqueta} · ${r.fuente}`, valor: r.valor, ...(r.origen && { origen: r.origen }) });
 
   const brazo = conBrazo ? blindajeDelBrazo(sheet) : null;
-  if (brazo) lineas.push({ etiqueta: `Bloqueado con el brazo · ${brazo.fuente}`, valor: brazo.valor, origen: brazo.origen });
+  if (brazo) {
+    const aporta = Math.max(0, brazo.valor - fijo);
+    lineas.push({
+      etiqueta: `Bloqueado con el brazo · ${brazo.fuente}`,
+      valor: aporta,
+      ...(aporta < brazo.valor && {
+        nota: `Blindaje ${brazo.valor}: no se apila con la armadura ni con la armadura natural (${fijo}), cuenta el mayor.`,
+      }),
+      origen: brazo.origen,
+    });
+  }
 
   return [...lineas, ...deContencion];
 }
@@ -241,7 +260,7 @@ export function casillaBlindajeBrazo(sheet: Pick<Sheet, "equipo">, tipo: TipoDan
   return {
     etiqueta: "Bloqueado con el brazo biónico",
     valor: brazo.valor,
-    nota: `${brazo.fuente}: su blindaje solo protege el golpe que bloqueas con el brazo, como un escudo.`,
+    nota: `${brazo.fuente}: su blindaje solo protege el golpe que bloqueas con el brazo, como un escudo. No se apila con la armadura ni con la armadura natural: cuenta el mayor (el Escudo Deflector y el blindaje reactivo, aparte).`,
     bloqueada: noCuenta ? MOTIVO_NO_CUENTA[tipo as "mental" | "fuego"] : null,
   };
 }

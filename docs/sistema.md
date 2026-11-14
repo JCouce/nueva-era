@@ -433,7 +433,8 @@ Detalle completo en `docs/sistema-y-combate.md`. Lo esencial:
 - **El blindaje del escudo no suma al blindaje del portador**: solo sirve para que el escudo
   aguante.
 - Bloquear con el escudo (dote Bloqueo) desvía el golpe sin que el escudo lo reciba.
-- El Brazo Biónico no cambia: "Bloqueado con el brazo" sigue sumando su blindaje al golpe.
+- El Brazo Biónico no cambia: "Bloqueado con el brazo" sigue protegiendo el golpe con su
+  blindaje (desde el sync Drive 2026-11-14, sin apilarse con la armadura: §11, A6a).
 - En la app (S86): la esquiva lleva la casilla "Tengo cobertura (+2)" para cualquier ficha;
   "Resistir daño" pregunta "¿A qué da el golpe?" (A ti · Al escudo · A la cobertura) y "Al
   escudo" resta de la durabilidad del escudo (`golpeAlEscudo`, `rules/blindaje.ts`). La app
@@ -2336,9 +2337,16 @@ sobreesfuerzo.
     En la app, `Accion.desarmado` más `sinPenalizadorDesarmado` (la fuente que quita el −3), que
     usa también «Bloquear con» la Pelea con armadura o Refuerzo de Combate.
   - **Blindaje (R12):** casilla "Bloqueado con el brazo biónico" en "Resistir daño", sin coste,
-    solo con el nivel 2+: suma el blindaje del brazo (3, 6 u 8) a ese golpe, donde cuente el
+    solo con el nivel 2+: el blindaje del brazo (3, 6 u 8) protege ese golpe, donde cuente el
     blindaje (no contra Mental ni Fuego sin Ignífuga, `blindajeNoCuenta`); cambiar a uno de
     esos tipos la desmarca. Vale igual en el combate en vivo del máster (el mismo modal).
+    **No se apila** `[FIRME · AUMENTOS 2026-11-14 + usuario, lectura A]`: «no se apila con
+    armaduras ni con otros aumentos (se aplica el mayor)». Compite con la **suma** del blindaje
+    fijo del cuerpo (armadura, armadura natural de especie y de aumentos) y su línea aporta solo
+    lo que le falta a esa suma para llegar a su valor: armadura 4 + Osteotendinosa 1 con brazo 3
+    → 5 (el brazo, 0); Ropa Reforzada 1 + Osteotendinosa 1 con brazo 3 → 3 (+1). El Escudo
+    Deflector, el blindaje reactivo (Densificar) y la Contención suman aparte; el Tejido
+    Conductor también (supuesto, `TODO(revisar)`: el plan no lo nombra).
   - **Fuera (A6a):** el arma incorporada, el sabotaje y la extracción. Lanzar un arma
     arrojadiza y lanzar granadas, sin casilla (usuario, 2026-10-22).
 - *En la app (A6b, Brazo Biónico: bloqueo con arma y arma incorporada; usuario, 2026-10-22):*
@@ -3252,6 +3260,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S104 | **Sobreesfuerzo (T6a, 2026-11-13)**, supuestos al construirlo (§10.7), todos `TODO(revisar)`: (1) **«fatigado» es el umbral tras pagar el poder** (el que ve el servidor al aplicar el fallo): un gasto que te deja fatigado ya lo dispara; la prosa dice «estando fatigado» sin aclarar si antes o después. (2) **Aturdido sin duración** («queda aturdido», «causa aturdimiento») = 1 turno; el fracaso crítico exhausto que solo cambia el daño (Arianyi y Maestría, implante 3) conserva el Aturdido. (3) **Más suave** casilla a casilla, daño antes que estados (con el implante 1 exhausto, «1 grave» frente a «1 letal y Aturdido» gana Maestría). (4) **Dos fuentes** a la vez (Maolher con implante): vale la que salte con más dificultad. (5) **Prolongar Proeza** no vuelve a tirar sobreesfuerzo (solo el uso). (6) **Muerte cerebral** (implante 1 y 2, exhausto, fracaso crítico): la app la avisa, no la aplica. (7) El **NPC del máster** (modo libre) no mira quién puede tener poderes. | Construcción de T6a; formas de es-01, au-04, au-05, ps-01…04 decididas por el usuario. |
 | S105 | **Poderes sueltos (T6b, 2026-11-13)**, supuestos al construirlos (§10.6b), `TODO(revisar)`: (1) **«La misma fatiga» del Sondeo** = la del uso con lo que el servidor sabe (tramo, descuentos por nivel y los Supresores puestos); las casillas que se marcaron al usarlo (Xovromium) y lo pagado con cargas de Derivación no cuentan al prolongar. (2) **Prolongar el Sondeo** cobra contra la fatiga efectiva; si cruza a exhausto, avisa de la sobrecarga (la salvación, a mano) y no vuelve a saltar el sobreesfuerzo (como prolongar Proeza, S104). (3) Fuera de combate las rondas no corren: el estado sigue hasta quitarlo y prolongar solo cobra. (4) **Proyección**: «por cada 200 kg adicionales» se cuenta por tramos completos (299 kg sobre 100 no suma); sin peso escrito, objeto de hasta 100 kg. (5) **Alerta pasiva**: exhausto es el umbral de la fatiga efectiva (la temporal de Proeza cuenta), como la sobrecarga. | Construcción de T6b; formas de ps-05…08 decididas por el usuario. |
 | S106 | **Bajón y rechazo de fármacos (T7c, 2026-11-14)**, supuestos al construir fa-03 (§12): (1) **Salvaciones incluidas** en «tiradas con atributos mentales» (el Ultra excluye las salvaciones de las «acciones físicas»; aquí el texto dice «tiradas»). (2) **Fatiga en combate**: a la foto que enseña la Mesa, como la pestaña Vida; fuera, a la ficha. (3) **Fatiga insuficiente** para el bajón: se cobra la que quede (hasta 0) y se avisa; no bloquea. (4) **El servidor acepta la consecuencia del fármaco ya agotado** (el cliente gasta la dosis antes; con la última, la fila ya no está): `accionesDeFarmacos(…, conAgotados)`. (5) ~~Los cinco estados los puede quitar el propio jugador~~: los bajones y el rechazo, solo el máster (usuario, 2026-11-14); los recordatorios, también el jugador. `TODO(revisar)` (4): no comprueba que la ficha haya tenido nunca esa dosis (solo se perjudica a sí mismo). | Construcción de T7c; decisiones de fa-03 del usuario. |
+| S107 | **Sync Drive 2026-11-14, tanda T2 (medianos)**, decisiones del usuario (2026-11-14) y supuestos al construirla (`docs/plan-sync-2026-11-14.md`): (1) **Brazo Biónico, blindaje (lectura A, usuario)**: compite contra la **suma** de armadura + armadura natural (especie y aumentos) y aporta lo que le falte; Deflector, blindaje reactivo y Contención suman aparte. Supuesto: el Tejido Conductor también suma aparte (`TODO(revisar)`). | Plan de sync, decisiones de arriba; supuestos, `TODO(revisar)`. |
 
 ## Conflictos detectados
 
