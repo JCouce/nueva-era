@@ -95,6 +95,7 @@ import {
   excesosDePuntos,
   pasosPersonaje,
   especieDeFicha,
+  recargoArmadurasDeEspecie,
   ajustesDeCoste,
   type AjusteCoste,
   comprarDote,
@@ -505,7 +506,8 @@ export async function equiparAction(
     if (compra.tipo === "viaEspecie") nueva = { ...nueva, viaEspecie: true };
   }
 
-  const coste = costeDePieza(nueva);
+  // Modelos a Medida (Arköru): las armaduras, un 10 % más caras.
+  const coste = costeDePieza(nueva, recargoArmadurasDeEspecie(especieDeFicha(ctx.sheet)));
   if (coste > ctx.creditos) return { ok: false, error: "No tienes créditos suficientes" };
 
   const sheet = equipar(ctx.sheet, nueva);
@@ -599,7 +601,8 @@ export async function desequiparAction(
   if ("error" in ctx) return { ok: false, error: ctx.error };
 
   const devolucion = ctx.aprobada ? null : devolucionAumento(ctx.sheet, instanciaId);
-  const refund = costeDeRetirar(ctx.sheet, instanciaId) + (devolucion?.deCreditos ?? 0);
+  const refund =
+    costeDeRetirar(ctx.sheet, instanciaId, recargoArmadurasDeEspecie(especieDeFicha(ctx.sheet))) + (devolucion?.deCreditos ?? 0);
   // retirarPieza recorta la vida actual si el máximo baja (Hipertrofia y los +1, A1).
   const sinPieza = retirarPieza(ctx.sheet, instanciaId, ctx.estados);
   const sheet = devolucion

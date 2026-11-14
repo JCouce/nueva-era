@@ -546,6 +546,7 @@ export function NpcEditor({
           sheet={sheet}
           topeRareza={null}
           libre
+          recargoArmaduras={ficha.recargoArmaduras}
           atributosRequisito={ficha.requisitosDotes.atributos}
           onEquipar={commitEquipar}
           onComprarGranada={commitComprarGranada}

@@ -3,7 +3,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { FORMULA_MOVIMIENTO_GENERAL } from "./formulaMovimiento";
 import { defaultSheet, type Sheet } from "./sheet";
-import { equipar } from "./equipo";
+import { costeDePieza, costeDeRetirar, equipar } from "./equipo";
 import { movimiento, cargaMaxima, modificadoresActivos } from "./derivados";
 import { blindajeContra, desgloseBlindaje, SIN_ARMADURA_NATURAL } from "./blindaje";
 import {
@@ -310,4 +310,41 @@ describe("resolverFicha da lo mismo que la caracterización sin efectos de espec
       assert.deepEqual(r.blindaje.armaduraNatural, SIN_ARMADURA_NATURAL);
     });
   }
+});
+
+// Modelos a Medida (Arköru, sync Drive 2026-11-14): armaduras y trajes +20 % de peso y +10 % de
+// precio; toda la familia `armadura`, Ropa Reforzada e Inteligente incluidas (usuario).
+describe("Arköru, Modelos a Medida", () => {
+  const conArmadura = (especieId: string | null, catalogoId: string) =>
+    equipar({ ...defaultSheet(), especieId }, { instanciaId: "a", catalogoId });
+
+  test("la carga cuenta la armadura un 20 % más pesada", () => {
+    assert.equal(resuelta(conArmadura(null, "armadura_pesada")).pesoEquipado, 28);
+    assert.equal(resuelta(conArmadura("arkoru", "armadura_pesada")).pesoEquipado, 33.6);
+    assert.equal(resuelta(conArmadura("arkoru", "ropa_reforzada")).pesoEquipado, 2.4);
+    assert.equal(resuelta(conArmadura("arkoru", "ropa_inteligente")).pesoEquipado, 2.4);
+    assert.equal(resuelta(conArmadura("arkoru", "ultra_ligero_avanzado")).pesoEquipado, 1.8);
+  });
+
+  test("solo las armaduras: un arma pesa lo mismo con la especie", () => {
+    const arma = (especieId: string | null) =>
+      resuelta(equipar({ ...defaultSheet(), especieId }, { instanciaId: "p", catalogoId: "pistola_mosquito" })).pesoEquipado;
+    assert.equal(arma("arkoru"), arma(null));
+  });
+
+  test("precio en la Tienda: un 10 % más con la especie, el de la tabla sin ella", () => {
+    const precio = (especieId: string | null, catalogoId: string) =>
+      costeDePieza({ instanciaId: "-", catalogoId }, resuelta({ ...defaultSheet(), especieId }).recargoArmaduras);
+    assert.equal(precio(null, "armadura_ligera"), 6000);
+    assert.equal(precio("arkoru", "armadura_ligera"), 6600);
+    assert.equal(precio("arkoru", "ropa_reforzada"), 110);
+    assert.equal(precio("arkoru", "armadura_pesada_avanzada"), 220000);
+    assert.equal(precio("humano", "armadura_ligera"), 6000);
+    assert.equal(precio("arkoru", "pistola_mosquito"), precio(null, "pistola_mosquito"));
+  });
+
+  test("al quitarla se devuelve lo pagado, con el recargo", () => {
+    const s = conArmadura("arkoru", "armadura_ligera");
+    assert.equal(costeDeRetirar(s, "a", resuelta(s).recargoArmaduras), 6600);
+  });
 });

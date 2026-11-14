@@ -973,6 +973,7 @@ export function CharacterSheet({
                 bolsaAumentos={ficha.bolsaAumentos}
                 atributosRequisito={ficha.requisitosDotes.atributos}
                 excepcionRareza={{ estado: characterStatus, esMaster, excepciones: ficha.excepcionesRareza }}
+                recargoArmaduras={ficha.recargoArmaduras}
                 onEquipar={commitEquipar}
                 onComprarGranada={commitComprarGranada}
                 onComprarFarmaco={commitComprarFarmaco}

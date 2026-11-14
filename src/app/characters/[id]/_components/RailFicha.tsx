@@ -5,7 +5,6 @@ import {
   ATRIBUTOS,
   APLICADOS,
   estadosParaPintar,
-  pesoEquipado,
   type CategoriaDanio,
   type EstadoFicha,
   type FichaResuelta,
@@ -49,7 +48,7 @@ export function RailFicha({
     : "sin especie";
   const estados = estadosParaPintar(ficha);
   const mov = ficha.movimiento;
-  const pesoArmas = pesoEquipado(sheet);
+  const pesoArmas = ficha.pesoEquipado;
 
   return (
     <div className="flex flex-col gap-5">

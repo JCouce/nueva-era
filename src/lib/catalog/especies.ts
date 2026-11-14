@@ -57,6 +57,9 @@ export type Rasgo = {
   formulaMovimiento?: Partial<FormulaMovimiento>; // sustituye esas constantes de la general
   multiplicadorCarga?: number; // sobre el total de la carga sin penalizador (§5.5)
   armaduraNatural?: number; // línea propia en el blindaje, sumada a la armadura puesta
+  // Modelos a Medida (Arköru, sync Drive 2026-11-14): % de más en peso y precio de toda la
+  // familia `armadura`. Lo resuelve recargoArmadurasDeEspecie → costeDePieza / pesoDePieza.
+  recargoArmaduras?: RecargoArmaduras;
   // Tiradas (§14.8, E4). Los resuelve especie.ts una vez en la FichaResuelta:
   // casillasDeEspecie (al mismo índice que las del equipo), textosDeEspecie (nota fija
   // en la tirada) y ajusteUmbralesDeEspecie (modificadoresDeUmbrales). Un bono fijo a
@@ -117,6 +120,9 @@ export type CostesRasgo = {
 };
 
 export type ExcepcionRareza = { material: MaterialPieza; maxPiezas: number };
+
+// Porcentaje de más sobre el peso y el precio de las armaduras (Modelos a Medida del Arköru).
+export type RecargoArmaduras = { pesoPct: number; costePct: number };
 
 // Casta o linaje: se suman a la especie (§14.1, Noble Ílkrem = Carácter +1 y Fuerza +1).
 export type OpcionEspecie = {
@@ -813,6 +819,14 @@ export const ESPECIES: Especie[] = [
         creacion: true,
         excepcionRareza: { material: "kerzul", maxPiezas: 1 },
         motor: [],
+      },
+      {
+        id: "modelos_a_medida",
+        label: "Modelos a Medida",
+        texto: "Sus armaduras y trajes pesan un 20 % más y cuestan un 10 % más.",
+        // Usuario (2026-11-14): toda la familia `armadura`, Ropa Reforzada e Inteligente incluidas.
+        recargoArmaduras: { pesoPct: 20, costePct: 10 },
+        motor: [derivadoEstatico],
       },
     ],
   },

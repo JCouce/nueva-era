@@ -22,7 +22,7 @@ import {
   type MaterialPieza,
   type Rareza,
 } from "../catalog/equipo";
-import type { ExcepcionRareza } from "../catalog/especies";
+import type { ExcepcionRareza, RecargoArmaduras } from "../catalog/especies";
 import { MUNICION_GRANADA } from "../catalog/municion";
 import type { EstadoFicha } from "./revision";
 import { ID_BUSQUEDA_MIRA } from "../catalog/mejorasArma";
@@ -541,11 +541,13 @@ export function fijarArmaIncorporada(
 // esta rama por completitud de tipos (MunicionGranada sí tiene `coste`
 // plano), aunque en la práctica ninguna PiezaEquipada la lleva ya — el
 // precio real de una granada vive en comprarGranada() (recursos.ts).
-export function costeDePieza(pieza: PiezaEquipada): number {
+// `recargo`: Modelos a Medida del Arköru (recargoArmadurasDeEspecie), solo a la familia
+// `armadura`; redondeado al crédito.
+export function costeDePieza(pieza: PiezaEquipada, recargo: RecargoArmaduras | null = null): number {
   const cat = equipoPorId(pieza.catalogoId);
   if (!cat) return 0;
+  if (cat.familia === "armadura") return conRecargo(cat.coste, recargo?.costePct ?? 0, 0);
   if (
-    cat.familia === "armadura" ||
     cat.familia === "arma" ||
     cat.familia === "armaMelee" ||
     cat.familia === "consumible" ||
@@ -565,14 +567,22 @@ export function costeDePieza(pieza: PiezaEquipada): number {
 // devuelve el coste íntegro, no hay medias tintas ni penalización.
 // Los aumentos no entran aquí: con la ficha aprobada no se revenden, y en creación
 // los devuelve devolucionAumento (aumentos.ts), que separa bolsa y créditos.
-export function costeDeRetirar(sheet: Sheet, instanciaId: string): number {
+export function costeDeRetirar(sheet: Sheet, instanciaId: string, recargo: RecargoArmaduras | null = null): number {
   return sheet.equipo
     .filter((p) => p.instanciaId === instanciaId || p.instaladoEnId === instanciaId)
     .filter((p) => {
       const familia = equipoPorId(p.catalogoId)?.familia;
       return familia !== "operacionGenetica" && familia !== "implante";
     })
-    .reduce((total, p) => total + costeDePieza(p), 0);
+    .reduce((total, p) => total + costeDePieza(p, recargo), 0);
+}
+
+// +pct % sobre `valor`, redondeado a `decimales` (0 en créditos; 2 en kg, que 2 × 1,2 en coma
+// flotante no da 2,4).
+function conRecargo(valor: number, pct: number, decimales: number): number {
+  if (!pct) return valor;
+  const f = 10 ** decimales;
+  return Math.round((valor * (100 + pct) * f) / 100) / f;
 }
 
 // Rareza de una pieza equipada, con el mismo criterio de nivel que
@@ -684,15 +694,16 @@ export function topeRarezaDeCompra(
 // que el documento no lo dice (salvo las mejoras de arma con `pesoKg`, abajo). "granada" se queda en esta rama por
 // completitud de tipos, aunque en la práctica ninguna PiezaEquipada la lleva
 // ya (docs/tareas.md, 2026-09-27).
-export function pesoDePieza(pieza: PiezaEquipada): number {
+// `recargo`: Modelos a Medida del Arköru, como en costeDePieza.
+export function pesoDePieza(pieza: PiezaEquipada, recargo: RecargoArmaduras | null = null): number {
   const cat = equipoPorId(pieza.catalogoId);
   if (!cat) return 0;
+  if (cat.familia === "armadura") return conRecargo(cat.pesoKg, recargo?.pesoPct ?? 0, 2);
   if (
     cat.familia === "arma" ||
     cat.familia === "armaMelee" ||
     cat.familia === "consumible" ||
     cat.familia === "armaPesada" ||
-    cat.familia === "armadura" ||
     cat.familia === "granada"
   ) {
     if (cat.familia === "armaMelee") return pesoArmaModificada(cat, pieza.modificaciones ?? []) ?? 0;
@@ -715,8 +726,8 @@ function pesoGranadas(sheet: Sheet): number {
 // Suma de lo que SÍ se sabe pesar (ver pesoDePieza) de todo lo equipado, más las granadas. No
 // es "el peso total real" — la interfaz avisa de qué falta (EstadosYDatos, en Recursos). Redondeado
 // a la centésima (hay pesos de 6,25 kg): 0,3 + 0,4 en coma flotante no da 0,7.
-export function pesoEquipado(sheet: Sheet): number {
-  const total = sheet.equipo.reduce((t, p) => t + pesoDePieza(p), 0) + pesoGranadas(sheet);
+export function pesoEquipado(sheet: Sheet, recargo: RecargoArmaduras | null = null): number {
+  const total = sheet.equipo.reduce((t, p) => t + pesoDePieza(p, recargo), 0) + pesoGranadas(sheet);
   return Math.round(total * 100) / 100;
 }
 

@@ -137,6 +137,7 @@ const ESPERADAS: Record<string, EtiquetaRasgo> = {
   "arkoru/adaptacion_termica": "tirada",
   "arkoru/sistemas_filtradores": "tirada",
   "arkoru/acceso_kerzul": "creacion",
+  "arkoru/modelos_a_medida": "siempre", // peso y precio de las armaduras (sync Drive 2026-11-14)
   "manduk.noble/contra_miedo": "tirada",
   "manduk.noble/coste_habilidad": "creacion",
   "manduk.sabio/coste_habilidad": "creacion",

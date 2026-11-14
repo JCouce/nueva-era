@@ -33,6 +33,8 @@ import {
   precioArmaModificada,
   rarezaArmaModificada,
   nombreArmaModificada,
+  costeDePieza,
+  type RecargoArmaduras,
   type ModificacionArmaId,
   type ContextoExcepcionRareza,
   type TopeRarezaCompra,
@@ -1090,6 +1092,7 @@ export function TiendaTab({
   libre = false,
   bolsaAumentos = null,
   excepcionRareza = null,
+  recargoArmaduras = null,
   atributosRequisito,
   onEquipar,
   onComprarAumento,
@@ -1106,6 +1109,8 @@ export function TiendaTab({
   bolsaAumentos?: BolsaAumentosResuelta | null;
   // Excepción de rareza por especie (kerzul del Arköru, §14.6); null en el NPC.
   excepcionRareza?: ContextoExcepcionRareza | null;
+  // De la FichaResuelta: Modelos a Medida del Arköru (armaduras un 10 % más caras), o null.
+  recargoArmaduras?: RecargoArmaduras | null;
   // De la FichaResuelta (requisitosDotes.atributos): el requisito de atributo de un aumento.
   atributosRequisito: Readonly<Record<AtributoId, number>>;
   onEquipar: (p: PiezaEquipada) => void;
@@ -1203,22 +1208,31 @@ export function TiendaTab({
 
       <div className="flex flex-col gap-2">
         {categoria === "armaduras" &&
-          ARMADURAS.map((p) => (
-            <Acordeon
-              key={p.id}
-              titulo={p.label}
-              resumen={p.resumen}
-              etiqueta={
-                <div className="flex flex-col items-end gap-1">
-                  <BadgeRareza rareza={p.rareza} />
-                  <Precio coste={p.coste} />
-                </div>
-              }
-            >
-              <DetalleArmadura p={p} />
-              <AccionSimple pieza={p} creditos={creditosEfectivos} compra={compraDe(p)} onEquipar={onEquipar} />
-            </Acordeon>
-          ))}
+          ARMADURAS.map((p) => {
+            const precio = costeDePieza({ instanciaId: "-", catalogoId: p.id }, recargoArmaduras);
+            return (
+              <Acordeon
+                key={p.id}
+                titulo={p.label}
+                resumen={p.resumen}
+                etiqueta={
+                  <div className="flex flex-col items-end gap-1">
+                    <BadgeRareza rareza={p.rareza} />
+                    <Precio coste={precio} />
+                  </div>
+                }
+              >
+                <DetalleArmadura p={p} />
+                <AccionSimple
+                  pieza={p}
+                  creditos={creditosEfectivos}
+                  compra={compraDe(p)}
+                  onEquipar={onEquipar}
+                  precio={precio}
+                />
+              </Acordeon>
+            );
+          })}
 
         {categoria === "armas" &&
           TIPOS_ARMA.map(({ tipo, titulo }) => {

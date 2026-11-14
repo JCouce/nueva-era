@@ -36,6 +36,7 @@ import {
   type Especie,
   type EspecieOpciones,
   type ExcepcionRareza,
+  type RecargoArmaduras,
   type OpcionEspecie,
   type ReferenciaFisica,
   type Rasgo,
@@ -319,6 +320,17 @@ export function bolsaDeAumentos(especie: EspecieResuelta | null): number | null 
 // puedeEquiparSinRareza (equipo.ts), que recibe esto ya resuelto.
 export function excepcionesRareza(especie: EspecieResuelta | null): ExcepcionRareza[] {
   return (especie?.rasgos ?? []).flatMap((r) => (r.excepcionRareza ? [r.excepcionRareza] : []));
+}
+
+// Modelos a Medida (Arköru, sync Drive 2026-11-14): el recargo de peso y precio de las
+// armaduras, o null. Si llegaran dos, se suman los porcentajes.
+export function recargoArmadurasDeEspecie(especie: EspecieResuelta | null): RecargoArmaduras | null {
+  const con = (especie?.rasgos ?? []).flatMap((r) => (r.recargoArmaduras ? [r.recargoArmaduras] : []));
+  if (!con.length) return null;
+  return {
+    pesoPct: con.reduce((t, r) => t + r.pesoPct, 0),
+    costePct: con.reduce((t, r) => t + r.costePct, 0),
+  };
 }
 
 // --- Derivados (§14.7) --------------------------------------------------------

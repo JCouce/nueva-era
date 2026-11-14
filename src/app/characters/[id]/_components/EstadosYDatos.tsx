@@ -3,7 +3,6 @@
 import {
   estadosParaPintar,
   notasDeEstado,
-  pesoEquipado,
   textoInmunidad,
   type DuracionEstado,
   type FichaResuelta,
@@ -104,14 +103,13 @@ export function EstadosCard({ ficha, chips }: { ficha: FichaResuelta; chips?: Ch
 
 // Lo derivado: nada de esto se edita, todo sale de atributos, habilidades y equipo.
 export function DatosCard({ ficha }: { ficha: FichaResuelta }) {
-  const sheet = ficha.ficha;
   const mov = ficha.movimiento;
   const vue = ficha.vuelo;
   const lev = ficha.levitacion;
   const notas = notasDeEstado(ficha);
   const tono = (nota: string | undefined) => (nota ? "text-info" : "text-foreground");
   const limiteCarga = ficha.cargaMaxima;
-  const pesoArmas = pesoEquipado(sheet);
+  const pesoArmas = ficha.pesoEquipado;
 
   return (
     <HudCard className="mt-2 flex flex-col gap-3 p-4">

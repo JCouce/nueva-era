@@ -52,6 +52,7 @@ import {
   fallosCriticosDeEspecie,
   formulaMovimientoDeEspecie,
   multiplicadorCargaDeEspecie,
+  recargoArmadurasDeEspecie,
   textosDeEspecie,
   fuentesPsionicasDeFicha,
   accesoDeFuentes,
@@ -82,12 +83,13 @@ import { accionesDeAumentos, type AccionesDeAumentos, type FilaAumento } from ".
 import { efectosDeActivables } from "./aumentosActivables";
 import { conUsosEscena, usosEscenaDeFicha } from "./usosEscena";
 import { poderesDeDotes } from "./dotesPoderes";
-import type { ExcepcionRareza } from "../catalog/especies";
+import type { ExcepcionRareza, RecargoArmaduras } from "../catalog/especies";
 import { AJUSTE_NEUTRO, type AjusteCoste } from "./progresion";
 import {
   consultaIndiceCondiciones,
   indiceDeCondiciones,
   modificadoresDeEquipo,
+  pesoEquipado,
   rebajasTipoAccionDeEquipo,
   reduccionesDeEquipo,
   salvacionesDeEquipo,
@@ -224,6 +226,11 @@ export type FichaResuelta = {
   vuelo: ReturnType<typeof vuelo>;
   levitacion: ReturnType<typeof levitacion>;
   cargaMaxima: number;
+  // Lo que pesa lo que se lleva (pesoEquipado, rules/equipo.ts), con el recargo de abajo.
+  pesoEquipado: number;
+  // Modelos a Medida (Arköru, sync Drive 2026-11-14): % de más en peso y precio de las
+  // armaduras, o null. Lo usan la carga y la Tienda (costeDePieza). Derivado: también al NPC.
+  recargoArmaduras: RecargoArmaduras | null;
   // Lo que la especie cambia de fórmula (§14.7), con su fuente: lo usan movimiento,
   // cargaMaxima y las notas de Estado (notasDeEstado). Derivado: también al NPC.
   formulaMovimiento: FormulaMovimientoResuelta;
@@ -467,6 +474,7 @@ export function resolverFicha(
   const lev = levitacion(psionica.paraEfectos);
   const carga = cargaMaxima(enUso, modificadores, multiplicadorCarga.valor);
   const ajusteCoste = libre ? AJUSTE_NEUTRO : ajustesDeCoste(especie);
+  const recargoArmaduras = recargoArmadurasDeEspecie(especie);
 
   const resuelta: FichaResuelta = {
     ficha: sheet,
@@ -505,6 +513,8 @@ export function resolverFicha(
     vuelo: vue && { ...vue, velocidadM: velocidad(vue.velocidadM) },
     levitacion: lev && { ...lev, velocidadM: velocidad(lev.velocidadM) },
     cargaMaxima: porUmbral.reduccionCarga ? reducir(carga, porUmbral.reduccionCarga.fraccion) : carga,
+    pesoEquipado: pesoEquipado(sheet, recargoArmaduras),
+    recargoArmaduras,
     formulaMovimiento,
     multiplicadorCarga,
     blindaje: {
