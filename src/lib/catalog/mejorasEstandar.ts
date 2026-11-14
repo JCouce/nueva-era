@@ -45,13 +45,14 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
     familia: "mejoraEstandar",
     id: "soporte_vital",
     label: "Soporte Vital",
-    resumen: "El estándar industrial de habitabilidad: aísla del exterior. No gasta ranura.",
+    resumen: "El estándar industrial de habitabilidad: aísla del exterior. No gasta ranura de subsistema.",
     descripcion:
       "Una red de micro-conductos de purificación, intercambiadores de calor de fase y membranas " +
       "de filtración osmótica tejida en las capas internas del traje. Aísla por completo al " +
       "usuario del exterior, reciclando el aire, neutralizando agentes químicos y disipando la " +
-      "radiación ambiental. No es un módulo táctico opcional: se integra en la arquitectura " +
-      "hermética de cualquier armadura de serie, sin consumir ranuras de personalización.",
+      "radiación ambiental. No es un subsistema al uso (como un camuflaje trifásico o un escudo " +
+      "deflector): es el estándar de habitabilidad y se integra en la arquitectura hermética de " +
+      "cualquier armadura de serie, sin consumir ranuras de subsistema.",
     niveles: [
       {
         nivel: 1,
