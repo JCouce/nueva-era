@@ -5,6 +5,7 @@ import {
   equipoPorId,
   aumentoPorId,
   aumentosConRequisitoRoto,
+  aumentosIncompatibles,
   etiquetaEleccionAumento,
   esPiezaAumento,
   ranurasSubsistemaUsadas,
@@ -288,7 +289,8 @@ function ConvertirArma({
 }
 
 // Aumentos (A0, docs/sistema.md §11.3): pieza, nivel, elección y textos. Una operación
-// cuyo requisito se ha quitado queda marcada "requisito roto", como las dotes.
+// cuyo requisito se ha quitado queda marcada "requisito roto", como las dotes; dos piezas
+// incompatibles (E4) llevan su aviso, sin apagar nada.
 function SeccionAumentos({
   sheet,
   onDesequipar,
@@ -300,6 +302,7 @@ function SeccionAumentos({
 }) {
   const aumentos = sheet.equipo.filter(esPiezaAumento);
   const rotos = aumentosConRequisitoRoto(sheet);
+  const incompatibles = aumentosIncompatibles(sheet);
   if (aumentos.length === 0) {
     return <p className="font-sans text-prosa-sm text-soft">Sin aumentos. Están en la Tienda.</p>;
   }
@@ -314,6 +317,7 @@ function SeccionAumentos({
         if (!cat) return null;
         const eleccion = etiquetaEleccionAumento(a);
         const roto = rotos.find((r) => r.instanciaId === a.instanciaId);
+        const incompatible = incompatibles.find((r) => r.instanciaId === a.instanciaId);
         const titulo = eleccion ? `${cat.label} · ${eleccion}` : cat.label;
         const resumen = cat.familia === "implante" ? `Nivel ${a.nivel} · ${cat.resumen}` : cat.resumen;
         return (
@@ -325,11 +329,16 @@ function SeccionAumentos({
                 <DetalleImplante p={cat} nivelActual={a.nivel} eleccion={a.eleccion} />
               )}
             </Acordeon>
-            {(roto || cat.familia === "implante") && (
+            {(roto || incompatible || cat.familia === "implante") && (
               <div className="mt-1 flex flex-wrap items-center gap-1.5 px-1">
                 {roto && (
                   <span className="font-mono text-[10px] uppercase text-danger">
                     requisito roto: falta {roto.faltan.join(", ")}
+                  </span>
+                )}
+                {incompatible && (
+                  <span className="font-mono text-[10px] uppercase text-danger">
+                    incompatible con {incompatible.con.join(", ")}
                   </span>
                 )}
                 {cat.familia === "implante" && <MarcasImplante p={cat} />}
