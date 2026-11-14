@@ -36,6 +36,7 @@ function ficha(dotes: DoteComprada[]): Sheet {
 const resolver = (s: Sheet) => resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
 const fija = (f: FichaResuelta, id: string) => conExtrasDeFicha(f, ACCIONES.find((a) => a.id === id)!);
 type Toggle = Extract<NonNullable<Accion["condiciones"]>[number], { tipo: "toggle" }>;
+type Opcion = Extract<NonNullable<Accion["condiciones"]>[number], { tipo: "opcion" }>;
 const casillasDe = (t: Accion, dote: string): Toggle[] =>
   (t.condiciones ?? []).filter((c): c is Toggle => c.tipo === "toggle" && c.id.startsWith(dote));
 const total = (f: FichaResuelta, t: Accion, marcadas: string[] = []) => {
@@ -48,10 +49,22 @@ describe("Paso de Fantasma", () => {
   const f = resolver(ficha([{ id: "dote_paso_de_fantasma" }]));
   const t = fija(f, "sigilo");
 
-  test("casilla de terreno difícil o ruidoso en Ocultarse: +3 marcada, nada sin marcar", () => {
-    const [c] = casillasDe(t, "dote_paso_de_fantasma");
-    assert.match(c.etiqueta, /terreno difícil o ruidoso/);
-    assert.equal(total(f, t, [c.id]) - total(f, t), 3);
+  // Solo anula el penalizador del terreno, hasta 3: nunca deja bono positivo (usuario, 2026-11-14).
+  test("selector del penalizador por terreno difícil o ruidoso en Ocultarse: lo anula hasta 3", () => {
+    const c = (t.condiciones ?? []).find((x): x is Opcion => x.tipo === "opcion" && x.id.startsWith("dote_paso_de_fantasma"))!;
+    assert.match(c.etiqueta, /Terreno difícil o ruidoso: anula hasta 3/);
+    assert.deepEqual(
+      c.opciones.map((o) => [o.id, o.valor]),
+      [["ninguna", 0], ["uno", 1], ["dos", 2], ["tres", 3]],
+    );
+    const con = (opcion: string) => {
+      const e = eleccionSinTocar(t);
+      return montarTirada(f, t, { ...e, estadoCondiciones: { ...e.estadoCondiciones, [c.id]: opcion } }).total;
+    };
+    assert.equal(con("ninguna"), total(f, t));
+    assert.equal(con("dos") - con("ninguna"), 2);
+    assert.equal(con("tres") - con("ninguna"), 3);
+    assert.deepEqual(casillasDe(t, "dote_paso_de_fantasma"), []);
   });
 
   test("el −3 a la alerta sísmica o auditiva de quien te busca, como aviso en Ocultarse", () => {
@@ -61,7 +74,7 @@ describe("Paso de Fantasma", () => {
   test("sin Ocultación 2 no hace nada", () => {
     const s = ficha([{ id: "dote_paso_de_fantasma" }]);
     const sin = resolver({ ...s, habilidades: { ...s.habilidades, sigilo: { valor: 4, especialidades: ["mimetismo"] } } });
-    assert.deepEqual(casillasDe(fija(sin, "sigilo"), "dote_paso_de_fantasma"), []);
+    assert.equal(fija(sin, "sigilo").condiciones?.some((c) => c.id.startsWith("dote_paso_de_fantasma")), false);
   });
 });
 

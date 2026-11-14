@@ -7127,8 +7127,20 @@
         {
           "tipo": "bono",
           "alcance": "sigilo",
+          "valor": 1,
+          "condicion": "terreno_ruidoso:uno"
+        },
+        {
+          "tipo": "bono",
+          "alcance": "sigilo",
+          "valor": 2,
+          "condicion": "terreno_ruidoso:dos"
+        },
+        {
+          "tipo": "bono",
+          "alcance": "sigilo",
           "valor": 3,
-          "condicion": "Moviéndote por terreno difícil o ruidoso (cristales rotos, metal crujiente, charcos)"
+          "condicion": "terreno_ruidoso:tres"
         },
         {
           "tipo": "texto",

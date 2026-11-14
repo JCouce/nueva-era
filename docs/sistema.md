@@ -1074,9 +1074,10 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
   requisito roto.
 - **Dotes de Sigilo y Pilotaje (E6)** `[FIRME · DOTES 2026-11-14]`. Lo que la app aplica y lo que
   es texto:
-  - *Paso de Fantasma*: casilla +3 en Ocultarse por terreno difícil o ruidoso; el −3 a la alerta
-    sísmica o auditiva de quien te busca, aviso (tirada ajena). `TODO(revisar)`: «reduce en 3 los
-    penalizadores» puede sumar de más si el del terreno es menor.
+  - *Paso de Fantasma*: selector en Ocultarse con el penalizador por terreno difícil o ruidoso
+    que pone el máster (ninguno, −1, −2, −3 o más), que la dote anula hasta 3 sin dejar bono
+    positivo (usuario, 2026-11-14); el −3 a la alerta sísmica o auditiva de quien te busca, aviso
+    (tirada ajena).
   - *Fundido Evasivo*: casilla +1 en la esquiva (penumbra, cobertura parcial o camuflaje, ataque a
     distancia); el nivel de cobertura de más, aviso. «Una vez por turno», límite de la dote y
     etiqueta (la casilla de la esquiva no cuenta turnos).

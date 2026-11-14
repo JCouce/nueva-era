@@ -7705,9 +7705,26 @@ export const DOTES: readonly DoteCatalogo[] = [
       {
         "tipo": "bono",
         "alcance": "sigilo",
-        "valor": 3,
-        "condicion": "Moviéndote por terreno difícil o ruidoso (cristales rotos, metal crujiente, charcos)",
+        "valor": 1,
+        "condicion": null,
+        "tramo": "terreno_ruidoso:uno",
         "borrador": 0
+      },
+      {
+        "tipo": "bono",
+        "alcance": "sigilo",
+        "valor": 2,
+        "condicion": null,
+        "tramo": "terreno_ruidoso:dos",
+        "borrador": 1
+      },
+      {
+        "tipo": "bono",
+        "alcance": "sigilo",
+        "valor": 3,
+        "condicion": null,
+        "tramo": "terreno_ruidoso:tres",
+        "borrador": 2
       },
       {
         "tipo": "texto",
@@ -7715,12 +7732,30 @@ export const DOTES: readonly DoteCatalogo[] = [
         "texto": "Quien te busque con medios sísmicos, de vibración o auditivos pasivos sufre −3 en su tirada de alerta.",
         "condicion": null,
         "porque": "tercero",
-        "borrador": 1
+        "borrador": 3
       }
     ],
     "limite": null,
     "candidataUX": null,
     "motor": [
+      {
+        "tipo": "numerico",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "sigilo"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      },
+      {
+        "tipo": "numerico",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "sigilo"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      },
       {
         "tipo": "numerico",
         "afecta": {
@@ -9072,8 +9107,8 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   221 efectos (211 en el borrador)
-//   construidos: 122
+//   223 efectos (213 en el borrador)
+//   construidos: 124
 //   texto: 99
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0

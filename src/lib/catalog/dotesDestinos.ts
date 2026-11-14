@@ -70,9 +70,8 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // (salto incluido, derivados.ts); ¿la dote lo vuelve a duplicar o S10 no debería contar el salto?
   atletismo: tirada("atletismo"),
   escalar: tirada("escalar"),
-  // «Ocultarse» (id sigilo). Paso de Fantasma (E6): casilla +3 por terreno difícil o ruidoso.
-  // TODO(revisar): la fuente dice «reduce en 3 los penalizadores»; si el del terreno que pone el
-  // máster es menor de 3, la casilla suma de más.
+  // «Ocultarse» (id sigilo). Paso de Fantasma (E6): selector del penalizador por terreno difícil o
+  // ruidoso que anula hasta 3 (OPCIONES_DE_TRAMO.terreno_ruidoso).
   sigilo: tirada("sigilo"),
   // «Juego de manos» (id hurto, E6): Sustracción Rápida.
   hurto: tirada("hurto"),
@@ -185,12 +184,20 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
 };
 
 // Bonos por opción de otra condición (`tramo` = "<condición>:<opción>") cuya condición
-// NO existe en la tirada destino: la dote pone su propia casilla de opción. Vacía desde T4
-// (do-01, usuario 2026-11-13): «moverse oculto» pasó a ser el selector «¿Te mueves?» de Sigilo
-// (SELECTORES_DE_TIRADA, abajo).
+// NO existe en la tirada destino: la dote pone su propia casilla de opción. «Moverse oculto»
+// pasó a ser el selector «¿Te mueves?» de Sigilo en T4 (SELECTORES_DE_TIRADA, abajo).
 export const OPCIONES_DE_TRAMO: Readonly<
   Record<string, { etiqueta: string; ninguna: string; opciones: Readonly<Record<string, string>> }>
-> = {};
+> = {
+  // Paso de Fantasma (E6): «reduce en 3 los penalizadores por terreno difícil o ruidoso». La app
+  // no conoce el penalizador del terreno (lo pone el máster): el jugador elige cuánto le quita y
+  // la dote lo anula hasta 3, sin dejar bono positivo (usuario, 2026-11-14).
+  terreno_ruidoso: {
+    etiqueta: "Terreno difícil o ruidoso: anula",
+    ninguna: "Sin penalizador de terreno",
+    opciones: { uno: "Penalizador −1", dos: "Penalizador −2", tres: "Penalizador −3 o más" },
+  },
+};
 
 // Selectores que ya trae la tirada (no los pone la dote, a diferencia de OPCIONES_DE_TRAMO):
 // un bono con `tramo` "<selector>:<opción>" va como bono por opción de ese selector, y con
