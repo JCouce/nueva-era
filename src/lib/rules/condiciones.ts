@@ -102,6 +102,10 @@ export type CondicionTirada = (
       // La casilla sale en el modal pero no se puede marcar, con el motivo ("Usada esta
       // escena", la pone conUsosEscena). montarTirada la trata como desmarcada.
       bloqueada?: string;
+      // Solo vale con este estado puesto en la ficha (el sacrificio del colchón con «Malla
+      // activa»). Sin él, conExtrasDeFicha la deja bloqueada con `motivo`, o la quita si no trae
+      // motivo (la casilla del −8 al Sigilo, que el estado además deja marcada: marcaCasillas).
+      requiereEstado?: { estadoId: string; motivo?: string };
       // La tirada se hace con la Fuerza y la Agilidad de una extremidad propia (Brazo Biónico,
       // A6a de aumentos): montarTirada recalcula el aplicado y, si toca, el daño con ellas.
       extremidad?: AtributosExtremidad;

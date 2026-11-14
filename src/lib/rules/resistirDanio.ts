@@ -54,7 +54,8 @@ export const ID_RESISTIR_DANIO = "bloquear_danio";
 //   danioExtra → casilla que suma +1 por cada `cada` puntos que entran tras el blindaje (Tensión
 //               ósea). Si el blindaje lo para todo, nada.
 //   aviso     → casilla que, marcada, solo avisa (Malla Plasmática: devuelves el golpe). No
-//               calcula nada sobre el atacante.
+//               calcula nada sobre el atacante. `requiereEstado`: sin ese estado puesto, sale
+//               bloqueada con su motivo (la Malla, con «Malla activa»).
 export type EfectoAlRecibir =
   | {
       tipo: "salvacion";
@@ -67,7 +68,7 @@ export type EfectoAlRecibir =
       fracaso: string;
     }
   | { tipo: "danioExtra"; id: string; etiqueta: string; nota: string; tipos: readonly TipoDanio[]; cada: number }
-  | { tipo: "aviso"; id: string; etiqueta: string; aviso: string };
+  | { tipo: "aviso"; id: string; etiqueta: string; aviso: string; requiereEstado?: { estadoId: string; motivo: string } };
 
 export type EfectoAlRecibirConFuente = EfectoAlRecibir & { fuente: string };
 
@@ -149,7 +150,7 @@ export type GolpeResuelto = {
 };
 
 type FichaParaResistir = Pick<FichaResuelta, "ficha" | "especie" | "blindaje" | "textosTirada"> &
-  Partial<Pick<FichaResuelta, "fichaSinApagadas" | "piezasInutilizadas" | "piezasPenalizadas">>;
+  Partial<Pick<FichaResuelta, "fichaSinApagadas" | "piezasInutilizadas" | "piezasPenalizadas" | "estados">>;
 
 const MOTIVO_FUERA_DE_TIPO = "No cuenta con este tipo de daño.";
 
@@ -174,7 +175,12 @@ export function resolverGolpe(ficha: FichaParaResistir, e: EntradaResistir): Gol
   const pasa = Math.max(0, danio - blindaje);
 
   const efectos = efectosAlRecibir(sheet, ficha.especie);
-  const marcada = (ef: EfectoAlRecibirConFuente) => e.marcadas.includes(ef.id) && (ef.tipo !== "danioExtra" || ef.tipos.includes(e.tipo));
+  const sinEstado = (ef: EfectoAlRecibirConFuente): string | null =>
+    ef.tipo === "aviso" && ef.requiereEstado && !ficha.estados?.some((x) => x.estadoId === ef.requiereEstado!.estadoId)
+      ? ef.requiereEstado.motivo
+      : null;
+  const marcada = (ef: EfectoAlRecibirConFuente) =>
+    e.marcadas.includes(ef.id) && (ef.tipo !== "danioExtra" || ef.tipos.includes(e.tipo)) && !sinEstado(ef);
   const casillas: CasillaResistir[] = efectos.flatMap((ef) =>
     ef.tipo === "salvacion"
       ? []
@@ -184,7 +190,7 @@ export function resolverGolpe(ficha: FichaParaResistir, e: EntradaResistir): Gol
             etiqueta: ef.etiqueta,
             nota: ef.tipo === "danioExtra" ? ef.nota : ef.aviso,
             fuente: ef.fuente,
-            bloqueada: ef.tipo === "danioExtra" && !ef.tipos.includes(e.tipo) ? MOTIVO_FUERA_DE_TIPO : null,
+            bloqueada: ef.tipo === "danioExtra" && !ef.tipos.includes(e.tipo) ? MOTIVO_FUERA_DE_TIPO : sinEstado(ef),
           },
         ],
   );

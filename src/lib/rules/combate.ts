@@ -754,6 +754,11 @@ function efectosPlasmaLiberado(nivel: number): string {
     : `Sin sus efectos salvo en crítico: shock, llamarada o fusión, a tu elección — dificultad de absorción ${6 + nivel}.`;
 }
 
+// El colchón solo existe con el campo levantado («mientras esté activa»; usuario 2026-11-14): sin
+// el estado «Malla activa», los sacrificios salen bloqueados y la detonación también.
+export const MOTIVO_MALLA_INACTIVA = "Activa la Malla primero.";
+const REQUIERE_MALLA = { estadoId: ESTADO_MALLA_ID, motivo: MOTIVO_MALLA_INACTIVA };
+
 function condicionesSacrificioColchon(nivel: number): CondicionTirada[] {
   const condiciones: CondicionTirada[] = [
     {
@@ -762,6 +767,7 @@ function condicionesSacrificioColchon(nivel: number): CondicionTirada[] {
       etiqueta: "Sacrificar 2 del colchón (+1 nivel de plasma)",
       valorActivo: 0,
       valorInactivo: 0,
+      requiereEstado: REQUIERE_MALLA,
       nota:
         `Suma 1 nivel de daño de plasma al golpe, aparte del daño normal. ${efectosPlasmaLiberado(nivel)} ` +
         "Descuenta 2 puntos del colchón a mano en Recursos.",
@@ -774,6 +780,7 @@ function condicionesSacrificioColchon(nivel: number): CondicionTirada[] {
       etiqueta: "Sacrificar 4 del colchón (+2 nivel de plasma)",
       valorActivo: 0,
       valorInactivo: 0,
+      requiereEstado: REQUIERE_MALLA,
       nota:
         `Alternativa al sacrificio menor: +2 nivel de daño de plasma por 4 puntos del colchón. ${efectosPlasmaLiberado(nivel)} ` +
         "Descuéntalos a mano en Recursos.",
@@ -1687,6 +1694,7 @@ function tiradaDetonacionPulsoTermico(pieza: PiezaEquipada): AccionDirecta | nul
       " · con fracaso crítico en la esquiva, además Fusión (misma dificultad).",
     recursoInstanciaId: pieza.instanciaId,
     categoriaDanio: "Plasma",
+    requiereEstado: REQUIERE_MALLA,
   };
 }
 

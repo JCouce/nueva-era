@@ -5,6 +5,7 @@ import type { ModoOcultacion, Ocultacion } from "../rules/sigilo";
 import type { EfectoArma } from "../rules/efectosArma";
 import { enCritico, salva, texto } from "./efectosArma";
 import { FALLA_RADIACION } from "./municion";
+import { ESTADO_MALLA_ID } from "./estados";
 
 export type Subsistema = {
   familia: "subsistema";
@@ -80,14 +81,14 @@ const EFECTOS_PROYECTOR_PULSO: EfectoArma[] = [
 // usuario es impactado por un golpe melee devuelve daño al objeto con el que es golpeado o al
 // sujeto en caso de ser un golpe desarmado, el daño es de plasma y es igual al nivel de
 // subsistema»; en el nivel 4, «además se causa los efectos de shock y llamarada (dificultad 8)».
-// Casilla en Resistir daño que solo avisa: la app no calcula nada sobre el atacante.
-// TODO(revisar): la prosa no dice si hace falta la Malla activa (el colchón sí lo dice); la
-// casilla sale con la pieza puesta, esté activa o no.
+// Casilla en Resistir daño que solo avisa: la app no calcula nada sobre el atacante. Solo con
+// «Malla activa» (usuario 2026-11-14: el estado manda); sin él, bloqueada.
 function devolverGolpe(nivel: number): EfectoAlRecibir {
   return {
     tipo: "aviso",
     id: "malla_devuelve",
     etiqueta: "Golpe cuerpo a cuerpo",
+    requiereEstado: { estadoId: ESTADO_MALLA_ID, motivo: "Activa la Malla primero." },
     aviso:
       `Devuelves ${nivel} de plasma al objeto con el que te golpean (al atacante, si es desarmado)` +
       (nivel >= 4 ? ", y Shock y Llamarada (8)." : "."),

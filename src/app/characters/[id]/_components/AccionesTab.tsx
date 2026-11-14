@@ -895,7 +895,7 @@ export function AccionesTab({
       movimientoDirectas: ficha.directasMovimiento.map((d) => conExtrasDirectaDeFicha(ficha, d)),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, ficha.extrasDotes, ficha.notasFarmacos, ficha.accionesMovimiento, ficha.directasMovimiento, ficha.rebajasTipoAccion, ficha.piezasInutilizadas, ficha.piezasPenalizadas, mods]);
+  }, [sheet.equipo, sheet.recursos, sheet.farmacos, sheet.municionEspecial, indiceCondiciones, ficha.textosTirada, ficha.extrasDotes, ficha.notasFarmacos, ficha.accionesMovimiento, ficha.directasMovimiento, ficha.rebajasTipoAccion, ficha.piezasInutilizadas, ficha.piezasPenalizadas, ficha.estados, mods]);
 
   // Acciones de dote (D2c-1): las de la sección Dotes y las copias en otro grupo fijo.
   const { dotesTiradas, dotesEnGrupos, dotesDirectas, directasDotesEnGrupos } = useMemo(() => {

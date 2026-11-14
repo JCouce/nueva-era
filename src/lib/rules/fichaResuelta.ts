@@ -625,7 +625,30 @@ export function conExtrasDeFicha(
   ficha: FichaParaHabilitar & Partial<Pick<FichaResuelta, "objetivosTirada" | "casillasMarcadas" | "rebajasTipoAccion">> & PiezasDeFicha,
   t: Accion,
 ): Accion {
-  return conPiezasAfectadas(ficha, conExtrasSinPiezas(ficha, conHabilitacion(t, habilitacionEnFicha(ficha, t))));
+  return conPiezasAfectadas(ficha, conCasillasDeEstados(ficha, conExtrasSinPiezas(ficha, conHabilitacion(t, habilitacionEnFicha(ficha, t)))));
+}
+
+// Las casillas que dependen de los estados puestos, sobre todas las de la tirada (las suyas y las
+// del índice): las que un estado deja ya marcadas (Estado.marcaCasillas: Camuflaje → «Tengo
+// cobertura», eq-26) y las que piden uno (`requiereEstado`): sin él, bloqueadas con su motivo, o
+// fuera si no lo traen.
+function conCasillasDeEstados(ficha: Partial<Pick<FichaResuelta, "casillasMarcadas" | "estados">>, t: Accion): Accion {
+  if (!t.condiciones?.length) return t;
+  const marcadas = ficha.casillasMarcadas ?? [];
+  const puestos = new Set((ficha.estados ?? []).map((e) => e.estadoId));
+  let cambia = false;
+  const condiciones = t.condiciones.flatMap((c): CondicionTirada[] => {
+    if (c.tipo !== "toggle") return [c];
+    if (c.requiereEstado && !puestos.has(c.requiereEstado.estadoId)) {
+      cambia = true;
+      const motivo = c.requiereEstado.motivo;
+      return motivo ? [{ ...c, activaPorDefecto: false, bloqueada: c.bloqueada ?? motivo }] : [];
+    }
+    if (!marcadas.includes(c.id) || c.activaPorDefecto) return [c];
+    cambia = true;
+    return [{ ...c, activaPorDefecto: true }];
+  });
+  return cambia ? { ...t, condiciones } : t;
 }
 
 function conExtrasSinPiezas(
@@ -635,14 +658,8 @@ function conExtrasSinPiezas(
 ): Accion {
   // T5c: el tipo de acción de desenfundar, recargar o inyectarse, ya rebajado, y su selector.
   if (t.tiposDeAccionBase?.length) t = { ...t, ...conTiposDeAccion(t, ficha.rebajasTipoAccion ?? []) };
-  // T4: las casillas que un estado puesto deja ya marcadas (Camuflaje: «Tengo cobertura»).
-  const marcadas = ficha.casillasMarcadas ?? [];
-  if (marcadas.length > 0 && t.condiciones?.some((c) => c.tipo === "toggle" && marcadas.includes(c.id) && !c.activaPorDefecto)) {
-    t = {
-      ...t,
-      condiciones: t.condiciones.map((c) => (c.tipo === "toggle" && marcadas.includes(c.id) ? { ...c, activaPorDefecto: true } : c)),
-    };
-  }
+  // T4: las casillas que un estado puesto deja ya marcadas, en conCasillasDeEstados (también las
+  // del índice).
   // La tirada libre (T-007, R1): sin casillas, textos, ventajas, bonos por tramo, descuentos
   // ni crítico fijo; solo los modificadores de alcance que casen con su aplicado y habilidad.
   if (t.libre) return t;

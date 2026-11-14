@@ -9,6 +9,7 @@ import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { repararPieza, ajustarMaterial } from "./recursos";
 import { pulsarTipoDanio, recibirGolpe, resolverGolpe, textoDelGolpe, tirarSalvacionAlRecibir, type EntradaResistir } from "./resistirDanio";
 import { defaultSheet, type Sheet } from "./sheet";
+import { ESTADO_MALLA_ID } from "../catalog/estados";
 
 function ficha(patch: Partial<Sheet> = {}): Sheet {
   const d = defaultSheet();
@@ -130,8 +131,12 @@ describe("es-02: Falla metabólica del Ílkrem", () => {
 });
 
 describe("eq-24: Malla Plasmática devuelve el golpe", () => {
+  // Con «Malla activa» puesta (usuario 2026-11-14: sin ella, la casilla sale bloqueada).
   const conMalla = (nivel: number) =>
-    resolver(equipar(conArmadura(ficha(), "armadura_pesada"), { instanciaId: "mp", catalogoId: "malla_plasmatica", nivel, instaladoEnId: "arm1" }));
+    resolverFicha(equipar(conArmadura(ficha(), "armadura_pesada"), { instanciaId: "mp", catalogoId: "malla_plasmatica", nivel, instaladoEnId: "arm1" }), {
+      estados: [{ estadoId: ESTADO_MALLA_ID, gradoId: "activo", rondasRestantes: 10 }],
+      vitalidad: VITALIDAD_DE_FICHA,
+    });
 
   test("casilla «Golpe cuerpo a cuerpo» solo con la malla; marcada, avisa sin calcular", () => {
     const g = resolverGolpe(conMalla(2), entrada({ danio: 3 }));

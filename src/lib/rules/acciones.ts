@@ -390,6 +390,8 @@ export type AccionDirecta = {
   // El estado que te pone según la opción elegida (Activar camuflaje: estático o dinámico; T4,
   // rules/sigilo.ts). Lo aplica el servidor.
   estadoAlUsar?: EstadoAlUsar;
+  // Como en Accion: solo con este estado puesto (Detonar pulso térmico con «Malla activa»).
+  requiereEstado?: { estadoId: string; motivo: string };
 };
 
 // −1 acumulativo por cada atacante adicional en la ronda (sistema-y-combate.md).

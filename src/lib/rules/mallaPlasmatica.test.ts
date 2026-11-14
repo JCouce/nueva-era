@@ -8,11 +8,12 @@ import { motivoDeBloqueo } from "./habilitacion";
 import { defaultSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
 import { ajustarRecurso, claveBateria, recursoDe } from "./recursos";
-import { accionesDirectasDeAtaque, MOTIVO_SIN_CARGAS } from "./combate";
+import { accionesDeAtaque, accionesDirectasDeAtaque, MOTIVO_MALLA_INACTIVA, MOTIVO_SIN_CARGAS } from "./combate";
 import { estadoPorUso } from "./sigilo";
 import { ESTADO_MALLA_ID, TURNOS_MALLA } from "../catalog/estados";
 import type { EstadoActivo } from "./estados";
-import { conExtrasDirectaDeFicha, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { conExtrasDeFicha, conExtrasDirectaDeFicha, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { resolverGolpe, type EntradaResistir } from "./resistirDanio";
 
 const conMalla = (nivel: number): Sheet =>
   equipar(equipar(defaultSheet(), { instanciaId: "a1", catalogoId: "armadura_pesada" }), {
@@ -57,5 +58,51 @@ describe("Malla Plasmática: Activar Malla Plasmática", () => {
 
   test("sin Malla no hay acción", () => {
     assert.equal(directa(defaultSheet(), "activar_malla_mp"), undefined);
+  });
+});
+
+describe("Malla Plasmática: el estado «Malla activa» manda", () => {
+  const ficha = (s: Sheet, estados: EstadoActivo[]) => resolverFicha(s, { estados, vitalidad: VITALIDAD_DE_FICHA });
+  const punetazo = (s: Sheet, estados: EstadoActivo[]) => {
+    const conPunetazo = equipar(s, { instanciaId: "p1", catalogoId: "pelea_punetazo" });
+    const f = ficha(conPunetazo, estados);
+    return conExtrasDeFicha(f, accionesDeAtaque(conPunetazo, f.modificadores, f.extrasDotes.permisos).find((t) => t.id === "ataque_melee_p1")!);
+  };
+  const casilla = (s: Sheet, estados: EstadoActivo[], id: string) => {
+    const c = punetazo(s, estados).condiciones?.find((x) => x.id === id);
+    assert.ok(c && c.tipo === "toggle", id);
+    return c;
+  };
+
+  test("sin el estado, los sacrificios del colchón salen bloqueados; con él, libres", () => {
+    for (const id of ["sacrificio_colchon_menor", "sacrificio_colchon_mayor"]) {
+      assert.equal(casilla(conMalla(3), [], id).bloqueada, MOTIVO_MALLA_INACTIVA, id);
+      assert.equal(casilla(conMalla(3), [MALLA_ACTIVA], id).bloqueada, undefined, id);
+    }
+  });
+
+  test("sin el estado, la detonación sale bloqueada; con él, disponible", () => {
+    const s = conMalla(2);
+    assert.equal(motivoDeBloqueo(directa(s, "detonacion_pulso_termico_mp")!.habilitacion), MOTIVO_MALLA_INACTIVA);
+    assert.equal(motivoDeBloqueo(directa(s, "detonacion_pulso_termico_mp", [MALLA_ACTIVA])!.habilitacion), null);
+  });
+
+  test("Resistir daño: sin el estado, «Golpe cuerpo a cuerpo» bloqueada y sin aviso aunque venga marcada", () => {
+    const entrada: EntradaResistir = {
+      tipo: "cinetico",
+      critico: false,
+      danio: 3,
+      reactivo: false,
+      conBrazo: false,
+      marcadas: ["malla_devuelve"],
+      rompeBlindaje: 0,
+      categoria: null,
+    };
+    const sin = resolverGolpe(ficha(conMalla(2), []), entrada);
+    assert.equal(sin.casillas.find((c) => c.id === "malla_devuelve")?.bloqueada, MOTIVO_MALLA_INACTIVA);
+    assert.deepEqual(sin.avisos, []);
+    const con = resolverGolpe(ficha(conMalla(2), [MALLA_ACTIVA]), entrada);
+    assert.equal(con.casillas.find((c) => c.id === "malla_devuelve")?.bloqueada, null);
+    assert.match(con.avisos[0] ?? "", /^Devuelves 2 de plasma/);
   });
 });
