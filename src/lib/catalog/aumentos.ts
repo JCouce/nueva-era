@@ -267,7 +267,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     resumen: "+1 Inteligencia. Una vez por escena, ahorra 1 de fatiga en una prueba de perspicacia, voluntad o expresión.",
     detalle: [
       "El personaje aumenta en 1 su puntuación en el atributo de Inteligencia.",
-      "Una vez por escena puedes omitir el gasto de un punto de fatiga para una prueba que utilicen perspicacia, voluntad o expresión. Se puede combinar este beneficio con el gasto de fatiga de aumentos que influyan en el empleo de estos atributos.",
+      "Una vez por escena puede omitir el gasto de un punto de fatiga para una prueba que utilice perspicacia, voluntad o expresión.",
     ],
     rareza: "Poco Habitual",
     coste: 30000,
@@ -327,7 +327,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     resumen: "+1 Inteligencia adicional y memoria perfecta. Subir cualquier habilidad cuesta 1 menos (mínimo 1).",
     detalle: [
       "El personaje aumenta en 1 adicional su puntuación en el atributo de Inteligencia.",
-      "El cerebro elimina por completo la degradación de los recuerdos. Cada concepto, habilidad o dato adquirido se archiva con fidelidad estructural imborrable.",
+      "El cerebro elimina por completo la degradación de los recuerdos. Cada concepto, habilidad o dato adquirido se archiva con fidelidad estructural imborrable, salvo que se provoque daño cerebral grave o se manipulen sus recuerdos.",
       "Reduce en 1 el coste para cualquier aumento de habilidad (mínimo 1).",
     ],
     rareza: "Extraño",
@@ -447,10 +447,10 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     familia: "operacionGenetica",
     id: "aum_optimizacion_vestibulo_auditiva",
     label: "Optimización Vestíbulo-Auditiva",
-    resumen: "+1 Percepción. +2 contra ceguera y sordera; dos dados al buscar o rastrear por el oído.",
+    resumen: "+1 Percepción. +2 a las salvaciones contra ceguera y sordera; dos dados al buscar o rastrear por el oído.",
     detalle: [
       "El personaje aumenta en 1 su puntuación en el atributo de Percepción.",
-      "Además, otorga un bonificador de +2 contra efectos de ceguera y sordera. También permite lanzar dos dados y escoger el mejor en las pruebas de percepción auditiva para detectar enemigos ocultos, o rastrear por el sonido.",
+      "Además, otorga un bonificador de +2 en salvaciones contra efectos de ceguera y sordera. También otorga ventaja en las pruebas de percepción auditiva para detectar enemigos ocultos, o rastrear por el sonido, permitiendo lanzar dos dados y escoger el mejor resultado.",
     ],
     rareza: "Extraño",
     coste: 25000,
@@ -490,10 +490,10 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     familia: "operacionGenetica",
     id: "aum_consciencia_omnidireccional",
     label: "Consciencia Omnidireccional",
-    resumen: "+1 Percepción. No te pueden flanquear; por 1 de fatiga, esquivas con dos dados.",
+    resumen: "+1 Percepción. Flanquearte no da bono; por 1 de fatiga, esquivas con dos dados.",
     detalle: [
       "El personaje aumenta en 1 su puntuación en el atributo de Percepción.",
-      "Además, el personaje no puede ser flanqueado, además por el gasto de un punto de fatiga realiza una acción defensiva de esquiva contra un ataque melee o a distancia tirando dos dados y escogiendo el mejor.",
+      "Además, los enemigos no obtienen bonificador contra el personaje al atacarle flanqueando. También, por el gasto de un punto de fatiga puede realizar una acción defensiva de esquiva con ventaja tirando dos dados y escogiendo el mejor.",
     ],
     rareza: "Muy Extraño",
     coste: 30000,
@@ -518,7 +518,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     textos: [
       {
         en: { tipo: "grupo", grupo: "Defensa" },
-        texto: "No te pueden flanquear: quien te ataca no gana ningún bono por flanquear o rodear, tampoco el de dotes.",
+        texto: "Flanquearte no da bono: quien te ataca flanqueándote no gana ningún bono por ello, tampoco el de dotes.",
       },
     ],
     motor: [
@@ -640,7 +640,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     resumen: "+1 Carácter. Una vez por escena, dos dados en una prueba de Actitud con lenguaje; por 1 de fatiga, anulas los penalizadores sociales.",
     detalle: [
       "El personaje aumenta en 1 su puntuación en el atributo de Carácter.",
-      "Además, una vez por escena o combate puede realizar dos tiradas para una misma prueba y escoger el mejor resultado en el uso de la habilidad de Actitud, la prueba en cuestión tiene que emplear algún tipo de lenguaje.",
+      "Además, una vez por escena o combate puede realizar una prueba de Actitud para expresar un mensaje o emoción con ventaja, la prueba en cuestión tiene que emplear algún tipo de lenguaje oral o visual.",
       "También, mediante el gasto de un punto de fatiga, puede anular cualquier penalizador en sus interacciones sociales durante una hora.",
     ],
     rareza: "Extraño",
@@ -658,7 +658,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
         valorActivo: 0,
         ventaja: true,
         usoPorEscena: true,
-        nota: "Una vez por escena o combate; la prueba tiene que emplear algún tipo de lenguaje.",
+        nota: "Una vez por escena o combate; la prueba tiene que emplear algún tipo de lenguaje oral o visual.",
       },
     ],
     // A5a: "una hora" = hasta el final de la escena (R2); "interacciones sociales" = cualquier
@@ -694,7 +694,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
       "El personaje aumenta en 1 su puntuación en el atributo de Carácter.",
       "El núcleo de su personalidad se vuelve impermeable: es muy resistente contra efectos de dominación mental artificial, sugestión coercitiva o pérdida de voluntad por agentes químicos, farmacológicos o neurológicos.",
       "Gana un bonificador de +2 en todas las tiradas de salvación contra efectos de dominación mental, sugestión coercitiva o alteración de la voluntad; si llega a ser dominado o manipulado, puede realizar una tirada de salvación adicional al final de cada uno de sus turnos para romper el control de inmediato.",
-      "Una vez por escena puede repetir un tirada de Actitud lanzando dos dados y escogiendo el mejor resultado.",
+      "Una vez por escena puede repetir una tirada de Actitud ya resuelta, obtiene ventaja en la nueva tirada, lanzando dos dados y escogiendo el mejor resultado.",
     ],
     rareza: "Muy Extraño",
     coste: 35000,
@@ -703,6 +703,8 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "caracter", valor: 1 }],
     salvaciones: [{ contra: ["dominacion_mental", "sugestion_coercitiva", "alteracion_voluntad"], bono: 2 }],
+    // TODO(revisar): la fuente nueva (sync Drive 2026-11-14) dice «repetir una tirada de actitud
+    // ya resuelta», sin «tras fallar»; la casilla sigue con la lectura de la tercera ronda.
     casillas: [
       {
         id: "aum_matriz_red_repetir",
@@ -980,7 +982,7 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     resumen: "+1 Aguante. Las hemorragias duran la mitad y las cortas pagando fatiga; sanas el doble al descansar.",
     detalle: [
       "El personaje aumenta en 1 su puntuación en el atributo de Aguante.",
-      "Además, los efectos de hemorrogia solo duran la mitad del habitual, podrá emplear un punto de fatiga para interrumpir una hemorragia de forma automática. En caso de hemorragia exanguinante tendrá que emplear dos puntos de fatiga.",
+      "Además, cuando sufre efecto de hemorragia reduce a la mitad su duración, y podrá emplear un punto de fatiga para interrumpir una hemorragia de forma automática. En caso de hemorragia exanguinante podrá cesar el efecto pero tendrá que emplear dos puntos de fatiga.",
       "También, el personaje sanará de forma natural el doble en descanso largo, pudiendo intercambiar dos niveles de daño no letal sanados por uno de daño letal. En descanso corto pasa también a sanar un nivel de daño no letal además de los efectos habituales.",
     ],
     rareza: "Extraño",

@@ -426,7 +426,7 @@ describe("A2b: casillas de la rama cognitiva", () => {
     const m = montar(f, t, { aum_consciencia_esquiva: true });
     assert.equal(m.ventaja, "Esquivar con dos dados · Consciencia Omnidireccional");
     assert.equal(m.costeFatiga, 1);
-    assert.ok(lineaAntes(t).includes("No te pueden flanquear"));
+    assert.ok(lineaAntes(t).includes("Flanquearte no da bono"));
   });
 
   // Sync Drive 2026-11-14: el +1 vale para todo ataque a distancia, sin apuntar (antes, S82).
