@@ -146,6 +146,22 @@ describe("selector «Contra…» de las salvaciones", () => {
     assert.equal(montar(f, t, { [sel.id]: "coercion" }).modificador - base.modificador, 1);
   });
 
+  // Sync Drive 2026-11-14: contra efectos emocionales de cualquier tipo (lista abierta).
+  test("Regulación: +1 contra miedo y contra «Otro efecto emocional», en Voluntad", () => {
+    const f = resolver(conTodas([REGULACION]));
+    const t = tiradaFija(f, "salv_voluntad");
+    const sel = selector(t);
+    const base = montar(f, t);
+    for (const amenaza of ["miedo", "emocional", "coercion", "intimidacion", "manipulacion_mental"]) {
+      const m = montar(f, t, { [sel.id]: amenaza });
+      assert.equal(m.modificador - base.modificador, 1, amenaza);
+      assert.ok(m.desglose.some((l) => l.etiqueta.endsWith("· Regulación Límbico-Prefrontal") && l.valor === 1), amenaza);
+    }
+    assert.equal(sel.opciones.find((o) => o.id === "emocional")?.etiqueta, "Otro efecto emocional");
+    // Sin Regulación no sale la opción.
+    assert.equal(tiradaFija(resolver(defaultSheet()), "salv_voluntad").condiciones, undefined);
+  });
+
   test("Regulación + Estabilización contra miedo: +3; la Matriz deja su nota en Voluntad", () => {
     const f = resolver(conTodas([REGULACION, ESTABILIZACION, PROYECCION, MATRIZ_RED]));
     const t = tiradaFija(f, "salv_voluntad");

@@ -75,6 +75,10 @@ export const AMENAZAS = [
   { id: "dominacion_mental", label: "Dominación mental", salvacion: "salv_voluntad", incluye: ["manipulacion_mental"] },
   { id: "sugestion_coercitiva", label: "Sugestión coercitiva", salvacion: "salv_voluntad", incluye: ["manipulacion_mental"] },
   { id: "alteracion_voluntad", label: "Alteración de la voluntad", salvacion: "salv_voluntad", incluye: ["manipulacion_mental"] },
+  // «Efectos emocionales de cualquier tipo» (Regulación, sync Drive 2026-11-14): lista abierta
+  // (usuario, 2026-11-14). Miedo, coerción, intimidación y manipulación mental tienen opción
+  // propia; esta es para cualquier otro que el máster diga que es emocional.
+  { id: "emocional", label: "Otro efecto emocional", salvacion: "salv_voluntad" },
 ] as const satisfies readonly { id: string; label: string; salvacion: SalvacionConSelector; incluye?: readonly string[] }[];
 
 export type AmenazaId = (typeof AMENAZAS)[number]["id"];

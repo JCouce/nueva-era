@@ -614,10 +614,10 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     familia: "operacionGenetica",
     id: "aum_regulacion_limbico_prefrontal",
     label: "Regulación Límbico-Prefrontal",
-    resumen: "+1 Carácter. +1 contra coerción, intimidación, manipulación mental y miedo.",
+    resumen: "+1 Carácter. +1 a las salvaciones contra efectos emocionales de cualquier tipo.",
     detalle: [
       "El personaje aumenta en 1 su puntuación en el atributo de Carácter.",
-      "Además, gana un bonificador de +1 en tiradas contra coerción, intimidación, manipulación mental y efectos de miedo.",
+      "Además, gana un bonificador de +1 en tiradas de salvación contra efectos emocionales de cualquier tipo.",
     ],
     rareza: "Poco Habitual",
     coste: 30000,
@@ -625,7 +625,9 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     eleccion: null,
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "caracter", valor: 1 }],
-    salvaciones: [{ contra: ["coercion", "intimidacion", "manipulacion_mental", "miedo"], bono: 1 }],
+    // «Emocional» = miedo, coerción, intimidación, manipulación mental y cualquier otro que se
+    // diga emocional (opción «Otro efecto emocional»); lista abierta (usuario, 2026-11-14).
+    salvaciones: [{ contra: ["coercion", "intimidacion", "manipulacion_mental", "miedo", "emocional"], bono: 1 }],
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "eleccion_jugador", estado: "construido" },

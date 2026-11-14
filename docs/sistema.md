@@ -2028,8 +2028,8 @@ sobreesfuerzo.
     el desglose. Fortaleza: ceguera, ceguera por detonación (suma también lo de ceguera),
     sordera, aturdimiento, shock, toxinas, venenos, enfermedad, radiación y frío o
     calor del ambiente. Voluntad: confusión, asfixia (sync Drive 2026-11-14), miedo, coerción,
-    intimidación, manipulación mental, dominación, sugestión coercitiva y alteración de la
-    voluntad.
+    intimidación, manipulación mental, dominación, sugestión coercitiva, alteración de la
+    voluntad y «Otro efecto emocional» (Regulación, sync Drive 2026-11-14).
   - **Ventaja:** no se acumula. Si una fuente la da gratis (Resiliencia), no se cobra la de
     pago (Biogénesis). Si solo hay de pago, salen dos opciones, sin pagar y "pagando
     fatiga" (ventaja y 1 de fatiga), porque el texto lo deja a elección ("permite emplear").
@@ -2502,6 +2502,11 @@ sobreesfuerzo.
     esté activado. Nivel 4: es el segundo uso del nivel 3, y el +2 sustituye al +1/+2.
   - **Regulación Límbico-Prefrontal**: cualquier tirada para resistir la intimidación; +1
     aunque el efecto sea miedo y coerción a la vez. Con Matriz de Red (+2) se suma: +3.
+    **Sync Drive 2026-11-14** `[FIRME · docs/fuente/aumentos.md + usuario, 2026-11-14]`: +1 a
+    las salvaciones contra efectos **emocionales de cualquier tipo** (antes, lista cerrada).
+    «Emocional» = miedo, coerción, intimidación, manipulación mental y lo que el catálogo ya
+    llame emocional; lista abierta. En la app: además de esas cuatro opciones, «Otro efecto
+    emocional» en el selector «Contra…» de Voluntad, para lo que el máster diga.
   - **Proyección Neuro-Expresiva***: anula **cualquier** penalizador social, heridas y
     fatiga incluidos. Activarla es gratuito.
   - **Proyección y Matriz de Red*** se pueden usar en la misma escena: una tira con
