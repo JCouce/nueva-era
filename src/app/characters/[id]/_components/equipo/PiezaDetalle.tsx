@@ -135,7 +135,7 @@ export function DetalleArmadura({ p, blindaje }: { p: Armadura; blindaje?: Blind
           value={p.topeExoesqueleto === null ? "No admite" : `Nivel ${p.topeExoesqueleto}`}
         />
         <Stat
-          label="Tope mov. aérea"
+          label="Tope propulsión aérea"
           value={p.topeMovilidadAerea === null ? "No admite" : `Nivel ${p.topeMovilidadAerea}`}
         />
         <Stat label="Peso" value={`${p.pesoKg.toLocaleString("es-ES")} kg`} />

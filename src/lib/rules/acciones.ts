@@ -134,6 +134,8 @@ export type Accion = {
     especialidad?: EspecialidadId;
     etiqueta: string;
     ajuste?: { valor: number; fuente: string };
+    // Lo que el crítico da de más al usarla (esquiva en vuelo: una reacción para moverte).
+    efectoCritico?: string;
     origen?: OrigenAporte;
   };
   // Regla general (docs/sistema.md §3, usuario 2026-10-23): la tirada que no nombra
@@ -957,9 +959,10 @@ export function resolverDanio(danioBase: number, margen: number, categoria: stri
   };
 }
 
-export type ResultadoVuelo = { metros: number | null; descontrolado: boolean };
+// `sinTirada`: maniobra simple (Propulsión Aérea, foto de Drive 2026-11-14): el dado no cuenta.
+export type ResultadoVuelo = { metros: number | null; descontrolado: boolean; sinTirada?: true };
 
-// Payout de "Volar" (Movilidad Aérea) a partir del margen ya resuelto —
+// Payout de "Volar" (Propulsión Aérea) a partir del margen ya resuelto —
 // mismo espíritu que resolverDanio(), pero en metros. Máxima Potencia dobla
 // la base y solo con ella el crítico suma el bonus (docs/equipamiento.md:
 // "Máxima potencia... en crítico, +N m" — el bonus es propiedad de Máxima
@@ -969,7 +972,10 @@ export function resolverVuelo(
   vuelo: { velocidadBase: number; bonusCritico: number },
   margen: number,
   maximaPotencia: boolean,
+  // Sin maniobra compleja no se tira: la velocidad entera (o el doble), sin el bonus del crítico.
+  maniobraCompleja = true,
 ): ResultadoVuelo {
+  if (!maniobraCompleja) return { metros: maximaPotencia ? vuelo.velocidadBase * 2 : vuelo.velocidadBase, descontrolado: false, sinTirada: true };
   if (margen <= -MARGEN_CRITICO) return { metros: null, descontrolado: true };
   const base = maximaPotencia ? vuelo.velocidadBase * 2 : vuelo.velocidadBase;
   if (margen < 0) return { metros: Math.floor(base / 2), descontrolado: false };
@@ -1136,6 +1142,7 @@ export function usarHabilidadAlternativa(t: Accion): Accion | null {
     especialidadesAccion: alt.especialidad ? [alt.especialidad] : undefined,
     especialidadAElegir: undefined,
     ...(alt.ajuste && { ajustesFijos: [...(t.ajustesFijos ?? []), alt.ajuste] }),
+    ...(alt.efectoCritico && { efectoCritico: [t.efectoCritico, alt.efectoCritico].filter(Boolean).join(" ") }),
   });
 }
 

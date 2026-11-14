@@ -32,7 +32,7 @@
 //   acabarEstado.ts          el botón de un estado recordatorio al acabarse: quitarlo, fatiga y bajón (fa-03, T7c)
 //   sobreesfuerzo.ts   el sobreesfuerzo psiónico: fuentes, cuándo salta, tabla y lo que retocan las dotes (T6a)
 //   retrocesoEntropico.ts    retroceso entrópico del Kerzul: la salvación propia de sus golpes Estándar y Compleja (T3c)
-//   movimiento.ts      Movilidad Aérea equipada convertida en su propia tirada ("Volar")
+//   movimiento.ts      Propulsión Aérea equipada convertida en su propia tirada ("Volar")
 //   vitalidad.ts       vida/fatiga como recurso persistente de la ficha (vidaActual/fatigaActual)
 //   danio.ts           desglose de la vida perdida por categoría: no letal, letal, grave (§7)
 //   farmacos.ts        fármacos del pool (sheet.farmacos) convertidos en su propia acción "Usar"

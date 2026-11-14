@@ -2,10 +2,13 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet } from "./sheet";
 import { equipar } from "./equipo";
-import { accionesDeMovimiento, conEsquivaEnVuelo } from "./movimiento";
+import { accionesDeMovimiento, conEsquivaEnVuelo, ID_MANIOBRA_COMPLEJA } from "./movimiento";
 import { capacidadDePieza } from "./recursos";
 import { resolverVuelo, MARGEN_CRITICO, ACCIONES, usarHabilidadAlternativa } from "./acciones";
-import { resolverFicha } from "./fichaResuelta";
+import { resolverFicha, conExtrasDeFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { montarTirada, eleccionSinTocar } from "./montaje";
+import { equipoPorId } from "../catalog/equipo";
+import type { Sheet } from "./sheet";
 
 function equiparMovilidadAerea(nivel: number) {
   let s = equipar(defaultSheet(), { instanciaId: "arm1", catalogoId: "armadura_pesada" }); // tope 4
@@ -24,14 +27,15 @@ describe("accionesDeMovimiento", () => {
     assert.deepEqual(accionesDeMovimiento(s), []);
   });
 
-  test("Movilidad Aérea nivel 1: Reflejos + Tecnociencia, maniobrabilidad −3, grupo Acciones", () => {
+  test("Propulsión Aérea nivel 1: Reflejos + Pilotaje (Exoarmadura), maniobrabilidad −3, grupo Acciones", () => {
     const sheet = equiparMovilidadAerea(1);
     const [accion] = accionesDeMovimiento(sheet);
     assert.equal(accion.label, "Volar");
     assert.equal(accion.grupo, "Acciones");
     assert.equal(accion.aplicado, "reflejos");
-    assert.equal(accion.habilidad, "tecnociencia");
-    assert.deepEqual(accion.ajustesFijos, [{ valor: -3, fuente: "Maniobrabilidad (Movilidad Aérea)" }]);
+    assert.equal(accion.habilidad, "pilotaje");
+    assert.deepEqual(accion.especialidadesAccion, ["exoarmadura"]);
+    assert.deepEqual(accion.ajustesFijos, [{ valor: -3, fuente: "Maniobrabilidad (Propulsión Aérea)" }]);
     assert.deepEqual(accion.vuelo, { velocidadBase: 50, bonusCritico: 25 });
   });
 
@@ -68,7 +72,7 @@ describe("accionesDeMovimiento", () => {
   test("nivel 4: ajuste −4, vuelo con los números de ese nivel", () => {
     const sheet = equiparMovilidadAerea(4);
     const [accion] = accionesDeMovimiento(sheet);
-    assert.deepEqual(accion.ajustesFijos, [{ valor: -4, fuente: "Maniobrabilidad (Movilidad Aérea)" }]);
+    assert.deepEqual(accion.ajustesFijos, [{ valor: -4, fuente: "Maniobrabilidad (Propulsión Aérea)" }]);
     assert.deepEqual(accion.vuelo, { velocidadBase: 140, bonusCritico: 70 });
   });
 });
@@ -148,16 +152,71 @@ describe("conEsquivaEnVuelo", () => {
     assert.equal(conEsquivaEnVuelo(defaultSheet(), defensa), defensa);
   });
 
-  test("con Movilidad Aérea 4, la casilla En vuelo esquiva con Tecnociencia y −4", () => {
+  test("con Propulsión Aérea 4, la casilla En vuelo esquiva con Pilotaje (Exoarmadura) y −4", () => {
     const t = conEsquivaEnVuelo(equiparMovilidadAerea(4), defensa);
-    assert.equal(t.habilidadAlternativa?.etiqueta, "En vuelo: Tecnociencia, −4");
+    assert.equal(t.habilidadAlternativa?.etiqueta, "En vuelo: Exoarmadura, −4");
     const enVuelo = usarHabilidadAlternativa(t)!;
-    assert.equal(enVuelo.habilidad, "tecnociencia");
-    assert.deepEqual(enVuelo.ajustesFijos, [{ valor: -4, fuente: "Maniobrabilidad (Movilidad Aérea)" }]);
+    assert.equal(enVuelo.habilidad, "pilotaje");
+    assert.deepEqual(enVuelo.especialidadesAccion, ["exoarmadura"]);
+    assert.deepEqual(enVuelo.ajustesFijos, [{ valor: -4, fuente: "Maniobrabilidad (Propulsión Aérea)" }]);
   });
 
   test("solo toca la esquiva", () => {
     const otra = ACCIONES.find((t) => t.id !== "defensa")!;
     assert.equal(conEsquivaEnVuelo(equiparMovilidadAerea(1), otra), otra);
+  });
+});
+
+describe("Propulsión Aérea (foto de Drive 2026-11-14)", () => {
+  const conPilotaje = (s: Sheet, especialidades: Sheet["habilidades"]["pilotaje"]["especialidades"]) => ({
+    ...s,
+    habilidades: { ...s.habilidades, pilotaje: { valor: 4, especialidades } },
+  });
+  const resolver = (s: Sheet) => resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+
+  test("la pieza se llama Propulsión Aérea; el id se queda", () => {
+    const [accion] = accionesDeMovimiento(equiparMovilidadAerea(1));
+    assert.equal(accion.origen?.label, "Propulsión Aérea");
+    assert.equal(equipoPorId("movilidad_aerea")?.label, "Propulsión Aérea");
+    assert.equal(accion.recursoInstanciaId, "m1");
+  });
+
+  test("Volar: casilla «Maniobra compleja», sin marcar por defecto y sin tocar el número", () => {
+    const [accion] = accionesDeMovimiento(equiparMovilidadAerea(1));
+    const c = accion.condiciones?.find((x) => x.id === ID_MANIOBRA_COMPLEJA);
+    assert.ok(c?.tipo === "toggle");
+    if (c?.tipo === "toggle") assert.deepEqual([c.valorActivo, c.valorInactivo], [0, 0]);
+    assert.equal(Boolean(eleccionSinTocar(accion).estadoCondiciones[ID_MANIOBRA_COMPLEJA]), false);
+  });
+
+  test("maniobra simple: sin tirada, la velocidad entera aunque el dado falle; sin el bonus del crítico", () => {
+    const vuelo = { velocidadBase: 50, bonusCritico: 25 };
+    for (const margen of [-MARGEN_CRITICO, -1, 0, MARGEN_CRITICO]) {
+      assert.deepEqual(resolverVuelo(vuelo, margen, false, false), { metros: 50, descontrolado: false, sinTirada: true });
+      assert.deepEqual(resolverVuelo(vuelo, margen, true, false), { metros: 100, descontrolado: false, sinTirada: true });
+    }
+  });
+
+  test("maniobra compleja: Reflejos + Pilotaje entera con Exoarmadura, a la mitad sin ella, con la maniobrabilidad", () => {
+    const base = equiparMovilidadAerea(1);
+    const total = (s: Sheet) => {
+      const f = resolver(s);
+      const t = conExtrasDeFicha(f, f.accionesMovimiento[0]);
+      const e = eleccionSinTocar(t);
+      return montarTirada(f, t, { ...e, estadoCondiciones: { ...e.estadoCondiciones, [ID_MANIOBRA_COMPLEJA]: true } }).total;
+    };
+    // Atributos a 0: Reflejos 0. Pilotaje 4 − 3 de maniobrabilidad.
+    assert.equal(total(conPilotaje(base, ["exoarmadura"])), 1);
+    assert.equal(total(conPilotaje(base, ["aereo"])), -1);
+  });
+
+  test("esquiva en vuelo: Pilotaje en Exoarmadura y el crítico da una reacción para moverte una casilla", () => {
+    const defensa = ACCIONES.find((t) => t.id === "defensa")!;
+    const enVuelo = usarHabilidadAlternativa(conEsquivaEnVuelo(equiparMovilidadAerea(1), defensa))!;
+    assert.match(enVuelo.efectoCritico ?? "", /reacción para desplazarte una casilla/);
+    const f = resolver(conPilotaje(equiparMovilidadAerea(1), ["exoarmadura"]));
+    assert.equal(montarTirada(f, enVuelo, eleccionSinTocar(enVuelo)).habilidad?.valor, 4);
+    // Sin la casilla, la esquiva de siempre: sin texto de crítico.
+    assert.equal(defensa.efectoCritico, undefined);
   });
 });

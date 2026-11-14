@@ -1,10 +1,13 @@
-// Convierte Movilidad Aérea equipada en su propia tirada ("Volar") — mismo
-// patrón que herramientas.ts. Máxima Potencia NO es una acción aparte: es la
-// misma tirada de Volar jugada a lo grande (acción Compleja + 2 cargas en
-// vez de Simple + 1) — vive como el toggle "maxima_potencia" dentro de
-// `condiciones`, resuelto por resolverVuelo() (acciones.ts) a partir del
-// margen ya calculado. No hay un segundo tipo "acción sin dado" para esto
-// (ver docs/tareas.md, "Movilidad Aérea", decisión 2026-09-27).
+// Convierte Propulsión Aérea (antes Movilidad Aérea; id interno `movilidad_aerea`) equipada en
+// su propia tirada ("Volar") — mismo patrón que herramientas.ts. Máxima Potencia NO es una acción
+// aparte: es la misma tirada de Volar jugada a lo grande (acción Compleja + 2 cargas en vez de
+// Simple + 1) — vive como el toggle "maxima_potencia" dentro de `condiciones`, resuelto por
+// resolverVuelo() (acciones.ts) a partir del margen ya calculado. No hay un segundo tipo "acción
+// sin dado" para esto (ver docs/tareas.md, "Movilidad Aérea", decisión 2026-09-27).
+//
+// Foto de Drive 2026-11-14: las maniobras simples no tiran; las complejas, Reflejos + Pilotaje
+// (Exoarmadura). Casilla «Maniobra compleja» en la misma fila: sin marcar, la tirada no cuenta y
+// recorres la velocidad entera (resolverVuelo con `maniobraCompleja` false).
 import { equipoPorId, type Equipo, type MejoraMovimiento } from "../catalog/equipo";
 import type { PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
@@ -13,6 +16,8 @@ import type { CondicionTirada } from "./condiciones";
 import { origenDePieza } from "./origen";
 import { velocidadConUmbrales, type MovimientoPorUmbral } from "./estados";
 import { eleccionDePieza, nivelConEleccion } from "./eleccionNivel";
+
+export const ID_MANIOBRA_COMPLEJA = "maniobra_compleja";
 
 const SIN_UMBRALES: Pick<MovimientoPorUmbral, "mediaVelocidad"> = { mediaVelocidad: [] };
 
@@ -37,11 +42,20 @@ function tiradaDeVolar(
 
   const condiciones: CondicionTirada[] = [
     {
+      id: ID_MANIOBRA_COMPLEJA,
+      tipo: "toggle",
+      etiqueta: "Maniobra compleja",
+      valorActivo: 0,
+      valorInactivo: 0,
+      nota:
+        "Virajes cerrados, curvas pronunciadas, cambios de rasante o esquivar obstáculos; también una simple que el mal tiempo o un entorno confinado vuelven compleja. Sin marcar (línea recta, subir o bajar en vertical), no hace falta tirar.",
+    },
+    {
       id: "maxima_potencia",
       tipo: "toggle",
       etiqueta: "Máxima Potencia (acción Compleja, 2 cargas)",
       // No toca el modificador de la tirada — Máxima Potencia no cambia
-      // Reflejos+Tecnociencia, solo dobla el payout en metros (ver `vuelo`
+      // Reflejos + Pilotaje, solo dobla el payout en metros (ver `vuelo`
       // más abajo y resolverVuelo()).
       valorActivo: 0,
       valorInactivo: 0,
@@ -59,7 +73,8 @@ function tiradaDeVolar(
     label: "Volar",
     grupo: "Acciones",
     aplicado: "reflejos",
-    habilidad: "tecnociencia",
+    habilidad: "pilotaje",
+    especialidadesAccion: ["exoarmadura"],
     nota,
     recursoInstanciaId: pieza.instanciaId,
     recursoUnidad: "cargas",
@@ -73,10 +88,11 @@ function tiradaDeVolar(
   };
 }
 
-// Esquiva en vuelo: con Tecnociencia en vez de Atletismo y la maniobrabilidad de la pieza
-// (Murillo, 2026-10-26). Casilla "En vuelo" de la fila, como "Levitando" (la app no sabe si
-// vuelas). Si la esquiva ya trae otra habilidad (Levitar), gana el vuelo: es la que cambia
-// el número (S101).
+// Esquiva en vuelo: con Pilotaje (Exoarmadura) en vez de Atletismo y la maniobrabilidad de la
+// pieza (Murillo, 2026-10-26; foto de Drive 2026-11-14, antes Tecnociencia). Casilla "En vuelo"
+// de la fila, como "Levitando" (la app no sabe si vuelas). Si la esquiva ya trae otra habilidad
+// (Levitar), gana el vuelo: es la que cambia el número (S101). El crítico da una reacción para
+// desplazarte una casilla, «al igual que la esquiva en tierra»: texto (el tablero no es de la app).
 export function conEsquivaEnVuelo(sheet: Sheet, t: Accion): Accion {
   if (t.id !== "defensa") return t;
   for (const pieza of sheet.equipo) {
@@ -87,9 +103,11 @@ export function conEsquivaEnVuelo(sheet: Sheet, t: Accion): Accion {
     return {
       ...t,
       habilidadAlternativa: {
-        habilidad: "tecnociencia",
-        etiqueta: `En vuelo: Tecnociencia, ${String(valor).replace("-", "−")}`,
+        habilidad: "pilotaje",
+        especialidad: "exoarmadura",
+        etiqueta: `En vuelo: Exoarmadura, ${String(valor).replace("-", "−")}`,
         ajuste: { valor, fuente: `Maniobrabilidad (${cat.label})` },
+        efectoCritico: "En vuelo: puedes gastar una reacción para desplazarte una casilla.",
         origen: origenDePieza("equipo", cat, pieza.instanciaId),
       },
     };

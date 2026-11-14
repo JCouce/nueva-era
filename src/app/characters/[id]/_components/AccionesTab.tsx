@@ -58,6 +58,7 @@ import {
   etiquetaEspecialidad,
   conEsquivaLevitando,
   conEsquivaEnVuelo,
+  ID_MANIOBRA_COMPLEJA,
   conPsionicaEnTiradaFija,
   etiquetaPoder,
   dificultadSobrecarga,
@@ -882,7 +883,7 @@ export function AccionesTab({
       ataqueDirecta: directas.filter((a) => a.grupo === "Ataques"),
       // Activar camuflaje trifásico: ni ataque ni defensa, su propia sección.
       subsistemasDirectas: directas.filter((a) => a.grupo === "Acciones"),
-      // "Volar" (Movilidad Aérea) — mismo criterio que Bloqueo en Defensa:
+      // "Volar" (Propulsión Aérea) — mismo criterio que Bloqueo en Defensa:
       // generada por equipo, se mezcla en el grupo fijo "Acciones" en vez de
       // vivir en su propia sección.
       accionesGeneradas: ficha.accionesMovimiento.map(conExtras),
@@ -1306,12 +1307,17 @@ export function AccionesTab({
       };
     }
 
-    // "Volar" (Movilidad Aérea): Máxima Potencia es el toggle
+    // "Volar" (Propulsión Aérea): Máxima Potencia es el toggle
     // "maxima_potencia" dentro de esta misma tirada, no una acción aparte —
     // ver resolverVuelo() (acciones.ts) y movimiento.ts.
     const vueloResuelto =
       tirada.vuelo && r.margen !== null
-        ? resolverVuelo(tirada.vuelo, r.margen, Boolean(estadoCondiciones.maxima_potencia))
+        ? resolverVuelo(
+            tirada.vuelo,
+            r.margen,
+            Boolean(estadoCondiciones.maxima_potencia),
+            Boolean(estadoCondiciones[ID_MANIOBRA_COMPLEJA]),
+          )
         : undefined;
 
     // Gasto automático de RECURSOS al confirmar (docs/prompt-gasto-recursos.md,

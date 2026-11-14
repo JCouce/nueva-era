@@ -113,7 +113,7 @@ export type Lanzamiento = Resultado & {
   // Lo que le pasa al objetivo si el ataque acierta (T3a, efectosSobreObjetivo): ya resuelto
   // al tirar, con la duración de la Hemorragia tirada. Vacío si no acertó.
   efectosObjetivo?: EfectoSobreObjetivo[];
-  // Payout de "Volar" (Movilidad Aérea) — igual que danioResuelto pero en
+  // Payout de "Volar" (Propulsión Aérea) — igual que danioResuelto pero en
   // metros, y ya resuelto en el momento (no hay una segunda tirada "Tirar
   // vuelo" como sí la hay para daño). Ver resolverVuelo(), acciones.ts.
   vueloResuelto?: ResultadoVuelo;
@@ -319,7 +319,9 @@ export function ContenidoResultado({
           <p className="font-mono text-xs uppercase text-info">
             {resultado.vueloResuelto.descontrolado
               ? "Desplazamiento descontrolado en dirección aleatoria"
-              : `Vuelas ${resultado.vueloResuelto.metros} m`}
+              : resultado.vueloResuelto.sinTirada
+                ? `Maniobra simple: vuelas ${resultado.vueloResuelto.metros} m (el dado no cuenta)`
+                : `Vuelas ${resultado.vueloResuelto.metros} m`}
           </p>
         </div>
       )}

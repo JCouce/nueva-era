@@ -289,14 +289,14 @@ describe("pieza penalizada: −N a cada bono (suelo 0) y −N al usarla", () => 
     assert.equal(ex3.cargaMaxima, sin3.cargaMaxima - 2 * 20);
   });
 
-  test("Volar: la Maniobrabilidad −3 (negativa) no cambia y lleva «Movilidad Aérea (shock) −2»", () => {
+  test("Volar: la Maniobrabilidad −3 (negativa) no cambia y lleva «Propulsión Aérea (shock) −2»", () => {
     const s = con(base, { instanciaId: "vuelo", catalogoId: "movilidad_aerea", nivel: 1 });
     const sin = resolver(s, []);
     const f = resolver(s, [shockEquipo("fracaso")]);
     const volar = (x: FichaResuelta) => conExtrasDeFicha(x, x.accionesMovimiento[0]);
     const m = montar(f, volar(f));
-    assert.ok(m.desglose.some((l) => l.etiqueta === "Maniobrabilidad (Movilidad Aérea)" && l.valor === -3));
-    assert.ok(m.desglose.some((l) => l.etiqueta === "Movilidad Aérea (shock)" && l.valor === -2));
+    assert.ok(m.desglose.some((l) => l.etiqueta === "Maniobrabilidad (Propulsión Aérea)" && l.valor === -3));
+    assert.ok(m.desglose.some((l) => l.etiqueta === "Propulsión Aérea (shock)" && l.valor === -2));
     assert.equal(m.total, montar(sin, volar(sin)).total - 2);
   });
 

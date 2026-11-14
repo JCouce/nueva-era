@@ -34,7 +34,7 @@ describe("eq-36: la Progresión de Movilidad Aérea 3", () => {
   test("sin elegir: los valores base de la tabla y el aviso, en la pieza y en Volar", () => {
     for (const [nivel, metros, critico, maniobra] of [[3, 100, 50, -3], [4, 140, 70, -4]] as const) {
       const s = conVuelo(nivel);
-      assert.match(eleccionDePieza(pieza(s))?.aviso ?? "", /Progresión de Movilidad Aérea sin elegir .*Velocidad o Maniobrabilidad/);
+      assert.match(eleccionDePieza(pieza(s))?.aviso ?? "", /Progresión de Propulsión Aérea sin elegir .*Velocidad o Maniobrabilidad/);
       assert.deepEqual(volar(s).vuelo, { velocidadBase: metros, bonusCritico: critico });
       assert.equal(volar(s).ajustesFijos?.[0].valor, maniobra);
       assert.match(volar(s).nota ?? "", /sin elegir/);

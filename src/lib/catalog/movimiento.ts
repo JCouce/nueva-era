@@ -93,18 +93,24 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
   },
   {
     familia: "movimiento",
+    // Propulsión Aérea desde la foto de Drive del 2026-11-14 (antes Movilidad Aérea): el id y
+    // `topeMovilidadAerea` de las armaduras se quedan, para no migrar fichas.
     id: "movilidad_aerea",
-    label: "Movilidad Aérea",
+    label: "Propulsión Aérea",
     resumen: "Propulsores vectoriales para volar; -1 a los ataques mientras estás en el aire.",
     tope: "movilidadAerea",
     descripcion:
       "Propulsores vectoriales de alta potencia colocados en la armadura o el traje que permiten " +
-      "impulsarse y desplazarse en vuelo controlado. Volar cuesta una acción simple con una tirada " +
-      "de Reflejos + Tecnociencia en cada maniobra: si falla, solo se recorre la mitad del " +
-      "movimiento; con fallo crítico, el desplazamiento es descontrolado en dirección aleatoria. En " +
-      "vuelo hay -1 a los ataques, y las esquivas usan Tecnociencia en vez de Atletismo. Célula " +
-      "interna de 10 cargas (mínimo 1 para volar); recarga de una hora con conector (1 carga cada 6 " +
-      "minutos), batería nueva 150 créditos, acción compleja con una mano libre.",
+      "impulsarse y desplazarse en vuelo controlado. Volar cuesta una acción simple. Las maniobras " +
+      "simples (línea recta, subir o bajar en vertical sin cambios bruscos) no tiran; las complejas " +
+      "(virajes cerrados, curvas pronunciadas, cambios de rasante, esquivar obstáculos) piden Reflejos " +
+      "+ Pilotaje (Exoarmadura). El mal tiempo o un entorno confinado pueden volver compleja una " +
+      "maniobra simple. Si la maniobra falla, solo se recorre la mitad; con fracaso crítico, el " +
+      "desplazamiento es descontrolado en dirección aleatoria, con riesgo de chocar. En vuelo hay -1 " +
+      "a los ataques, y las esquivas usan Pilotaje (Exoarmadura) en vez de Atletismo, con la " +
+      "dificultad de maniobra; un éxito crítico en esa esquiva da una reacción para desplazarse una " +
+      "casilla. Célula interna de 10 cargas (mínimo 1 para volar); recarga de una hora con conector " +
+      "(1 carga cada 6 minutos), batería nueva 150 créditos, acción compleja con una mano libre.",
     // Construido 2026-09-27 (docs/tareas.md, "Movilidad Aérea"): mismo shape
     // que Subsistema.celula, consumida por capacidadDePieza() (recursos.ts).
     celula: { cargas: 10, recarga: "1 hora con conector (1 carga cada 6 minutos)", bateriaCoste: 150 },
@@ -122,9 +128,10 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         velocidadM: 50,
         maniobrabilidad: -3,
         notaTirada:
-          "Acción simple, 1 carga por acción de vuelo. Fallo: recorres la mitad. Fracaso crítico: " +
-          "desplazamiento descontrolado en dirección aleatoria — resuélvelo a mano. Activa Máxima " +
-          "Potencia (abajo) para declarar acción Compleja y 2 cargas en vez de Simple y 1.",
+          "Acción simple, 1 carga por acción de vuelo. Solo se tira en maniobra compleja: fallo, recorres " +
+          "la mitad; fracaso crítico, desplazamiento descontrolado en dirección aleatoria — resuélvelo " +
+          "a mano. Activa Máxima Potencia (abajo) para declarar acción Compleja y 2 cargas en vez de " +
+          "Simple y 1.",
         bonusCriticoM: 25,
         motor: [
           // "Volar" construido 2026-09-27 (docs/tareas.md, "Movilidad Aérea"):
@@ -133,6 +140,12 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
           // (toggle "maxima_potencia" en Accion.condiciones, resuelto por
           // resolverVuelo()), no un segundo tipo "acción sin dado".
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "volar" }, mecanismo: "accion_equipo", estado: "construido" },
+          // Maniobra simple sin tirada, compleja con Reflejos + Pilotaje (2026-11-14): casilla
+          // «Maniobra compleja» de "Volar"; sin marcar, resolverVuelo no mira el dado.
+          { tipo: "resolucion", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          // Crítico en la esquiva en vuelo: reacción para desplazarse una casilla (texto del
+          // crítico de la casilla "En vuelo", conEsquivaEnVuelo).
+          { tipo: "texto", afecta: { modo: "accion_existente", id: "defensa" }, mecanismo: "eleccion_jugador", estado: "construido" },
           // velocidadM: derivado ya construido (lib/rules/derivados.ts::vuelo,
           // mostrado en EstadosYDatos, en Recursos) — Capa 1 → Derivado, además de alimentar
           // ahora la nota de "Volar".
@@ -141,8 +154,8 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
           // ajuste fijo al modificador de "Volar" y de la esquiva en vuelo (conEsquivaEnVuelo).
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "ajuste_fijo", estado: "construido" },
           // -1 a los ataques mientras se vuela (mismo texto en los 4 niveles): se lleva en mesa
-          // (usuario, 2026-09-28; S94). La esquiva con Tecnociencia y la maniobrabilidad sí
-          // están: casilla "En vuelo" de la esquiva (conEsquivaEnVuelo, S101).
+          // (usuario, 2026-09-28; S94). La esquiva en vuelo y la maniobrabilidad sí
+          // están: casilla "En vuelo" de la esquiva, con Pilotaje (Exoarmadura) desde 2026-11-14 (conEsquivaEnVuelo, S101).
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
         ],
@@ -160,15 +173,16 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         velocidadM: 70,
         maniobrabilidad: -3,
         notaTirada:
-          "Acción simple, 1 carga cada 2 acciones de vuelo. Fallo: recorres la mitad. Fracaso crítico: " +
-          "desplazamiento descontrolado. Máxima Potencia declara acción Compleja y 2 cargas.",
+          "Acción simple, 1 carga cada 2 acciones de vuelo. Solo se tira en maniobra compleja: fallo, " +
+          "recorres la mitad; fracaso crítico, desplazamiento descontrolado. Máxima Potencia declara " +
+          "acción Compleja y 2 cargas.",
         bonusCriticoM: 35,
         motor: [
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "ajuste_fijo", estado: "construido" },
           // -1 a los ataques mientras se vuela (mismo texto en los 4 niveles): se lleva en mesa
-          // (usuario, 2026-09-28; S94). La esquiva con Tecnociencia y la maniobrabilidad sí
-          // están: casilla "En vuelo" de la esquiva (conEsquivaEnVuelo, S101).
+          // (usuario, 2026-09-28; S94). La esquiva en vuelo y la maniobrabilidad sí
+          // están: casilla "En vuelo" de la esquiva, con Pilotaje (Exoarmadura) desde 2026-11-14 (conEsquivaEnVuelo, S101).
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
         ],
@@ -189,8 +203,9 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         velocidadM: 100,
         maniobrabilidad: -3,
         notaTirada:
-          "Acción simple, 1 carga cada 3 acciones de vuelo. Fallo: recorres la mitad. Fracaso crítico: " +
-          "desplazamiento descontrolado. Máxima Potencia declara acción Compleja y 2 cargas.",
+          "Acción simple, 1 carga cada 3 acciones de vuelo. Solo se tira en maniobra compleja: fallo, " +
+          "recorres la mitad; fracaso crítico, desplazamiento descontrolado. Máxima Potencia declara " +
+          "acción Compleja y 2 cargas.",
         bonusCriticoM: 50,
         // «El usuario debe elegir una de dos opciones de mejora (la cual comprometerá el siguiente
         // nivel)» (eq-36): se elige en Equipo; cambia los metros y la dificultad de «Volar», la
@@ -210,8 +225,8 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "ajuste_fijo", estado: "construido" },
           // -1 a los ataques mientras se vuela (mismo texto en los 4 niveles): se lleva en mesa
-          // (usuario, 2026-09-28; S94). La esquiva con Tecnociencia y la maniobrabilidad sí
-          // están: casilla "En vuelo" de la esquiva (conEsquivaEnVuelo, S101).
+          // (usuario, 2026-09-28; S94). La esquiva en vuelo y la maniobrabilidad sí
+          // están: casilla "En vuelo" de la esquiva, con Pilotaje (Exoarmadura) desde 2026-11-14 (conEsquivaEnVuelo, S101).
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           // La Progresión (eq-36): la elección guardada en la pieza cambia el ajuste fijo de
@@ -233,8 +248,9 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
         velocidadM: 140,
         maniobrabilidad: -4,
         notaTirada:
-          "Acción simple, 1 carga cada 4 acciones de vuelo. Fallo: recorres la mitad. Fracaso crítico: " +
-          "desplazamiento descontrolado. Máxima Potencia declara acción Compleja y 2 cargas.",
+          "Acción simple, 1 carga cada 4 acciones de vuelo. Solo se tira en maniobra compleja: fallo, " +
+          "recorres la mitad; fracaso crítico, desplazamiento descontrolado. Máxima Potencia declara " +
+          "acción Compleja y 2 cargas.",
         bonusCriticoM: 70,
         // La Progresión elegida en el nivel 3: «velocidad 140 metros (o 160 si eligió la progresión
         // de Velocidad)», «70 metros adicionales (u 80…)», «dificultad base -4 (modificada según la
@@ -247,8 +263,8 @@ export const MOVIMIENTO: MejoraMovimiento[] = [
           { tipo: "numerico", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "volar" }, mecanismo: "ajuste_fijo", estado: "construido" },
           // -1 a los ataques mientras se vuela (mismo texto en los 4 niveles): se lleva en mesa
-          // (usuario, 2026-09-28; S94). La esquiva con Tecnociencia y la maniobrabilidad sí
-          // están: casilla "En vuelo" de la esquiva (conEsquivaEnVuelo, S101).
+          // (usuario, 2026-09-28; S94). La esquiva en vuelo y la maniobrabilidad sí
+          // están: casilla "En vuelo" de la esquiva, con Pilotaje (Exoarmadura) desde 2026-11-14 (conEsquivaEnVuelo, S101).
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
         ],
