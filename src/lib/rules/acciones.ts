@@ -552,7 +552,7 @@ export const ACCIONES: Accion[] = [
     grupo: "Salvaciones",
     aplicado: "voluntad",
     habilidad: null,
-    nota: "Confusión, miedo y efectos mentales",
+    nota: "Confusión, miedo, asfixia y efectos mentales",
   },
 
   // ── Acciones ──

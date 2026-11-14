@@ -805,8 +805,9 @@ imponen penalizadores por umbral:
     por grado de un poder) no se repite.
   - **es-05**: cada rasgo que era solo descripción sale como texto en la tirada donde se usa:
     Zimethroni (casilla gratis tras esquivar) en Defensa, **solo con éxito**; Axadren (visión
-    infrarroja) en Buscar / percibir; Riux (Estasis) y Arianyi (apnea doble) en la Salvación de
-    Fortaleza, la de la asfixia y el daño al cuerpo (`TODO(revisar)`: no hay regla de estasis). La
+    infrarroja) en Buscar / percibir; Riux (Estasis) en la Salvación de Fortaleza y Arianyi (apnea
+    doble) en la de la asfixia, que es la de **Voluntad** desde el sync Drive 2026-11-14
+    (`TODO(revisar)`: no hay regla de estasis). La
     Visión UV del Arianyi lleva la etiqueta **Acción** en la ficha (un botón que cobra 1 de fatiga
     por escena); por la misma regla la llevan el Peaje neurológico y la Falla metabólica.
   - **au-06**: una línea por sentido en Buscar / percibir: los seis de la Introgresión (visión
@@ -2024,9 +2025,10 @@ sobreesfuerzo.
     que tengan alguna amenaza cubierta: "Nada en especial" por defecto y una opción por
     amenaza (`AMENAZAS`). La opción suma todo lo que le aplica, con una línea por fuente en
     el desglose. Fortaleza: ceguera, ceguera por detonación (suma también lo de ceguera),
-    sordera, aturdimiento, shock, asfixia, toxinas, venenos, enfermedad, radiación y frío o
-    calor del ambiente. Voluntad: confusión, miedo, coerción, intimidación, manipulación
-    mental, dominación, sugestión coercitiva y alteración de la voluntad.
+    sordera, aturdimiento, shock, toxinas, venenos, enfermedad, radiación y frío o
+    calor del ambiente. Voluntad: confusión, asfixia (sync Drive 2026-11-14), miedo, coerción,
+    intimidación, manipulación mental, dominación, sugestión coercitiva y alteración de la
+    voluntad.
   - **Ventaja:** no se acumula. Si una fuente la da gratis (Resiliencia), no se cobra la de
     pago (Biogénesis). Si solo hay de pago, salen dos opciones, sin pagar y "pagando
     fatiga" (ventaja y 1 de fatiga), porque el texto lo deja a elección ("permite emplear").
@@ -2452,9 +2454,13 @@ sobreesfuerzo.
 - **Reglas generales**:
   - **Dificultad por defecto de un ataque: 0** (sin penalizador), como un puñetazo. Vale
     para cualquier ataque cuya dificultad no esté escrita (Tempestad Nanobótica incluida).
-  - **Salvaciones**: asfixia, toxinas, venenos, enfermedades y aturdimiento con
+  - **Salvaciones**: toxinas, venenos, enfermedades y aturdimiento con
     **Fortaleza** (salvo que el texto diga otra cosa, como el MQE); Confusión con
-    **Voluntad**.
+    **Voluntad**. ~~Asfixia con Fortaleza~~: **Asfixia con Voluntad** `[FIRME ·
+    docs/fuente/reglas-base.md, sync Drive 2026-11-14]` — se aguanta sin respirar 1 minuto por
+    punto de Voluntad (mínimo 1), el grado 1 dura tantos turnos como la Voluntad y la salvación
+    del grado 2 es de Voluntad (9 + turnos en ese grado). En la app: la amenaza «Asfixia» del
+    selector «Contra…» pasa a la salvación de Voluntad (Biogénesis, Resiliencia, Apnea).
   - **Sanación natural = la de los descansos**: sin descanso no se sana nada.
   - **Fatigado** es el estado por umbral de fatiga restante que ya tiene el sistema.
   - **Hemorragia exanguinante**: no para nunca hasta que te curen por medios médicos.

@@ -39,8 +39,9 @@ import { conShockEnSalvaciones, type AfectacionDePiezas } from "./shock";
 
 export type SalvacionConSelector = "salv_fortaleza" | "salv_reflejos" | "salv_voluntad";
 
-// Contra qué se salva (§11.3, segunda y tercera ronda: ceguera, asfixia, toxinas, venenos,
-// enfermedad y aturdimiento con Fortaleza; confusión con Voluntad). `incluye`: una amenaza
+// Contra qué se salva (§11.3, segunda y tercera ronda: ceguera, toxinas, venenos, enfermedad y
+// aturdimiento con Fortaleza; confusión con Voluntad; la asfixia, con Voluntad desde el sync
+// Drive 2026-11-14, docs/fuente/reglas-base.md). `incluye`: una amenaza
 // que es a la vez otra, y suma también lo de esa (la ceguera por detonación es ceguera).
 export const AMENAZAS = [
   { id: "ceguera", label: "Ceguera", salvacion: "salv_fortaleza" },
@@ -51,7 +52,6 @@ export const AMENAZAS = [
   { id: "aturdimiento", label: "Aturdimiento", salvacion: "salv_fortaleza" },
   // El shock va con Fortaleza: la nota de la propia salvación lo lista (acciones.ts).
   { id: "shock", label: "Shock", salvacion: "salv_fortaleza" },
-  { id: "asfixia", label: "Asfixia", salvacion: "salv_fortaleza" },
   { id: "toxinas", label: "Toxinas", salvacion: "salv_fortaleza" },
   { id: "venenos", label: "Venenos", salvacion: "salv_fortaleza" },
   { id: "enfermedad", label: "Enfermedad", salvacion: "salv_fortaleza" },
@@ -65,6 +65,7 @@ export const AMENAZAS = [
   { id: "corrosion", label: "Corrosión", salvacion: "salv_fortaleza" },
   { id: "llamarada", label: "Llamarada", salvacion: "salv_reflejos" },
   { id: "confusion", label: "Confusión", salvacion: "salv_voluntad" },
+  { id: "asfixia", label: "Asfixia", salvacion: "salv_voluntad" },
   { id: "miedo", label: "Miedo", salvacion: "salv_voluntad" },
   { id: "coercion", label: "Coerción", salvacion: "salv_voluntad" },
   { id: "intimidacion", label: "Intimidación", salvacion: "salv_voluntad" },

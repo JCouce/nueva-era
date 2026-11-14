@@ -62,9 +62,9 @@ describe("selector «Contra…» de las salvaciones", () => {
     const m = montar(f, t, { [sel.id]: "venenos" });
     assert.equal(m.ventaja, "Resiliencia Homeostática");
     assert.equal(m.costeFatiga, 0);
-    // Térmicos solo los da Resiliencia; la de Voluntad no sale.
+    // Térmicos solo los da Resiliencia. En Voluntad, solo la asfixia (sync Drive 2026-11-14).
     assert.ok(sel.opciones.some((o) => o.id === "termicos"));
-    assert.equal(tiradaFija(f, "salv_voluntad").condiciones, undefined);
+    assert.deepEqual(selector(tiradaFija(f, "salv_voluntad")).opciones.map((o) => o.id), ["nada", "asfixia"]);
   });
 
   test("solo Biogénesis contra venenos: ventaja pagando 1 de fatiga; sin elegirla, nada", () => {
@@ -73,7 +73,7 @@ describe("selector «Contra…» de las salvaciones", () => {
     const sel = selector(t);
     assert.deepEqual(
       sel.opciones.map((o) => o.id),
-      ["nada", "asfixia_fatiga", "toxinas_fatiga", "venenos_fatiga"],
+      ["nada", "toxinas_fatiga", "venenos_fatiga"],
     );
     const m = montar(f, t, { [sel.id]: "venenos_fatiga" });
     assert.equal(m.ventaja, "Biogénesis Mitocondrial");
@@ -109,6 +109,25 @@ describe("selector «Contra…» de las salvaciones", () => {
     // Con Enjambre 2 no está.
     const f2 = resolver(con(defaultSheet(), ENJAMBRE, { nivel: 2 }));
     assert.equal(tiradaFija(f2, "salv_fortaleza").condiciones, undefined);
+  });
+
+  // Sync Drive 2026-11-14: la salvación de la asfixia pasa de Fortaleza a Voluntad.
+  test("asfixia: la ventaja de Biogénesis y de Resiliencia sale en Voluntad, no en Fortaleza", () => {
+    const soloBio = resolver(conTodas([BIOGENESIS]));
+    const vol = tiradaFija(soloBio, "salv_voluntad");
+    const selVol = selector(vol);
+    assert.deepEqual(selVol.opciones.map((o) => o.id), ["nada", "asfixia_fatiga"]);
+    const pagando = montar(soloBio, vol, { [selVol.id]: "asfixia_fatiga" });
+    assert.equal(pagando.ventaja, "Biogénesis Mitocondrial");
+    assert.equal(pagando.costeFatiga, 1);
+    assert.ok(!selector(tiradaFija(soloBio, "salv_fortaleza")).opciones.some((o) => o.id.startsWith("asfixia")));
+
+    const conRes = resolver(conTodas([BIOGENESIS, MATRIZ_OSEA, ANGIOGENESIS, RESILIENCIA]));
+    const volRes = tiradaFija(conRes, "salv_voluntad");
+    const gratis = montar(conRes, volRes, { [selector(volRes).id]: "asfixia" });
+    assert.equal(gratis.ventaja, "Resiliencia Homeostática");
+    assert.equal(gratis.costeFatiga, 0);
+    assert.ok(!selector(tiradaFija(conRes, "salv_fortaleza")).opciones.some((o) => o.id.startsWith("asfixia")));
   });
 
   test("Regulación + Matriz de Red contra dominación: +3, una línea por fuente", () => {

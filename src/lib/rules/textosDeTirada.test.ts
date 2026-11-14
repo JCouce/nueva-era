@@ -199,10 +199,13 @@ describe("fase 4: momento y grado de cada texto", () => {
 describe("es-05 y au-06: rasgos y sentidos en la tirada donde se usan", () => {
   const fija = (s: Sheet, id: string) => conExtrasDeFicha(resolver(s), ACCIONES.find((a) => a.id === id)!);
 
-  test("Riux (Estasis) y Arianyi (Apnea): texto en la Salvación de Fortaleza, solo con el rasgo", () => {
+  // La Apnea va con la salvación de la asfixia, que es de Voluntad desde el sync Drive 2026-11-14.
+  test("Riux (Estasis) en la Salvación de Fortaleza y Arianyi (Apnea) en la de Voluntad, solo con el rasgo", () => {
     assert.match(lineaAntes(fija(FICHAS.riux, "salv_fortaleza")), /^.*Estasis: entras y sales de estasis/);
-    assert.match(lineaAntes(fija(FICHAS.arianyi, "salv_fortaleza")), /Apnea: aguantas el doble que un humano sin respirar/);
+    assert.match(lineaAntes(fija(FICHAS.arianyi, "salv_voluntad")), /Apnea: aguantas el doble que un humano sin respirar/);
+    assert.doesNotMatch(lineaAntes(fija(FICHAS.arianyi, "salv_fortaleza")), /Apnea/);
     assert.doesNotMatch(lineaAntes(fija(capaz(), "salv_fortaleza")), /Estasis|Apnea/);
+    assert.doesNotMatch(lineaAntes(fija(capaz(), "salv_voluntad")), /Apnea/);
   });
 
   test("Axadren: visión infrarroja en Buscar / percibir", () => {

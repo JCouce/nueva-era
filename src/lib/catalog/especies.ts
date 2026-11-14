@@ -701,10 +701,11 @@ export const ESPECIES: Especie[] = [
         id: "apnea",
         label: "Apnea",
         texto: "Aguantan el doble que un humano sin respirar.",
-        // es-05 (usuario, 2026-11-13): en la Salvación de Fortaleza, la de la asfixia (selector
-        // «Contra…»). Sin regla de apnea: el doble lo cuenta el máster.
-        textos: [{ en: [tiradaFija("salv_fortaleza")], texto: "Apnea: aguantas el doble que un humano sin respirar." }],
-        motor: [textoEn("salv_fortaleza")],
+        // es-05 (usuario, 2026-11-13): en la salvación de la asfixia (selector «Contra…»), que
+        // pasa de Fortaleza a Voluntad con el sync Drive 2026-11-14. Sin regla de apnea: el
+        // doble lo cuenta el máster.
+        textos: [{ en: [tiradaFija("salv_voluntad")], texto: "Apnea: aguantas el doble que un humano sin respirar." }],
+        motor: [textoEn("salv_voluntad")],
       },
     ],
   },
