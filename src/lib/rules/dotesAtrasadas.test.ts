@@ -10,6 +10,8 @@ import { accionesDeAtaque } from "./combate";
 import { equipar } from "./equipo";
 import { ajustarGranada } from "./recursos";
 import { lineaAntes } from "./textosDeTirada";
+import { motivoDeBloqueo } from "./habilitacion";
+import { gastarUsoLimitado, type MesaDeFicha } from "./dotesAcciones";
 import { montarTirada, eleccionSinTocar } from "./montaje";
 import { efectosSobreObjetivo } from "./efectosArma";
 import { resolverDanio, type Accion } from "./acciones";
@@ -185,5 +187,40 @@ describe("Políglota", () => {
     assert.deepEqual(d.motor.map((m) => [m.tipo, m.afecta.modo]), [["texto", "ninguna"]]);
     const f = resolver(ficha([{ id: "dote_poliglota" }]));
     assert.equal(f.textosTirada.some((x) => x.fuente === "Políglota"), false);
+  });
+});
+
+describe("Mente Enciclopédica", () => {
+  const ID = "dotes_mente_enciclopedica";
+  const MESA: MesaDeFicha = { aliados: [], turno: null };
+  const s = ficha([{ id: "dote_mente_enciclopedica" }]);
+  const deDote = (x: Sheet, mesa: MesaDeFicha | null = MESA) =>
+    resolverFicha(x, { estados: [], vitalidad: VITALIDAD_DE_FICHA, mesa }).accionesDotes.tiradas.find((t) => t.id === ID);
+
+  test("acción de dote: Perspicacia + Cultura, en especialidad con cualquiera de las cuatro", () => {
+    const t = deDote(s)!;
+    assert.deepEqual([t.grupo, t.aplicado, t.habilidad], ["Dotes", "perspicacia", "cultura"]);
+    assert.deepEqual(t.especialidadesAccion, ["economia", "historia", "linguistica", "sociedad"]);
+    assert.match(t.nota ?? "", /prueba de conocimiento/);
+    // Perspicacia (Inteligencia 4 + Percepción 4, a la mitad) + Cultura 5 entera.
+    const f = resolver(s);
+    assert.equal(total(f, t), total(f, { ...t, especialidadesAccion: undefined, habilidad: null }) + 5);
+  });
+
+  test("con ventaja: la casilla de la ventaja de las acciones de dote", () => {
+    const c = (deDote(s)!.condiciones ?? []).find((x): x is Toggle => x.tipo === "toggle" && x.ventaja === true)!;
+    assert.match(c.etiqueta, /Con ventaja \(dos dados, el mejor\) \(Mente Enciclopédica\)/);
+  });
+
+  test("una vez por escena: se gasta al tirar y se bloquea agotada", () => {
+    const t = deDote(s)!;
+    assert.deepEqual(t.usoLimitado, { accionId: ID, claves: [{ clave: ID, veces: 1 }] });
+    const r = gastarUsoLimitado(s, t.usoLimitado!, null, []);
+    assert.ok(r.ok);
+    if (r.ok) assert.equal(motivoDeBloqueo(deDote(r.sheet)!.habilitacion), "Usada esta escena (1/1).");
+  });
+
+  test("sin Cultura 3, no sale", () => {
+    assert.equal(deDote({ ...s, habilidades: { ...s.habilidades, cultura: { valor: 2, especialidades: [] } } }), undefined);
   });
 });

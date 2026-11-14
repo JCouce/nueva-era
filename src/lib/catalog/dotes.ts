@@ -6889,6 +6889,96 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_mente_enciclopedica",
+    "label": "Mente Enciclopédica",
+    "grupo": "cultura",
+    "coste": 4,
+    "requisitos": [
+      {
+        "tipo": "habilidad",
+        "id": "cultura",
+        "min": 3
+      },
+      {
+        "tipo": "atributo",
+        "id": "inteligencia",
+        "min": 2
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "Una vez por escena lanzas una tirada de cultura para un *(sic)* prueba de conocimiento con ventaja (dos dados y escoges mejor resultado).",
+    "efectos": [
+      {
+        "tipo": "accion",
+        "accion": {
+          "id": "dotes_mente_enciclopedica",
+          "label": "Prueba de conocimiento",
+          "economia": {
+            "tiempo": "la de la prueba de conocimiento"
+          },
+          "limite": {
+            "veces": 1,
+            "por": "escena"
+          },
+          "resolucion": {
+            "tipo": "tirada",
+            "aplicado": "perspicacia",
+            "habilidad": "cultura",
+            "especialidad": [
+              "economia",
+              "historia",
+              "linguistica",
+              "sociedad"
+            ],
+            "dificultad": {
+              "manual": "la que fije el máster"
+            }
+          },
+          "objetivoTira": [],
+          "resultados": {},
+          "notas": [
+            {
+              "texto": "Una tirada de Cultura para una prueba de conocimiento: Perspicacia + la especialidad de Cultura que toque (Economía, Historia, Lingüística o Sociedad).",
+              "condicion": null
+            }
+          ]
+        },
+        "borrador": 0
+      },
+      {
+        "tipo": "ventaja",
+        "alcance": "dotes_mente_enciclopedica",
+        "condicion": "Con ventaja (dos dados, el mejor)",
+        "borrador": 1
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "accion",
+        "afecta": {
+          "modo": "accion_nueva",
+          "id": "dotes_mente_enciclopedica"
+        },
+        "mecanismo": "accion_sin_equipo",
+        "estado": "construido"
+      },
+      {
+        "tipo": "resolucion",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "dotes_mente_enciclopedica"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_vigilancia_tactica",
     "label": "Vigilancia Táctica",
     "grupo": "exploracion",
@@ -9490,8 +9580,8 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   233 efectos (223 en el borrador)
-//   construidos: 127
+//   235 efectos (225 en el borrador)
+//   construidos: 129
 //   texto: 106
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0

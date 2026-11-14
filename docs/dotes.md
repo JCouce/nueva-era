@@ -16,8 +16,8 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **128 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 18 · Cultura 1 · Exploración 10 · Interpretación 0 · Pilotaje 3 · Sigilo 8 ·
+> Recuento: **129 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 18 · Cultura 2 · Exploración 10 · Interpretación 0 · Pilotaje 3 · Sigilo 8 ·
 > Tecnociencia 1 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
@@ -34,7 +34,7 @@
 >
 > **Dotes atrasadas** (estaban en Drive desde fotos anteriores y no se habían transcrito;
 > sync del 2026-11-14, `docs/plan-sync-2026-11-14.md`, «Después del sync»), con el mismo criterio:
-> *Disparo Relámpago*, *Disparo de Interdicción*, *Fuego de Saturación*, *Fuego de Supresión*, *Fuego de Barrera*, *Lanzamiento Doble*, *Políglota*.
+> *Disparo Relámpago*, *Disparo de Interdicción*, *Fuego de Saturación*, *Fuego de Supresión*, *Fuego de Barrera*, *Lanzamiento Doble*, *Políglota*, *Mente Enciclopédica*.
 
 ## Actitud
 
@@ -1170,6 +1170,17 @@ Si el personaje lleva una pistola a cada mano puede realizar dos ataques de fueg
 
 **Efecto:**
 Por cada punto en la especialidad de lingüística ganas dos idiomas en lugar de 1.
+
+### Mente Enciclopédica
+
+**Coste:** 4
+
+**Requisitos:**
+- Cultura 3 · habilidad
+- Inteligencia 2 · atributo
+
+**Efecto:**
+Una vez por escena lanzas una tirada de cultura para un *(sic)* prueba de conocimiento con ventaja (dos dados y escoges mejor resultado).
 
 ## Exploración
 

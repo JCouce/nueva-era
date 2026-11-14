@@ -167,6 +167,8 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   dotes_mirada_desafiante: { tipo: "accionDote" },
   // Finta: casilla «Finta repetida» (§9.3), con la opción de Maestro de Fintas.
   dotes_finta: { tipo: "accionDote" },
+  // Mente Enciclopédica (dote atrasada, sync 2026-11-14): la ventaja, con su casilla.
+  dotes_mente_enciclopedica: { tipo: "accionDote" },
 
   // ── Poderes (D2c-2): textos de dote en la ventana o la tirada de un poder ──
   // Impacto Métrico Relámpago → el poder de dote Impacto Métrico (rules/dotesPoderes.ts).

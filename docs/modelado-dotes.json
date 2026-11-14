@@ -6388,6 +6388,72 @@
       "candidataUX": null
     },
     {
+      "id": "dote_mente_enciclopedica",
+      "label": "Mente Enciclopédica",
+      "grupo": "cultura",
+      "coste": 4,
+      "requisitos": [
+        {
+          "tipo": "habilidad",
+          "id": "cultura",
+          "min": 3
+        },
+        {
+          "tipo": "atributo",
+          "id": "inteligencia",
+          "min": 2
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "accion",
+          "accion": {
+            "id": "dotes_mente_enciclopedica",
+            "label": "Prueba de conocimiento",
+            "economia": {
+              "tiempo": "la de la prueba de conocimiento"
+            },
+            "limite": {
+              "veces": 1,
+              "por": "escena"
+            },
+            "resolucion": {
+              "tipo": "tirada",
+              "aplicado": "perspicacia",
+              "habilidad": "cultura",
+              "especialidad": [
+                "economia",
+                "historia",
+                "linguistica",
+                "sociedad"
+              ],
+              "dificultad": {
+                "manual": "la que fije el máster"
+              }
+            },
+            "objetivoTira": [],
+            "resultados": {},
+            "notas": [
+              {
+                "texto": "Una tirada de Cultura para una prueba de conocimiento: Perspicacia + la especialidad de Cultura que toque (Economía, Historia, Lingüística o Sociedad).",
+                "condicion": null
+              }
+            ]
+          }
+        },
+        {
+          "tipo": "ventaja",
+          "alcance": "dotes_mente_enciclopedica",
+          "condicion": "Con ventaja (dos dados, el mejor)"
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_vigilancia_tactica",
       "label": "Vigilancia Táctica",
       "grupo": "exploracion",
