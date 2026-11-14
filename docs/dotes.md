@@ -1515,7 +1515,7 @@ Para canalizar la energía sin lesionarse, el personaje deberá realizar de form
 - Ninguna dote sin coste ni sin requisito.
 - **Movimiento Sigiloso Constante**: el efecto acaba sin punto final.
 - **Finta de Manos** (foto del 2026-11-14): el requisito «Combate Melee» no lleva número; se lee
-  como Combate Melee 1 (`TODO(revisar)` en el borrador).
+  como Combate Melee 1 (usuario, 2026-11-14).
 
 **Bloques que no son efecto de la dote**
 - **Bloqueo**: "Se aplican los factores circunstanciales habituales" + tamaño del atacante

@@ -737,9 +737,9 @@ const AJUSTES_ACCION: Readonly<Record<string, AjusteAccion>> = {
     },
   },
 };
-// TODO(revisar): Finta de Manos (E6) pide «Combate Melee» sin número en la fuente; el borrador
-// pone Combate Melee 1. Su ataque «con el arma sutil» y el sorprendido/desprevenido van como
-// texto del resultado, como la Finta.
+// Finta de Manos (E6) pide «Combate Melee» sin número en la fuente: Combate Melee 1 (usuario,
+// 2026-11-14). Su ataque «con el arma sutil» y el sorprendido/desprevenido van como texto del
+// resultado, como la Finta.
 // TODO(revisar): Agarre Rápido (pregunta a Murillo, tareas.md; Zafarse confirmado por el
 // usuario: regla de Atrapado). La prosa da la economía pero no la tirada; el borrador supone
 // Reflejos + Atletismo (Escalada) y Potencia + Atletismo (Escapismo; docs/fuente/reglas-base.md,

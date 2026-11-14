@@ -1088,7 +1088,7 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
   - *Finta de Manos*: acción de dote, simple o reacción, Reflejos + Sigilo en Juego de Manos,
     enfrentada a Perspicacia + Exploración; éxito, siguiente ataque con arma sutil contra un
     enemigo sorprendido; crítico, desprevenido (texto del resultado). Repetible sin penalizador.
-    Su requisito «Combate Melee» no lleva número: Combate Melee 1 (`TODO(revisar)`).
+    Su requisito «Combate Melee» no lleva número: Combate Melee 1 (usuario, 2026-11-14).
   - *Piloto de Exoarmadura* / *As de Exoarmadura*: anulan hasta 2 / 3 de la dificultad de
     maniobra de la esquiva en vuelo, sin dejar bono positivo (usuario, 2026-11-14): van con la
     casilla «En vuelo» de la esquiva, como una línea más del desglose topada en la maniobrabilidad
