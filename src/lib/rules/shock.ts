@@ -11,9 +11,14 @@
 //     (las de `origen` la pieza) llevan −N. Lo aplica la app: resolverFicha a los modificadores
 //     con `item`, conPiezasAfectadas a lo que trae la tirada y conShockEnLineas a los desgloses
 //     sin dado (Resistir daño).
+//   - `conReglaPropia` (eq-29, decisiones del usuario 2026-11-14): la pieza que declara `alShock`
+//     no se apaga ni lleva −N en ningún grado con efecto: hace lo suyo (Inyector 2, como el nivel
+//     1; Soporte Vital, salvaciones a +1 y sin resistencia térmica). Lo aplica piezasEnUso (el
+//     nivel) y conShockEnSalvaciones (el selector «Contra…»).
 // «Apagón» (Soporte Vital) es lo mismo que estar afectado por el Shock (pl-03, eq-28).
 import { equipoPorId, type Equipo } from "../catalog/equipo";
 import { estadoPorId, type GradoEstado } from "../catalog/estados";
+import type { AmenazaId, EfectoSalvacion } from "./aumentosTiradas";
 import { nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import { estadosConEfecto, type EstadoActivo } from "./estados";
 import { inmunidadesDe } from "./inmunidades";
@@ -60,6 +65,24 @@ export function shockDePieza(cat: Equipo, nivel?: number): AfectaShock {
   return porDefecto(cat);
 }
 
+// La regla propia de una pieza frente al Shock, en vez de la general (apagarse o −N). Cerrada a
+// los dos casos que da la fuente (eq-29):
+//   comoNivel      funciona como ese nivel (Inyector 2 → 1: pierde el tambor, conserva la simple)
+//   salvacionesA   cada bono positivo de sus salvaciones baja a `valor` (nunca sube), sin las
+//                  amenazas de `pierde` (Soporte Vital: todo a +1, la resistencia térmica fuera;
+//                  la «protección total» del Blindaje Ambiental también queda en +1, sin su nota)
+// En NivelModulo; hereda por niveles como `shock` (ultimoQueDefine).
+export type AlShock = { tipo: "comoNivel"; nivel: number } | { tipo: "salvacionesA"; valor: number; pierde: AmenazaId[] };
+
+// Lo que declara el nivel más alto instalado que lo diga. Solo las piezas con NivelModulo.
+export function alShockDePieza(cat: Equipo, nivel?: number): AlShock | undefined {
+  if (!("niveles" in cat) || cat.familia === "implante" || nivel === undefined) return undefined;
+  return ultimoQueDefine(nivelesHasta(cat.niveles, nivel), "alShock")?.alShock;
+}
+
+// Una pieza con regla propia, tocada por un estado con efecto (cualquier grado salvo éxito crítico).
+export type PiezaConReglaPropia = { origen: OrigenAporte; regla: AlShock; estado: string };
+
 // Una pieza tocada por un estado que la penaliza (fracaso, éxito). `valor`: lo que pierde cada
 // bono y lo que se resta al usarla. `estado`: el estado que la penaliza, de origen de la línea del
 // uso.
@@ -70,9 +93,11 @@ export type AfectacionDePiezas = {
   inutilizadas: ReadonlyMap<string, string>;
   // instanciaId → −N a cada bono y a usarla.
   penalizadas: ReadonlyMap<string, PiezaPenalizada>;
+  // instanciaId → su regla (`alShock`), que sustituye a las dos de arriba en todos los grados.
+  conReglaPropia: ReadonlyMap<string, PiezaConReglaPropia>;
 };
 
-export const SIN_AFECTACION: AfectacionDePiezas = { inutilizadas: new Map(), penalizadas: new Map() };
+export const SIN_AFECTACION: AfectacionDePiezas = { inutilizadas: new Map(), penalizadas: new Map(), conReglaPropia: new Map() };
 
 // Lo que hace cada estado puesto (sin los que anula una inmunidad, A7) a las piezas: la lista de
 // piezas de la ficha que toca, con el grado. Lo comparten afectacionDePiezas y la explicación del
@@ -101,15 +126,20 @@ const origenDeTocada = (cat: Equipo, instanciaId: string): OrigenAporte => ({
 });
 
 // Con los estados que hacen efecto (sin los que anula una inmunidad, A7). Si dos estados tocan la
-// misma pieza (no pasa hoy: cada pieza es de cuerpo o de equipo), apagar gana a penalizar.
+// misma pieza (no pasa hoy: cada pieza es de cuerpo o de equipo), apagar gana a penalizar. La
+// pieza con regla propia va a su grupo en cualquier grado con efecto.
 export function afectacionDePiezas(sheet: Pick<Sheet, "equipo">, estados: readonly EstadoActivo[]): AfectacionDePiezas {
   const tocan = toques(sheet, estados);
   if (tocan.length === 0) return SIN_AFECTACION;
   const inutilizadas = new Map<string, string>();
   const penalizadas = new Map<string, PiezaPenalizada>();
+  const conReglaPropia = new Map<string, PiezaConReglaPropia>();
   for (const t of tocan) {
     for (const { pieza, cat } of t.tocadas) {
-      if ("apagadas" in t.piezas) {
+      const regla = alShockDePieza(cat, pieza.nivel);
+      if (regla) {
+        conReglaPropia.set(pieza.instanciaId, { origen: origenDeTocada(cat, pieza.instanciaId), regla, estado: t.estadoLabel });
+      } else if ("apagadas" in t.piezas) {
         inutilizadas.set(pieza.instanciaId, t.estadoLabel);
         penalizadas.delete(pieza.instanciaId);
       } else if (!inutilizadas.has(pieza.instanciaId)) {
@@ -122,26 +152,76 @@ export function afectacionDePiezas(sheet: Pick<Sheet, "equipo">, estados: readon
       }
     }
   }
-  return { inutilizadas, penalizadas };
+  return { inutilizadas, penalizadas, conReglaPropia };
 }
 
 // Las piezas de la ficha que toca un estado puesto, para explicarlo (explicacionDeEstado): las que
-// apaga o las que penaliza (con cuánto), por nombre. null si el estado no toca piezas con el grado
+// apaga o las que penaliza (con cuánto), por nombre, y las de regla propia con lo que hacen
+// («Inyector Hipodérmico: funciona como nivel 1.»). null si el estado no toca piezas con el grado
 // puesto (éxito crítico, otro estado) o la inmunidad lo anula.
-export type PiezasDeEstado = { apagadas: string[] } | { penaliza: number; peor: string[] };
+// `propias`: las de regla propia, con su regla; el texto lo pone explicacionDeEstado (textoReglaPropia).
+export type PiezasDeEstado = ({ apagadas: string[] } | { penaliza: number; peor: string[] }) & { propias: { pieza: string; regla: AlShock }[] };
 
 export function piezasDeEstado(sheet: Pick<Sheet, "equipo">, estados: readonly EstadoActivo[], estadoId: string): PiezasDeEstado | null {
   const t = toques(sheet, estados).find((x) => x.estadoId === estadoId);
   if (!t) return null;
-  const nombres = [...new Set(t.tocadas.map((x) => x.cat.label))];
-  return "apagadas" in t.piezas ? { apagadas: nombres } : { penaliza: t.piezas.penaliza, peor: nombres };
+  const propias: { pieza: string; regla: AlShock }[] = [];
+  const generales: string[] = [];
+  for (const { pieza, cat } of t.tocadas) {
+    const regla = alShockDePieza(cat, pieza.nivel);
+    if (regla) {
+      if (!propias.some((x) => x.pieza === cat.label)) propias.push({ pieza: cat.label, regla });
+    } else if (!generales.includes(cat.label)) generales.push(cat.label);
+  }
+  return "apagadas" in t.piezas ? { apagadas: generales, propias } : { penaliza: t.piezas.penaliza, peor: generales, propias };
 }
 
-// La ficha sin las piezas apagadas: con ella se calcula todo lo que esas piezas aportan sin pasar
-// por un aporte con origen (vuelo, exoesqueleto, absorción, activables, inmunidades…).
-export function sinPiezasInutilizadas<S extends Pick<Sheet, "equipo">>(sheet: S, inutilizadas: ReadonlyMap<string, string>): S {
-  if (inutilizadas.size === 0) return sheet;
-  return { ...sheet, equipo: sheet.equipo.filter((p) => !inutilizadas.has(p.instanciaId)) };
+// La ficha con la que se calcula lo que aportan las piezas (FichaResuelta.fichaSinApagadas): sin
+// las apagadas (vuelo, exoesqueleto, absorción, activables, inmunidades… no pasan por un aporte
+// con origen) y la de regla `comoNivel` leída con ese nivel (Inyector 2 bajo Shock: rebajas,
+// modificadores y todo lo demás del nivel 1).
+export function piezasEnUso<S extends Pick<Sheet, "equipo">>(sheet: S, afectacion: Pick<AfectacionDePiezas, "inutilizadas"> & Partial<Pick<AfectacionDePiezas, "conReglaPropia">>): S {
+  const propias = afectacion.conReglaPropia;
+  if (afectacion.inutilizadas.size === 0 && !propias?.size) return sheet;
+  const equipo = sheet.equipo.flatMap((p): PiezaEquipada[] => {
+    if (afectacion.inutilizadas.has(p.instanciaId)) return [];
+    const regla = propias?.get(p.instanciaId)?.regla;
+    return regla?.tipo === "comoNivel" ? [{ ...p, nivel: regla.nivel }] : [p];
+  });
+  return { ...sheet, equipo };
+}
+
+// Los bonos de salvación del selector «Contra…» (aumentosTiradas.ts), cada uno con su pieza de
+// origen, con el Shock: los de una pieza penalizada pierden N sin bajar de 0 (bonoConShock); los de
+// una con `salvacionesA` bajan a su valor y pierden las amenazas de `pierde` (y la nota, que es de
+// cuándo vale el bono normal). Los tocados llevan «<pieza> (shock)» de fuente. Las apagadas ni
+// llegan (piezasEnUso): su línea a 0 la pone aportesApagados.
+export function conShockEnSalvaciones<E extends EfectoSalvacion & { fuente: string; origen?: OrigenAporte }>(
+  efectos: E[],
+  afectacion: Partial<Pick<AfectacionDePiezas, "penalizadas" | "conReglaPropia">>,
+): E[] {
+  if (!afectacion.penalizadas?.size && !afectacion.conReglaPropia?.size) return efectos;
+  return efectos.flatMap((e): E[] => {
+    const id = e.origen?.instanciaId;
+    if (!id || !e.origen) return [e];
+    const regla = afectacion.conReglaPropia?.get(id)?.regla;
+    if (regla?.tipo === "salvacionesA") {
+      const contra = e.contra.filter((c) => !regla.pierde.includes(c));
+      if (contra.length === 0) return [];
+      const bono = e.bono !== undefined && e.bono > 0 ? Math.min(e.bono, regla.valor) : e.bono;
+      return [{ ...e, contra, bono, nota: undefined, fuente: etiquetaShock(e.origen.label) }];
+    }
+    const p = afectacion.penalizadas?.get(id);
+    if (!p || e.bono === undefined || e.bono <= 0) return [e];
+    return [{ ...e, bono: bonoConShock(e.bono, p.valor), fuente: etiquetaShock(e.origen.label) }];
+  });
+}
+
+// La fuente de lo que aporta una pieza con regla propia, con la marca: «Inyector Hipodérmico
+// (shock)» en el tipo de acción de inyectarse.
+export function conMarcaDeReglaPropia<T extends { fuente: string; origen?: OrigenAporte }>(xs: T[], propias: ReadonlyMap<string, PiezaConReglaPropia>): T[] {
+  if (propias.size === 0) return xs;
+  return xs.map((x) => (x.origen?.instanciaId && propias.has(x.origen.instanciaId) ? { ...x, fuente: etiquetaShock(x.origen.label) } : x));
 }
 
 // «Apagada por Shock.»: el `bloqueada` de las acciones propias de una pieza apagada. Con `pieza`,

@@ -16,7 +16,11 @@ import { descontarDuracion, type EstadoActivo } from "./estados";
 import { operacionesDe } from "./estadosFicha";
 import { aplicarOperacionEstado } from "./vidaPorEstados";
 import { planDeshacerEstados } from "./registro";
-import { afectacionDePiezas, conShockEnModificadores, shockDePieza, trozosDeEtiqueta } from "./shock";
+import { afectacionDePiezas, alShockDePieza, conShockEnModificadores, shockDePieza, trozosDeEtiqueta } from "./shock";
+import { accionesDeFarmacos, accionesDirectasDeFarmacos } from "./farmacos";
+import { idSelectorTipoAccion } from "./tipoAccion";
+import { consultaIndiceCondiciones } from "./equipo";
+import { MEJORAS_ESTANDAR } from "../catalog/mejorasEstandar";
 import type { ModificadorConFuente } from "./modificadores";
 import type { Habilitacion } from "./habilitacion";
 
@@ -334,6 +338,17 @@ describe("arma incorporada en un Brazo Biónico apagado (usuario 2026-11-14)", (
 });
 
 describe("explicacionDeEstado: lo que dice el modal del chip", () => {
+  test("las piezas con regla propia, con lo que hacen; detrás de las apagadas o penalizadas", () => {
+    const s = con(ficha, INYECTOR, soporte(3));
+    const de2 = (estados: EstadoActivo[]) => explicacionDeEstado(estadosParaPintar(resolver(s, estados)).find((e) => e.estadoId === "shock_equipo")!).piezas;
+    const propias = "Inyector Hipodérmico: funciona como nivel 1. Soporte Vital: salvaciones a +1; pierde la resistencia a congelación y a frío o calor extremos.";
+    assert.equal(de2([shockEquipo("fracaso")]), `Funcionan peor (−2 a su bono y −2 al usarlas): Camuflaje Trifásico, Pistola Láser, Mira Telescópica. ${propias}`);
+    assert.equal(de2([shockEquipo("fracaso_critico")]), `Apagadas: Camuflaje Trifásico, Pistola Láser, Mira Telescópica. ${propias}`);
+    // Solo las dos: sin «No llevas nada…».
+    const solo = con(base, ARMADURA, INYECTOR, soporte(1));
+    assert.equal(explicacionDeEstado(estadosParaPintar(resolver(solo, [shockEquipo("exito")])).find((e) => e.estadoId === "shock_equipo")!).piezas, propias);
+  });
+
   const de = (s: Sheet, estados: EstadoActivo[], id: string) => explicacionDeEstado(estadosParaPintar(resolver(s, estados)).find((e) => e.estadoId === id)!);
 
   test("Shock en el equipo, fracaso: las piezas de esta ficha que funcionan peor", () => {
@@ -366,6 +381,181 @@ describe("explicacionDeEstado: lo que dice el modal del chip", () => {
     for (const id of ["shock", "shock_equipo"]) {
       for (const g of estadoPorId(id)!.grados) for (const d of g.detalle) assert.doesNotMatch(d, /a mano/, `${id}/${g.id}`);
     }
+  });
+});
+
+// T7b (eq-29, decisiones del usuario 2026-11-14): regla propia en todos los grados con efecto, en
+// vez de la general (ni se apaga ni lleva −N). Éxito crítico: nada.
+const GRADOS_CON_EFECTO = ["fracaso_critico", "fracaso", "exito"] as const;
+const INYECTOR: PiezaEquipada = { instanciaId: "iny", catalogoId: "inyector_hipodermico", nivel: 2, instaladoEnId: "a1" };
+const soporte = (nivel: number): PiezaEquipada => ({ instanciaId: "sv", catalogoId: "soporte_vital", nivel, instaladoEnId: "a1" });
+const conFarmacos = (s: Sheet): Sheet => ({ ...s, farmacos: { ...s.farmacos, farmaco_gel_sanador: 2, farmaco_analgesico: 1 } });
+
+// Una opción del selector «Contra…» de una salvación (undefined si no sale o no hay selector).
+function opcion(f: FichaResuelta, salvacion: string, amenaza: string) {
+  const c = consultaIndiceCondiciones(f.indiceCondiciones, { id: salvacion, grupo: "Salvaciones", habilidad: null, modoElegido: null }).find(
+    (x) => x.id === `aum_contra_${salvacion}`,
+  );
+  return c?.tipo === "opcion" ? c.opciones.find((o) => o.id === amenaza) : undefined;
+}
+// El desglose de la salvación con una opción del «Contra…» elegida.
+function desgloseContra(f: FichaResuelta, salvacion: string, amenaza: string) {
+  const t = conExtrasDeFicha(f, ACCIONES.find((a) => a.id === salvacion)!);
+  const eleccion = eleccionSinTocar(t);
+  return montarTirada(f, t, { ...eleccion, estadoCondiciones: { ...eleccion.estadoCondiciones, [`aum_contra_${salvacion}`]: amenaza } }).desglose;
+}
+
+describe("regla propia al Shock (alShock): datos del catálogo", () => {
+  test("Inyector 2 como el nivel 1; Soporte Vital, desde el 1 y heredada en el 2 y el 3", () => {
+    assert.equal(alShockDePieza(equipoPorId("inyector_hipodermico")!, 1), undefined);
+    assert.deepEqual(alShockDePieza(equipoPorId("inyector_hipodermico")!, 2), { tipo: "comoNivel", nivel: 1 });
+    for (const n of [1, 2, 3]) {
+      assert.deepEqual(alShockDePieza(equipoPorId("soporte_vital")!, n), { tipo: "salvacionesA", valor: 1, pierde: ["congelacion", "termicos"] });
+    }
+  });
+
+  test("un `comoNivel` siempre apunta a un nivel inferior que existe", () => {
+    for (const m of MEJORAS_ESTANDAR) {
+      for (const n of m.niveles) {
+        const r = n.alShock;
+        if (r?.tipo !== "comoNivel") continue;
+        assert.ok(r.nivel < n.nivel, `${m.id} ${n.nivel}`);
+        assert.ok(m.niveles.some((x) => x.nivel === r.nivel), `${m.id} ${n.nivel}`);
+      }
+    }
+  });
+
+  test("ninguna entrada `motor` sigue bloqueada por la pregunta 32", () => {
+    for (const m of MEJORAS_ESTANDAR) for (const n of m.niveles) for (const x of n.motor ?? []) assert.notEqual(x.bloqueoPor, "pregunta 32", `${m.id} ${n.nivel}`);
+  });
+});
+
+describe("Inyector Hipodérmico 2 con el Shock: funciona como el nivel 1", () => {
+  const s = conFarmacos(con(base, ARMADURA, INYECTOR));
+  const gel = (f: FichaResuelta) => conExtrasDeFicha(f, accionesDeFarmacos(f.ficha, []).find((t) => t.farmacoId === "farmaco_gel_sanador")!);
+  const analgesico = (f: FichaResuelta) => conExtrasDirectaDeFicha(f, accionesDirectasDeFarmacos(f.ficha, []).find((d) => d.farmacoId === "farmaco_analgesico")!);
+
+  for (const grado of GRADOS_CON_EFECTO) {
+    test(`${grado}: ni apagado ni penalizado; inyectarse simple con la marca, sin la gratuita/reacción`, () => {
+      const f = resolver(s, [shockEquipo(grado)]);
+      assert.equal(f.piezasInutilizadas.has("iny"), false);
+      assert.equal(f.piezasPenalizadas.has("iny"), false);
+      assert.deepEqual(f.piezasConReglaPropia.get("iny")?.regla, { tipo: "comoNivel", nivel: 1 });
+      const g = gel(f);
+      assert.equal(g.habilitacion, undefined);
+      assert.match(lineaAntes(g), /Inyectarse: acción simple\. Solo sobre ti\. \(Inyector Hipodérmico \(shock\)\)/);
+      assert.doesNotMatch(lineaAntes(g), /gratuita|reacción/);
+      assert.equal(g.condiciones?.some((c) => c.id === idSelectorTipoAccion("inyectarse")) ?? false, false);
+      // Ni −N a nada: la tirada del fármaco no lleva línea del Inyector.
+      assert.ok(!(g.ajustesFijos ?? []).some((a) => /Inyector/.test(a.fuente)));
+      const d = analgesico(f);
+      assert.match(d.nota!, /Inyectarse: acción simple\. Solo sobre ti/);
+      assert.ok(!d.condiciones?.some((c) => c.id === idSelectorTipoAccion("inyectarse")));
+    });
+  }
+
+  test("éxito crítico (y sin Shock): el nivel 2 entero", () => {
+    for (const estados of [[], [shockEquipo("exito_critico")]]) {
+      const f = resolver(s, estados);
+      assert.equal(f.piezasConReglaPropia.size, 0);
+      const g = gel(f);
+      assert.match(lineaAntes(g), /Inyectarse: acción simple, o acción gratuita o reacción, una vez por turno\. Solo sobre ti\. \(Inyector Hipodérmico 2\)/);
+      assert.ok(g.condiciones?.some((c) => c.id === idSelectorTipoAccion("inyectarse")));
+    }
+  });
+
+  test("el Shock del cuerpo no lo toca (es equipo)", () => {
+    assert.equal(resolver(s, [shock("fracaso_critico")]).piezasConReglaPropia.size, 0);
+  });
+});
+
+describe("Soporte Vital con el Shock: salvaciones a +1, la resistencia térmica fuera", () => {
+  for (const nivel of [1, 2, 3]) {
+    const s = con(base, ARMADURA, soporte(nivel));
+
+    test(`nivel ${nivel}, sin Shock: el Blindaje Ambiental +${nivel} con su nota y la térmica +1`, () => {
+      const f = resolver(s, []);
+      for (const amenaza of ["toxinas", "radiacion"]) {
+        const o = opcion(f, "salv_fortaleza", amenaza)!;
+        assert.equal(o.valor, nivel);
+        assert.match(o.nota ?? "", /protección total/);
+      }
+      assert.equal(opcion(f, "salv_fortaleza", "termicos")?.valor, 1);
+      assert.ok(opcion(f, "salv_fortaleza", "congelacion")!.partes!.some((p) => p.fuente === `Soporte Vital ${nivel}` && p.valor === 1));
+    });
+
+    for (const grado of GRADOS_CON_EFECTO) {
+      test(`nivel ${nivel}, ${grado}: toxinas y radiación a +1 sin la protección total; congelación y térmicos sin él`, () => {
+        const f = resolver(s, [shockEquipo(grado)]);
+        assert.equal(f.piezasInutilizadas.has("sv"), false);
+        assert.equal(f.piezasPenalizadas.has("sv"), false);
+        assert.ok(f.piezasConReglaPropia.has("sv"));
+        for (const amenaza of ["toxinas", "radiacion"]) {
+          const o = opcion(f, "salv_fortaleza", amenaza)!;
+          assert.equal(o.valor, 1, amenaza);
+          assert.deepEqual(o.partes, [{ fuente: "Soporte Vital (shock)", valor: 1, origen: { tipo: "equipo", id: "soporte_vital", label: "Soporte Vital", instanciaId: "sv" } }]);
+          assert.doesNotMatch(o.nota ?? "", /protección total/);
+        }
+        // Frío o calor extremos solo los cubría él: la opción desaparece.
+        assert.equal(opcion(f, "salv_fortaleza", "termicos"), undefined);
+        // La congelación sigue por la armadura, sin línea del Soporte.
+        const cong = opcion(f, "salv_fortaleza", "congelacion")!;
+        assert.ok(!cong.partes!.some((p) => /Soporte/.test(p.fuente)));
+        // En el desglose: «… · Soporte Vital (shock)» +1, con la marca aparte (en azul).
+        const linea = desgloseContra(f, "salv_fortaleza", "toxinas").find((l) => /Soporte Vital/.test(l.etiqueta))!;
+        assert.match(linea.etiqueta, /Contra…: Toxinas · Soporte Vital \(shock\)$/);
+        assert.equal(linea.valor, 1);
+        assert.ok(trozosDeEtiqueta(linea.etiqueta).some((t) => t.shock));
+        // Ninguna línea «(shock)» a 0 por apagado.
+        assert.ok(!desgloseContra(f, "salv_fortaleza", "toxinas").some((l) => /Soporte Vital/.test(l.etiqueta) && l.valor === 0));
+      });
+    }
+
+    test(`nivel ${nivel}, éxito crítico: intacto`, () => {
+      const f = resolver(s, [shockEquipo("exito_critico")]);
+      assert.equal(opcion(f, "salv_fortaleza", "toxinas")?.valor, nivel);
+      assert.equal(opcion(f, "salv_fortaleza", "termicos")?.valor, 1);
+    });
+  }
+});
+
+describe("bonos «Contra…» de otra pieza con la regla general (Ojo Biónico 3: +2 contra la ceguera)", () => {
+  const s = con(base, OJO);
+  const contraCeguera = (f: FichaResuelta) => opcion(f, "salv_fortaleza", "ceguera");
+
+  test("sin Shock, +2 con su pieza en las partes", () => {
+    const o = contraCeguera(resolver(s, []))!;
+    assert.equal(o.valor, 2);
+    assert.deepEqual(o.partes, [{ fuente: "Ojo Biónico 3", valor: 2, origen: { tipo: "aumento", id: "aum_ojo_bionico", label: "Ojo Biónico", instanciaId: "ojo" } }]);
+  });
+
+  test("penalizada: −2 sin bajar de 0 (fracaso) y −1 (éxito), con «(shock)» en su línea", () => {
+    const fracaso = resolver(s, [shock("fracaso")]);
+    assert.deepEqual(contraCeguera(fracaso)!.partes?.map((p) => [p.fuente, p.valor]), [["Ojo Biónico (shock)", 0]]);
+    assert.equal(contraCeguera(fracaso)!.valor, 0);
+    assert.equal(contraCeguera(resolver(s, [shock("exito")]))!.valor, 1);
+    const linea = desgloseContra(fracaso, "salv_fortaleza", "ceguera").find((l) => /Ojo Biónico/.test(l.etiqueta))!;
+    // La inmunidad del Ojo 3 (no numérica) sigue: «Ceguera · inmune».
+    assert.match(linea.etiqueta, /^Contra…: Ceguera · inmune · Ojo Biónico \(shock\)$/);
+    assert.equal(linea.valor, 0);
+  });
+
+  test("apagada: su bono no llega y la salvación lo dice con «Ojo Biónico (shock)» a 0", () => {
+    const f = resolver(s, [shock("fracaso_critico")]);
+    assert.equal(contraCeguera(f), undefined);
+    const t = conExtrasDeFicha(f, ACCIONES.find((a) => a.id === "salv_fortaleza")!);
+    const linea = montar(f, t).desglose.find((l) => /Ojo Biónico/.test(l.etiqueta))!;
+    assert.equal(linea.etiqueta, "Ojo Biónico (shock)");
+    assert.equal(linea.valor, 0);
+  });
+
+  test("los negativos no cambian: el −1 de la Neuroprótesis activa (activable), con su pieza", () => {
+    const conNeuro = con(base, NEURO);
+    const activa: EstadoActivo = { estadoId: "aum_neuroprotesis", gradoId: "activo", rondasRestantes: 3 };
+    const o = opcion(resolver(conNeuro, [activa, shock("fracaso")]), "salv_fortaleza", "toxinas")!;
+    assert.equal(o.valor, -1);
+    assert.equal(o.partes?.[0].origen?.instanciaId, "neuro");
+    assert.doesNotMatch(o.partes![0].fuente, /shock/);
   });
 });
 

@@ -33,6 +33,7 @@ import { acumulaPorClave, nivelesHasta } from "./equipo";
 import type { TextoEnTirada } from "./especie";
 import type { Sheet } from "./sheet";
 import { origenDePieza, type OrigenAporte } from "./origen";
+import { conShockEnSalvaciones, type AfectacionDePiezas } from "./shock";
 
 // ── Amenazas de las salvaciones ─────────────────────────────────────────
 
@@ -172,7 +173,7 @@ function aportesDeAumentos(sheet: Pick<Sheet, "equipo">): Aporte[] {
 export const ID_SELECTOR_CONTRA = "aum_contra";
 const NADA_EN_ESPECIAL = "nada";
 
-type EfectoConFuente = EfectoSalvacion & { fuente: string };
+type EfectoConFuente = EfectoSalvacion & { fuente: string; origen?: OrigenAporte };
 
 const amenazasQueCuenta = (a: (typeof AMENAZAS)[number]): readonly string[] => [a.id, ...("incluye" in a ? a.incluye : [])];
 
@@ -200,7 +201,8 @@ function opcionesSinInmunidad(a: (typeof AMENAZAS)[number], efectos: EfectoConFu
   const aplican = efectos.filter((e) => (e.soloDirecta ? e.contra.includes(a.id) : e.contra.some((c) => cuenta.includes(c))));
   // La dificultad, la de una fuente que la dé para esta amenaza (si varias, la más alta).
   const dificultades = aplican.filter((e) => e.dificultad !== undefined && e.contra.includes(a.id)).map((e) => e.dificultad!);
-  const partes = aplican.filter((e) => e.bono).map((e) => ({ fuente: e.fuente, valor: e.bono! }));
+  // Con bono, aunque sea 0: el de una pieza penalizada por el Shock (+2 → 0) deja su línea.
+  const partes = aplican.filter((e) => e.bono !== undefined).map((e) => ({ fuente: e.fuente, valor: e.bono!, ...(e.origen && { origen: e.origen }) }));
   const valor = partes.reduce((t, p) => t + p.valor, 0);
   const gratis = aplican.filter((e) => e.ventaja === "gratis").map((e) => e.fuente);
   const pago = aplican.filter((e) => e.ventaja === "fatiga").map((e) => e.fuente);
@@ -235,9 +237,13 @@ function opcionesSinInmunidad(a: (typeof AMENAZAS)[number], efectos: EfectoConFu
 const conSigno = (n: number) => (n < 0 ? `−${-n}` : `+${n}`);
 
 // Una condición "Contra…" por salvación que tenga alguna amenaza cubierta: "Nada en
-// especial" por defecto y una opción por amenaza (en el orden de AMENAZAS).
-function selectoresContra(aportes: Aporte[], inmunidades: Inmunidad[]): CondicionTirada[] {
-  const efectos: EfectoConFuente[] = aportes.flatMap((a) => (a.efectos.salvaciones ?? []).map((e) => ({ ...e, fuente: a.fuente })));
+// especial" por defecto y una opción por amenaza (en el orden de AMENAZAS). Cada bono con su pieza
+// de origen, y con el Shock encima (conShockEnSalvaciones: penalizadas y regla propia).
+function selectoresContra(aportes: Aporte[], inmunidades: Inmunidad[], afectacion: ShockEnSalvaciones): CondicionTirada[] {
+  const efectos: EfectoConFuente[] = conShockEnSalvaciones(
+    aportes.flatMap((a) => (a.efectos.salvaciones ?? []).map((e): EfectoConFuente => ({ ...e, fuente: a.fuente, ...(a.origen && { origen: a.origen }) }))),
+    afectacion,
+  );
   const salvaciones: SalvacionConSelector[] = ["salv_fortaleza", "salv_reflejos", "salv_voluntad"];
   return salvaciones.flatMap((salvacion): CondicionTirada[] => {
     const directas = new Set(efectos.flatMap((e) => e.contra));
@@ -266,20 +272,46 @@ function selectoresContra(aportes: Aporte[], inmunidades: Inmunidad[]): Condicio
 // `deActivables` (A5a): las salvaciones de los activables encendidos (Neuroprótesis: −1 contra
 // enfermedad, radiación, toxinas y venenos), que entran en el selector como las demás.
 // `deEquipo` (2026-10-24): las de la armadura y sus mejoras (salvacionesDeEquipo, equipo.ts).
+// `afectacion` (Shock, rules/shock.ts): las piezas penalizadas y las de regla propia, que cambian
+// sus bonos del «Contra…». Las apagadas ya no vienen en `sheet` (piezasEnUso).
+export type SalvacionesConFuente = { fuente: string; efectos: EfectoSalvacion[]; origen?: OrigenAporte }[];
+type ShockEnSalvaciones = Partial<Pick<AfectacionDePiezas, "penalizadas" | "conReglaPropia">>;
+
+function aportesDeSalvaciones(sheet: Pick<Sheet, "equipo">, deActivables: SalvacionesConFuente, deEquipo: SalvacionesConFuente): Aporte[] {
+  return [
+    ...aportesDeAumentos(sheet),
+    ...deActivables.map((a): Aporte => ({ fuente: `${a.fuente} (activa)`, efectos: { salvaciones: a.efectos }, ...(a.origen && { origen: a.origen }) })),
+    ...deEquipo.map((a): Aporte => ({ fuente: a.fuente, efectos: { salvaciones: a.efectos }, ...(a.origen && { origen: a.origen }) })),
+  ];
+}
+
 export function casillasDeAumentos(
   sheet: Pick<Sheet, "equipo">,
-  deActivables: { fuente: string; efectos: EfectoSalvacion[] }[] = [],
-  deEquipo: { fuente: string; efectos: EfectoSalvacion[] }[] = [],
+  deActivables: SalvacionesConFuente = [],
+  deEquipo: SalvacionesConFuente = [],
+  afectacion: ShockEnSalvaciones = {},
 ): CondicionTirada[] {
-  const aportes = [
-    ...aportesDeAumentos(sheet),
-    ...deActivables.map((a): Aporte => ({ fuente: `${a.fuente} (activa)`, efectos: { salvaciones: a.efectos } })),
-    ...deEquipo.map((a): Aporte => ({ fuente: a.fuente, efectos: { salvaciones: a.efectos } })),
-  ];
+  const aportes = aportesDeSalvaciones(sheet, deActivables, deEquipo);
   const casillas = aportes.flatMap((a) =>
     (a.efectos.casillas ?? []).map((c): CondicionTirada => ({ ...c, etiqueta: `${c.etiqueta} · ${a.fuente}`, ...(a.origen && { origen: a.origen }) })),
   );
-  return [...casillas, ...selectoresContra(aportes, inmunidadesDe(sheet))];
+  return [...casillas, ...selectoresContra(aportes, inmunidadesDe(sheet), afectacion)];
+}
+
+// A qué salvaciones llega cada pieza con un bono «Contra…» (sin las de pieza: especie), para que
+// la de una pieza apagada deje su línea a 0 en esas tiradas (aportesApagados, fichaResuelta.ts).
+export function salvacionesDePiezas(
+  sheet: Pick<Sheet, "equipo">,
+  deActivables: SalvacionesConFuente,
+  deEquipo: SalvacionesConFuente,
+): { origen: OrigenAporte; salvacion: SalvacionConSelector }[] {
+  return aportesDeSalvaciones(sheet, deActivables, deEquipo).flatMap((a) => {
+    const origen = a.origen;
+    if (!origen) return [];
+    const contra = new Set((a.efectos.salvaciones ?? []).flatMap((e) => e.contra));
+    const salvaciones = [...new Set(AMENAZAS.filter((x) => contra.has(x.id)).map((x) => x.salvacion))];
+    return salvaciones.map((salvacion) => ({ origen, salvacion }));
+  });
 }
 
 export function textosDeAumentos(sheet: Pick<Sheet, "equipo">): TextoEnTirada[] {

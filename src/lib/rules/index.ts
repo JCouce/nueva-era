@@ -58,7 +58,7 @@
 //   turnos.ts          combate en el centro de mando: vuelta, contador de rondas, resumen, vida en la Mesa (E1d)
 //   ajusteVida.ts      pestaña Vida del máster: daño/curación, vista previa y umbral que cruza
 //   origen.ts          OrigenAporte: de qué ítem viene cada aporte a una tirada (fase 2 de docs/aportes/plan.md)
-//   shock.ts           Shock sobre las piezas: cómo le afecta a cada una, cuáles apaga y cuáles penaliza, y el −N a sus bonos (T7a, S73, pl-02)
+//   shock.ts           Shock sobre las piezas: cómo le afecta a cada una, cuáles apaga, cuáles penaliza (el −N a sus bonos) y la regla propia de las que la declaran (T7a, T7b, S73, pl-02, eq-29)
 //   explicacionEstado.ts  lo que explica el modal de un estado (ChipEstado): grado, duración, inmunidad y piezas tocadas
 //   habilitacion.ts    Habilitacion: si una hoja de Acciones está activa, bloqueada u oculta (fase 6 de docs/aportes/plan.md)
 //   aportes.ts         aportesDeTirada: los aportes de los ítems de la ficha a una tirada, con su origen

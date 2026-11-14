@@ -401,7 +401,12 @@ describe("modificadores de equipo", () => {
   test("una armadura equipada ya no suma a la salvación entera: su bono va contra sus amenazas", () => {
     assert.deepEqual(modificadoresDeEquipo(conArmaduraPuesta()), []);
     assert.deepEqual(salvacionesDeEquipo(conArmaduraPuesta()), [
-      { fuente: "Armadura Ligera", efectos: [{ contra: ["congelacion", "llamarada"], bono: 1 }] },
+      // Con su pieza de origen, para que el Shock la vea (T7b).
+      {
+        fuente: "Armadura Ligera",
+        efectos: [{ contra: ["congelacion", "llamarada"], bono: 1 }],
+        origen: { tipo: "equipo", id: "armadura_ligera", label: "Armadura Ligera", instanciaId: "armadura-1" },
+      },
     ]);
   });
 
@@ -453,7 +458,13 @@ describe("modificadores de equipo", () => {
     // En una armadura sin bono propio contra llamarada (las avanzadas), el +2 entero.
     let av = equipar(defaultSheet(), { instanciaId: "av", catalogoId: "armadura_ligera_avanzada" });
     av = equipar(av, { instanciaId: "ig", catalogoId: "mejora_ignifuga", nivel: 2, instaladoEnId: "av" });
-    assert.deepEqual(salvacionesDeEquipo(av), [{ fuente: "Mejora Ignífuga 2", efectos: [{ contra: ["llamarada"], bono: 2 }] }]);
+    assert.deepEqual(salvacionesDeEquipo(av), [
+      {
+        fuente: "Mejora Ignífuga 2",
+        efectos: [{ contra: ["llamarada"], bono: 2 }],
+        origen: { tipo: "equipo", id: "mejora_ignifuga", label: "Mejora Ignífuga", instanciaId: "ig" },
+      },
+    ]);
   });
 
   test("solo cuentan la primera armadura y las mejoras instaladas en ella", () => {

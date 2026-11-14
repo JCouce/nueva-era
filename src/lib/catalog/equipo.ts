@@ -37,7 +37,7 @@ import type { EfectoAlRecibir } from "../rules/resistirDanio";
 import type { EstadoAlTirar, Ocultacion } from "../rules/sigilo";
 import type { Economia } from "../rules/psionica";
 import type { RebajaTipoAccion } from "../rules/tipoAccion";
-import type { AfectaShock } from "../rules/shock";
+import type { AfectaShock, AlShock } from "../rules/shock";
 import type { TipoDanio } from "./tiposDanio";
 import { ARMAS_MELEE, type ArmaMelee } from "./armasMelee";
 import { VALIJA_TACTICA_MEDICA, FARMACOS } from "./medicina";
@@ -223,6 +223,10 @@ export type NivelModulo = {
   // instalado que lo diga; sin ninguno, el de su familia (shockDePieza). Inyector 1 «no es
   // susceptible», el 2 «se vuelve susceptible».
   shock?: AfectaShock;
+  // Su regla propia cuando el Shock la toca, en vez de apagarse o llevar −N, en todos los grados
+  // con efecto (eq-29; rules/shock.ts). Hereda por niveles como `shock`. Inyector 2: como el nivel
+  // 1; Soporte Vital: salvaciones a +1 y sin la resistencia térmica.
+  alShock?: AlShock;
   motor?: MotorMetadata[]; // docs/motor.md — un MotorMetadata por efecto DE ESTE NIVEL
 };
 

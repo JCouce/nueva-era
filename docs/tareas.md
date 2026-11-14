@@ -1200,13 +1200,30 @@ Tandas, en orden:
     `explicacionDeEstado` (`rules/explicacionEstado.ts`; las piezas de esa ficha las pone
     `estadosParaPintar`); la × sigue en el chip y «Prolongar» pasa al modal. Sin migración.
     Sin cubrir (sin origen o no es «bono»): velocidad de vuelo, atributos propios del Brazo (y el
-    Exoesqueleto en su base), partes del selector «Contra…», factor de vida, números en textos
-    (Malla «devuelves 2 de plasma»), contadores por unidad.
-  - [ ] **Unificación de la habilitación** (paso 1 de la fase 6 de `docs/aportes/plan.md`), en su
+    Exoesqueleto en su base), factor de vida, números en textos (Malla «devuelves 2 de plasma»),
+    contadores por unidad. (Las partes del selector «Contra…», cubiertas en T7b.)
+  - [x] **Unificación de la habilitación** (paso 1 de la fase 6 de `docs/aportes/plan.md`), en su
     worktree aparte, en paralelo: `Accion.bloqueada`, `PoderDisponible.bloqueo`,
     `soloConEspecialidad`/`tiradaFijaVisible` y los permisos de dote → un solo `habilitacion` que da
     el motor; sin cambio visible para el jugador. Se pone encima de T7a cuando T7a tenga commit.
-  - [ ] **T7b excepciones** (eq-29, Soporte Vital): después.
+    *(2026-11-14, en main: 99fbf89.)*
+  - [x] **T7b excepciones** (eq-28, eq-29, pl-03; decisiones del usuario 2026-11-14) *(2026-11-14)*.
+    Regla propia frente al Shock en todos los grados con efecto, sustituye a la general (ni se apaga
+    ni −N); éxito crítico, nada. Campo cerrado `alShock` en `NivelModulo` (`AlShock`,
+    `rules/shock.ts`): `comoNivel` (Inyector Hipodérmico 2 → 1: sin la alternativa
+    gratuita/reacción, inyectarse simple con «Inyector Hipodérmico (shock)») y `salvacionesA`
+    (Soporte Vital, en el nivel 1 y heredado: sus salvaciones a +1, sin congelación ni frío o calor
+    extremos, sin la nota de la protección total). `afectacionDePiezas` las separa en
+    `conReglaPropia` (`FichaResuelta.piezasConReglaPropia`); `piezasEnUso` (sustituye a
+    `sinPiezasInutilizadas`) lee la de `comoNivel` con ese nivel en `resolverFicha`;
+    `conShockEnSalvaciones` aplica `salvacionesA` y, en general, el Shock a los bonos «Contra…»: cada
+    efecto lleva su pieza (`salvacionesDeEquipo`, activables, `OpcionCondicion.partes[].origen`);
+    penalizada, −N sin bajar de 0 con «(shock)»; apagada, fuera y su línea a 0 en la salvación
+    (`aportesApagados` con `salvacionesDePiezas`). Las rebajas de tipo de acción de la pieza con
+    regla propia llevan la marca (`conMarcaDeReglaPropia`). Modal del estado: «Inyector Hipodérmico:
+    funciona como nivel 1. Soporte Vital: salvaciones a +1, nada contra congelación ni frío o calor
+    extremos.». Catálogo: fuera los «es T7b»; las entradas `motor` bloqueadas por la pregunta 32,
+    construidas. eq-29 y pregunta 32 a FIRME (`sistema.md` §7.1, S73). Sin migración.
   - [ ] **T7c bajón de fármacos** (fa-03): después. pl-04 (avería pieza a pieza), más adelante.
 - [ ] **T8 Recursos**: au-01, au-02, au-03, au-07, au-08, td-12, td-19.
 - [ ] **T9 Catálogo y tienda**: td-01, td-03, td-04, di-24, eq-23, eq-34, eq-36, eq-37.

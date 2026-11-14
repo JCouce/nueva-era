@@ -18,6 +18,7 @@ import {
 import {
   bonosTramoDeAumentos,
   casillasDeAumentos,
+  salvacionesDePiezas,
   notasAlertaPasivaDeAumentos,
   textosDeAumentos,
   ventajasFijasDeAumentos,
@@ -123,7 +124,19 @@ import { fatigaEfectiva, fatigaEnJuego } from "./vitalidad";
 import { accionesDeMovimiento } from "./movimiento";
 import { alcanzaA, descartadosPorNoApila, type AlcanceModificador, type ModificadorConFuente } from "./modificadores";
 import { aplicadosPosibles, conTextosDeFicha, contextoDe, junta, textosDe, textosSinDado, type ObjetivoEnTirada } from "./textosTirada";
-import { afectacionDePiezas, bonoConShock, conShockEnModificadores, etiquetaShock, MARCA_SHOCK, motivoApagada, piezasDeEstado, sinPiezasInutilizadas, type PiezaPenalizada } from "./shock";
+import {
+  afectacionDePiezas,
+  bonoConShock,
+  conMarcaDeReglaPropia,
+  conShockEnModificadores,
+  etiquetaShock,
+  MARCA_SHOCK,
+  motivoApagada,
+  piezasDeEstado,
+  piezasEnUso,
+  type PiezaConReglaPropia,
+  type PiezaPenalizada,
+} from "./shock";
 import type { OrigenAporte } from "./origen";
 import type { Sheet } from "./sheet";
 import { condicionApuntado, ID_APUNTADO, ID_APUNTAR, tieneEspecialidad, type Accion, type AccionDirecta } from "./acciones";
@@ -166,8 +179,13 @@ export type FichaResuelta = {
   // `modificadores`; lo que trae la tirada, conPiezasAfectadas; Resistir daño, conShockEnLineas) y
   // las tiradas que la usan llevan −N.
   piezasPenalizadas: ReadonlyMap<string, PiezaPenalizada>;
-  // La ficha sin las piezas apagadas: con ella se resuelve lo que no llega por un aporte con
-  // origen (blindaje y absorción al resistir daño, vuelo, exoesqueleto…). `ficha` sigue entera.
+  // Piezas tocadas con regla propia (`alShock`, eq-29), en cualquier grado con efecto: ni apagadas
+  // ni penalizadas. Inyector 2, como el nivel 1 (ya en `fichaSinApagadas`); Soporte Vital, sus
+  // salvaciones del «Contra…» a +1 y sin la resistencia térmica (ya en `indiceCondiciones`).
+  piezasConReglaPropia: ReadonlyMap<string, PiezaConReglaPropia>;
+  // La ficha sin las piezas apagadas y con la de regla `comoNivel` en ese nivel (piezasEnUso): con
+  // ella se resuelve lo que no llega por un aporte con origen (blindaje y absorción al resistir
+  // daño, vuelo, exoesqueleto…). `ficha` sigue entera.
   fichaSinApagadas: Sheet;
   // A qué tiradas llegaba cada pieza apagada (por el blanco de sus aportes), para que su
   // desglose diga por qué no está. Vacío sin piezas apagadas.
@@ -360,6 +378,10 @@ function aportesDePiezasApagadas(sheet: Sheet, estados: EstadoActivo[], inutiliz
     }
   }
   for (const c of condicionesDelIndice(indiceDeCondiciones(sheet, casillasDeAumentos(sheet)))) if (c.alcance) pon(c.origen, c.alcance);
+  // Los bonos «Contra…» de la pieza: a la salvación entera (el selector no lleva pieza).
+  for (const s of salvacionesDePiezas(sheet, efectosDeActivables(sheet, estados).salvaciones, salvacionesDeEquipo(sheet))) {
+    pon(s.origen, { tipo: "tiradaId", id: s.salvacion });
+  }
   for (const t of textosDeAumentos(sheet)) pon(t.origen, t.en);
   for (const v of ventajasFijasDeAumentos(sheet)) pon(v.origen, v.alcance);
   for (const b of bonosTramoDeAumentos(sheet)) pon(b.bono.origen, b.alcance);
@@ -387,8 +409,11 @@ export function resolverFicha(
   // miran la ficha entera.
   // TODO(revisar): la fuente psiónica de un implante apagado (IRM) sigue dando acceso, y
   // prepararPoder lee la ficha entera (cargas y alcance de una Derivación Psiónica apagada).
+  // Las de regla propia (`alShock`, eq-29) no se apagan ni llevan −N: la de `comoNivel` entra en
+  // `enUso` con ese nivel (piezasEnUso) y las salvaciones de `salvacionesA` las cambia el selector
+  // «Contra…» (casillasDeAumentos con `afectacion`, conShockEnSalvaciones).
   const afectacion = afectacionDePiezas(sheet, estados);
-  const enUso = sinPiezasInutilizadas(sheet, afectacion.inutilizadas);
+  const enUso = piezasEnUso(sheet, afectacion);
   const deAumentos = modificadoresDeAumentos(enUso);
   // Activables encendidos (A5a): estado propio puesto y pieza que funciona. Sus atributos van con
   // origen "estado" y no entran en requisitosDotes (R3, S30).
@@ -480,6 +505,7 @@ export function resolverFicha(
     estadosConEfecto: conEfecto,
     piezasInutilizadas: afectacion.inutilizadas,
     piezasPenalizadas: afectacion.penalizadas,
+    piezasConReglaPropia: afectacion.conReglaPropia,
     fichaSinApagadas: enUso,
     aportesApagados: aportesDePiezasApagadas(sheet, estados, afectacion.inutilizadas),
     modificadores,
@@ -517,7 +543,7 @@ export function resolverFicha(
     indiceCondiciones: indiceDeCondiciones(enUso, [
       ...casillasDeEspecie(especie),
       ...dotes.casillas,
-      ...conUsosEscena(casillasDeAumentos(enUso, activables.salvaciones, [...salvacionesDeEspecie(especie), ...salvacionesDeEquipo(enUso)]), sheet.usosEscena),
+      ...conUsosEscena(casillasDeAumentos(enUso, activables.salvaciones, [...salvacionesDeEspecie(especie), ...salvacionesDeEquipo(enUso)], afectacion), sheet.usosEscena),
       ...casillasDeFarmacos(sheet, penalizadoresDeUmbral(umbrales.salud, umbrales.fatiga, ajusteUmbrales)),
       ...casillasDePsionica(psionica.paraEfectos),
     ]),
@@ -533,7 +559,7 @@ export function resolverFicha(
       grados: dotes.grados,
       alternativas: dotes.alternativas,
     },
-    rebajasTipoAccion: [...rebajasTipoAccionDeEquipo(enUso), ...dotes.rebajasTipoAccion],
+    rebajasTipoAccion: [...conMarcaDeReglaPropia(rebajasTipoAccionDeEquipo(enUso), afectacion.conReglaPropia), ...dotes.rebajasTipoAccion],
     accionesDotes: accionesDeDotes(activas, { usosEscena: sheet.usosEscena, mesa }),
     poderesDotes: poderesDeDotes(activas, sheet, psionica.paraEfectos),
     fatigaEnJuego: { actual: enJuego, efectiva: v.fatiga },

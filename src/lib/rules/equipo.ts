@@ -31,7 +31,7 @@ import { PELEA } from "../catalog/armasMelee";
 import { alcanzaA, alcanzaAlgunAplicado, type ContextoAccion, type FamiliaArma, type GrupoAccion, type Modificador, type ModificadorConFuente } from "./modificadores";
 import type { CondicionTirada } from "./condiciones";
 import type { RebajaConFuente } from "./tipoAccion";
-import { origenDePieza } from "./origen";
+import { origenDePieza, type OrigenAporte } from "./origen";
 import type { AmenazaId, EfectoSalvacion } from "./aumentosTiradas";
 import type { ReduccionPorAplicado } from "./estados";
 import type { HabilidadId } from "./habilidades";
@@ -772,7 +772,8 @@ export function modificadoresDeEquipo(sheet: Sheet): ModificadorConFuente[] {
 // cuenta (la primera de la ficha, como el blindaje) y los de las mejoras estándar instaladas
 // en ella. Van al selector «Contra…» de cada salvación (casillasDeAumentos), no a la salvación
 // entera. Por niveles, el que repite amenazas sustituye al anterior.
-export function salvacionesDeEquipo(sheet: Pick<Sheet, "equipo">): { fuente: string; efectos: EfectoSalvacion[] }[] {
+// Cada aporte con su pieza (`origen`): el Shock la mira (conShockEnSalvaciones, rules/shock.ts).
+export function salvacionesDeEquipo(sheet: Pick<Sheet, "equipo">): { fuente: string; efectos: EfectoSalvacion[]; origen: OrigenAporte }[] {
   let armadura: { pieza: PiezaEquipada; cat: Armadura } | null = null;
   for (const pieza of sheet.equipo) {
     const cat = equipoPorId(pieza.catalogoId);
@@ -785,7 +786,7 @@ export function salvacionesDeEquipo(sheet: Pick<Sheet, "equipo">): { fuente: str
   const deArmadura = armadura.cat.salvaciones ?? [];
   const bonoArmadura = (contra: AmenazaId) =>
     deArmadura.filter((e) => e.contra.includes(contra)).reduce((t, e) => t + (e.bono ?? 0), 0);
-  const aportes = deArmadura.length > 0 ? [{ fuente: armadura.cat.label, efectos: deArmadura }] : [];
+  const aportes = deArmadura.length > 0 ? [{ fuente: armadura.cat.label, efectos: deArmadura, origen: origenDePieza("equipo", armadura.cat, armadura.pieza.instanciaId) }] : [];
   for (const pieza of sheet.equipo) {
     if (pieza.instaladoEnId !== armadura.pieza.instanciaId || pieza.nivel === undefined) continue;
     const cat = equipoPorId(pieza.catalogoId);
@@ -800,7 +801,7 @@ export function salvacionesDeEquipo(sheet: Pick<Sheet, "equipo">): { fuente: str
         return extra > 0 ? [{ contra: [c], bono: extra }] : [];
       });
     });
-    if (efectos.length > 0) aportes.push({ fuente: `${cat.label} ${pieza.nivel}`, efectos });
+    if (efectos.length > 0) aportes.push({ fuente: `${cat.label} ${pieza.nivel}`, efectos, origen: origenDePieza("equipo", cat, pieza.instanciaId) });
   }
   return aportes;
 }

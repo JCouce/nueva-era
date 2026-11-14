@@ -58,7 +58,7 @@ export type EfectosActivables = {
   ajusteUmbrales: AjusteUmbrales;
   // Para modificadoresDeEstados: −valor a cada penalizador de tirada de cada estado.
   reduceEstados: ReduccionDeEstados | null;
-  salvaciones: { fuente: string; efectos: EfectoSalvacion[] }[];
+  salvaciones: { fuente: string; efectos: EfectoSalvacion[]; origen: OrigenAporte }[];
   textos: TextoEnTirada[];
 };
 
@@ -120,7 +120,7 @@ export function efectosDeActivables(sheet: Pick<Sheet, "equipo">, estados: reado
     if (activo.anulaPenalizadores) {
       modificadores.push({ tipo: "anulaPenalizadores", alcance: activo.anulaPenalizadores, valor: 0, origen: "estado", fuente, item: origen });
     }
-    if (activo.salvaciones?.length) salvaciones.push({ fuente, efectos: activo.salvaciones });
+    if (activo.salvaciones?.length) salvaciones.push({ fuente, efectos: activo.salvaciones, origen });
     if (activo.reducePenalizadores) {
       reduccion = reduccion
         ? { valor: reduccion.valor + activo.reducePenalizadores, fuente: `${reduccion.fuente} y ${fuente}` }

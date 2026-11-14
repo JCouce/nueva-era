@@ -219,8 +219,10 @@ resumen.
   **Todo aporte numérico de una pieza lleva su `origen`/`item` con `instanciaId`**:
   es lo que deja al Shock (pl-02) reducir sus bonos positivos y poner «<pieza>
   (shock)» en el desglose (`conShockEnModificadores`, `conPiezasAfectadas`,
-  `conShockEnLineas`). Un número que una pieza mete sin origen (en un texto, en las
-  `partes` de una opción, calculado aparte de la ficha) el Shock no lo ve. Se
+  `conShockEnLineas`, `conShockEnSalvaciones` para las `partes` del «Contra…»). Un
+  número que una pieza mete sin origen (en un texto, calculado aparte de la ficha) el
+  Shock no lo ve. La pieza cuya reacción al Shock no es la general lo declara en su
+  nivel con `alShock` (cerrado: `comoNivel`, `salvacionesA`), nunca con una rama por id. Se
   junta con lo que trae la hoja en un solo sitio, `conHabilitacion` (lo de la
   ficha primero). Las listas del motor no devuelven las ocultas;
   la pantalla solo pinta según el `estado` (`motivoDeBloqueo`, `esVisible`).

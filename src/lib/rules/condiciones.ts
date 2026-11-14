@@ -34,7 +34,8 @@ import { APLICADOS, type AplicadoId } from "./atributos";
 // `ventaja`, `costeFatiga`: como en el toggle, con la opción elegida (el selector "Contra…"
 // de las salvaciones, A2a de aumentos). `fuenteVentaja` es de dónde sale la ventaja, para
 // el aviso del modal. `partes`: de qué fuentes sale `valor` (su suma), para que el
-// desglose las enseñe una a una en vez de un número opaco.
+// desglose las enseñe una a una en vez de un número opaco; cada una con su pieza (`origen`) si la
+// tiene (el Shock la mira al montar el selector, conShockEnSalvaciones).
 export type OpcionCondicion = {
   id: string;
   etiqueta: string;
@@ -44,7 +45,7 @@ export type OpcionCondicion = {
   ventaja?: true;
   fuenteVentaja?: string;
   costeFatiga?: number;
-  partes?: { fuente: string; valor: number }[];
+  partes?: { fuente: string; valor: number; origen?: OrigenAporte }[];
   // Opción sin número (el selector de activar, A5b): el botón no enseña "+0".
   sinValor?: true;
   // Dificultad que el documento da para esta variante (Hemostáticos: 9 contra hemorragia

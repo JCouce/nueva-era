@@ -56,8 +56,11 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
       {
         nivel: 1,
         // «Vulnerabilidad al Shock»: el apagón es estar afectado por el Shock en el equipo (eq-28).
-        // Su rebaja propia (bonos a +1, la térmica fuera) es T7b; hoy se apaga o penaliza como las demás.
+        // En cualquier grado con efecto, en vez de apagarse o llevar −N, todas sus salvaciones
+        // bajan a +1 (también la protección total) y la resistencia térmica se pierde (eq-29).
+        // Los niveles 2 y 3 lo heredan.
         shock: "equipo",
+        alShock: { tipo: "salvacionesA", valor: 1, pierde: ["congelacion", "termicos"] },
         rareza: "Común",
         coste: 4000,
         detalle: [
@@ -74,7 +77,7 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         // solo contra esas amenazas (selector «Contra…» de Fortaleza, 2026-10-24); se suma al de
         // la armadura. Blindaje Ambiental (S94): sin tirada mientras la protección es total; el
         // +1 (+2, +3 en los niveles 2 y 3, que lo sustituyen) va en el mismo selector, contra
-        // toxinas y radiación, con la nota de cuándo vale. El apagón sigue en la pregunta 32.
+        // toxinas y radiación, con la nota de cuándo vale. El apagón, en `alShock`.
         modificadores: [],
         salvaciones: [
           { contra: ["congelacion", "termicos"], bono: 1 },
@@ -83,7 +86,7 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Resistencia Térmica
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Blindaje Ambiental: +1 en «Contra…» (toxinas, radiación), con la protección total como nota
-          { tipo: "habilitador", afecta: { modo: "ninguna" }, mecanismo: null, arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "pregunta 32" }, // Vulnerabilidad al Shock (apagón): degrada/deshabilita los bonos de arriba, exacto comportamiento sin definir
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Vulnerabilidad al Shock (apagón): `alShock`, sus bonos del «Contra…» a +1 y la térmica fuera (conShockEnSalvaciones)
         ],
       },
       {
@@ -105,7 +108,7 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         salvaciones: [{ contra: ["toxinas", "radiacion"], bono: 2, nota: notaBlindajeAmbiental(2) }],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Blindaje Ambiental Mejorado
-          { tipo: "habilitador", afecta: { modo: "ninguna" }, mecanismo: null, arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "pregunta 32" }, // Vulnerabilidad al Shock, heredada
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Vulnerabilidad al Shock, heredada (`alShock` del nivel 1)
         ],
       },
       {
@@ -122,7 +125,7 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         salvaciones: [{ contra: ["toxinas", "radiacion"], bono: 3, nota: notaBlindajeAmbiental(3) }],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Blindaje Ambiental Avanzado
-          { tipo: "habilitador", afecta: { modo: "ninguna" }, mecanismo: null, arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "pregunta 32" }, // Vulnerabilidad al Shock, heredada
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Vulnerabilidad al Shock, heredada (`alShock` del nivel 1)
         ],
       },
     ],
@@ -248,8 +251,10 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
       {
         nivel: 2,
         // «Al incorporar actuadores y circuitería electrónica… este nivel se vuelve susceptible a
-        // efectos de shock». Qué conserva del nivel 1 cuando cae es T7b: hoy cae entera.
+        // efectos de shock». Con el Shock, en cualquier grado con efecto, funciona como el nivel 1:
+        // pierde el tambor (gratuita o reacción) y conserva la simple, que es mecánica (eq-29).
         shock: "equipo",
+        alShock: { tipo: "comoNivel", nivel: 1 },
         rareza: "Poco Habitual",
         coste: 1500,
         detalle: [
@@ -263,7 +268,7 @@ export const MEJORAS_ESTANDAR: MejoraEstandar[] = [
         rebajasTipoAccion: [{ accion: "inyectarse", op: "alternativa", a: ["gratuita", "reaccion"], limite: { veces: 1, por: "turno" } }],
         motor: [
           { tipo: "texto", afecta: { modo: "accion_existente", id: "grupo:Fármacos" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "habilitador", afecta: { modo: "ninguna" }, mecanismo: null, arbitraje: "pendiente", estado: "bloqueado", bloqueoPor: "pregunta 32" }, // susceptible a shock
+          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "grupo:Fármacos" }, mecanismo: "eleccion_jugador", arbitraje: "duro", estado: "construido" }, // susceptible a shock: con él, `alShock` como el nivel 1 (sin la alternativa gratuita/reacción)
         ],
       },
     ],
