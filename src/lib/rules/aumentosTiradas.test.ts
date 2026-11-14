@@ -453,7 +453,8 @@ describe("A2b: casillas de la rama cognitiva", () => {
     assert.ok(ids(t).includes("aum_proyeccion_lenguaje"));
     assert.ok(ids(t).includes("aum_matriz_red_repetir"));
     const m = montar(f, t, { aum_matriz_red_repetir: true });
-    assert.equal(m.ventaja, "Repetir tras fallar · Matriz de Red Predeterminada");
+    assert.equal(m.ventaja, "Repetir tirada · Matriz de Red Predeterminada"); // sync Drive 2026-11-14
+    assert.ok(m.notas.some((n) => n.nota.includes("ya resuelta")));
     assert.equal(m.costeFatiga, 0);
     assert.ok(m.notas.some((n) => n.nota.includes("una vez por escena")));
     assert.ok(!ids(tiradaFija(f, "salv_voluntad")).includes("aum_proyeccion_lenguaje"));

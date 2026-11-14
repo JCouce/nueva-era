@@ -1,6 +1,6 @@
 // "Una vez por escena" (tanda A4a de docs/propuesta-aumentos.md, §11.3 de docs/sistema.md):
 // las casillas con `usoPorEscena` (Mielinización "Ahorro de fatiga", Proyección "Con
-// lenguaje", Matriz de Red "Repetir tras fallar") se gastan al tirar con ellas marcadas y con
+// lenguaje", Matriz de Red "Repetir tirada") se gastan al tirar con ellas marcadas y con
 // efecto (montarTirada las devuelve en `usosEscena`), no al marcarlas. Lo gastado se guarda en
 // sheet.usosEscena (ids de casilla) y no se puede volver a marcar hasta "Terminar escena"
 // (terminarEscena, vitalidad.ts; también el del máster). En Recursos se puede liberar uno a

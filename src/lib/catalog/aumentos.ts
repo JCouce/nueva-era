@@ -709,18 +709,18 @@ export const OPERACIONES_GENETICAS: OperacionGenetica[] = [
     repetible: false,
     modificadores: [{ tipo: "atributo", id: "caracter", valor: 1 }],
     salvaciones: [{ contra: ["dominacion_mental", "sugestion_coercitiva", "alteracion_voluntad"], bono: 2 }],
-    // TODO(revisar): la fuente nueva (sync Drive 2026-11-14) dice «repetir una tirada de actitud
-    // ya resuelta», sin «tras fallar»; la casilla sigue con la lectura de la tercera ronda.
+    // «Repetir una tirada de actitud ya resuelta» con ventaja, haya salido bien o mal (sync Drive
+    // 2026-11-14; antes, solo tras fallar).
     casillas: [
       {
         id: "aum_matriz_red_repetir",
         tipo: "toggle",
-        etiqueta: "Repetir tras fallar",
+        etiqueta: "Repetir tirada",
         alcance: { tipo: "habilidad", habilidad: "actitud" },
         valorActivo: 0,
         ventaja: true,
         usoPorEscena: true,
-        nota: "Solo al repetir esa misma tirada de Actitud tras fallarla; una vez por escena.",
+        nota: "Repites una tirada de Actitud ya resuelta, con ventaja; una vez por escena.",
       },
     ],
     textos: [

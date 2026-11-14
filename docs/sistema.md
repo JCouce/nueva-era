@@ -2084,7 +2084,7 @@ sobreesfuerzo.
   - **Foveo:** +1 en **todo** ataque con Combate a Distancia, apunte o no `[FIRME ·
     docs/fuente/aumentos.md, sync Drive 2026-11-14]` (la fuente quita «por puntería»).
     ~~S82: solo con el selector «Apuntado» en Éxito o Crítico.~~
-  - **Proyección** ("Con lenguaje") y **Matriz de Red** ("Repetir tras fallar"): ventaja en
+  - **Proyección** ("Con lenguaje") y **Matriz de Red** ("Repetir tirada"): ventaja en
     cualquier tirada de Actitud, con su nota (una vez por escena, hasta A4).
   - **Red Frontoparietal:** ventaja sin casilla en las tres de Iniciativa; la acción combinada
     (física + mental por 1 de fatiga), como texto en las pruebas mentales hasta A4.
@@ -2130,7 +2130,7 @@ sobreesfuerzo.
 - *En la app (A4a, una vez por escena y acciones sin dado):*
   - **Una vez por escena (R1):** ficha v19, `sheet.usosEscena` (ids de casilla,
     `rules/usosEscena.ts`). Las casillas con `usoPorEscena` (Mielinización "Ahorro de fatiga",
-    Proyección "Con lenguaje", Matriz de Red "Repetir tras fallar") **se gastan al tirar** con
+    Proyección "Con lenguaje", Matriz de Red "Repetir tirada") **se gastan al tirar** con
     ellas marcadas, no al marcarlas (usuario, 2026-10-22): `montarTirada` las devuelve en
     `usosEscena` y la pestaña Acciones las apunta. Una casilla sin efecto (por el aplicado) no
     gasta; el ahorro de Mielinización tampoco si no ha ahorrado nada (sin casillas de pago y
@@ -2510,7 +2510,8 @@ sobreesfuerzo.
   - **Proyección Neuro-Expresiva***: anula **cualquier** penalizador social, heridas y
     fatiga incluidos. Activarla es gratuito.
   - **Proyección y Matriz de Red*** se pueden usar en la misma escena: una tira con
-    ventaja y la otra repite con ventaja tras fallar.
+    ventaja y la otra repite con ventaja. *(Sync Drive 2026-11-14: la Matriz repite una tirada
+    de Actitud ya resuelta, haya fallado o no; casilla «Repetir tirada».)*
   - **Hipertrofia Miofibrilar**: Fortaleza × 1,5 redondeado hacia abajo; con Fortaleza
     negativa no se multiplica.
   - **Biogénesis Mitocondrial***: "consumible" es otro nombre de alimento (un gel
