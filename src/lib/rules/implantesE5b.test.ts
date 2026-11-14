@@ -35,8 +35,9 @@ const conChasis = (nivel: number, s: Sheet = base()) => con(s, CHASIS, { nivel }
 const resolver = (s: Sheet, estados: EstadoActivo[] = []) => resolverFicha(s, { estados, vitalidad: VITALIDAD_DE_FICHA });
 const filas = (s: Sheet, estados: EstadoActivo[] = []) => {
   const f = resolver(s, estados);
-  // Los permisos de las dotes sin mirar requisitos (Bloqueo pide Combate Melee).
-  return accionesDeAtaque(s, f.modificadores, permisosDeDotes(s));
+  // Los permisos de las dotes sin mirar requisitos (Bloqueo pide Combate Melee). Con las piezas que el
+  // Shock apaga o penaliza, como las pasa AccionesTab.
+  return accionesDeAtaque(s, f.modificadores, permisosDeDotes(s), { inutilizadas: f.piezasInutilizadas, penalizadas: f.piezasPenalizadas });
 };
 const punetazo = (s: Sheet) => filas(con(s, "pelea_punetazo")).find((t) => t.label === "Golpear con Puñetazo")!;
 
@@ -281,6 +282,41 @@ describe("E5b · Chasis Osteomuscular, nivel 4", () => {
 
 describe("E5b · Chasis Osteomuscular y el Shock", () => {
   const shock = (gradoId: string): EstadoActivo[] => [{ estadoId: "shock", gradoId, rondasRestantes: 1 }];
+  const golpe = (s: Sheet, estados: EstadoActivo[] = []) => filas(con(s, "pelea_punetazo"), estados).find((t) => t.label === "Golpear con Puñetazo")!;
+
+  test("golpe desarmado: apagado (fracaso crítico) ni letal ni +N; penalizado, +N con −2/−1 y sigue letal", () => {
+    const chasis4 = conChasis(4);
+    const normal = golpe(chasis4);
+    assert.equal(normal.ataque!.modos[0].categoriaDanio, "Letal");
+    // Apagado: el golpe de la ficha sin el Chasis (la Fuerza tampoco sube).
+    const sinChasis = golpe(base());
+    const apagado = golpe(chasis4, shock("fracaso_critico"));
+    assert.equal(apagado.ataque!.modos[0].categoriaDanio, sinChasis.ataque!.modos[0].categoriaDanio);
+    assert.equal(apagado.ataque!.modos[0].danio, sinChasis.ataque!.modos[0].danio);
+    assert.equal(/Chasis/.test(apagado.nota ?? ""), false);
+    // Fracaso: Fuerza +4 → +2 y el +3 del golpe → +1 (4 menos que sin Shock); el letal se queda.
+    const penalizado = golpe(chasis4, shock("fracaso"));
+    assert.equal(penalizado.ataque!.modos[0].categoriaDanio, "Letal");
+    assert.equal(penalizado.ataque!.modos[0].danio, normal.ataque!.modos[0].danio! - 4);
+    assert.match(penalizado.nota ?? "", /Chasis Osteomuscular 4 \(shock\) \+1/);
+    // Éxito: −1 a cada bono (Fuerza y golpe).
+    assert.equal(golpe(chasis4, shock("exito")).ataque!.modos[0].danio, normal.ataque!.modos[0].danio! - 2);
+  });
+
+  test("Refuerzo de Combate: inmune al Shock (placas del traje), sigue letal y con su +1", () => {
+    const a = con(base(), "armadura_pesada");
+    const armadura = a.equipo[a.equipo.length - 1].instanciaId;
+    const conRefuerzo: Sheet = { ...a, equipo: [...a.equipo, { instanciaId: "rc5b", catalogoId: "refuerzo_combate", nivel: 1, instaladoEnId: armadura }] };
+    const normal = golpe(conRefuerzo);
+    assert.equal(normal.ataque!.modos[0].categoriaDanio, "Letal");
+    const equipo: EstadoActivo[] = [{ estadoId: "shock_equipo", gradoId: "fracaso_critico", rondasRestantes: 1 }];
+    for (const estados of [equipo, shock("fracaso_critico")]) {
+      const g = golpe(conRefuerzo, estados);
+      assert.equal(g.ataque!.modos[0].categoriaDanio, "Letal");
+      assert.equal(g.ataque!.modos[0].danio, normal.ataque!.modos[0].danio);
+    }
+  });
+
   const s = () => con(base(), CHASIS, { nivel: 3, eleccion: "proyector_pulso" });
 
   test("en fracaso pierde 2 de cada bono: Fuerza +1, armadura natural 1 y +1 contra el aturdimiento", () => {

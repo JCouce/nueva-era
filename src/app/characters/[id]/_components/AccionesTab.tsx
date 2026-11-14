@@ -863,7 +863,11 @@ export function AccionesTab({
     movimientoDirectas,
   } = useMemo(() => {
     // Bloquear y Sutil solo con su dote (D2b-2): los permisos salen de la FichaResuelta.
-    const generadas = accionesDeAtaque(sheet, mods, ficha.extrasDotes.permisos).map(conExtras);
+    // Con las piezas que el Shock apaga o penaliza: el golpe desarmado del Chasis va metido en la fila.
+    const generadas = accionesDeAtaque(sheet, mods, ficha.extrasDotes.permisos, {
+      inutilizadas: ficha.piezasInutilizadas,
+      penalizadas: ficha.piezasPenalizadas,
+    }).map(conExtras);
     // Textos de dote en "Levantar [escudo]" (D2b-1), a su nota.
     const directas = accionesDirectasDeAtaque(sheet).map((d) => conExtrasDirectaDeFicha(ficha, d));
     return {

@@ -43,7 +43,7 @@ import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type A
 import { RUIDO_DISPARO, modosDeOcultacion, ocultacionDeNivel, textoSigiloAlAtacar, type SigiloAlAtacar } from "./sigilo";
 import { ESTADO_AGUIJON_ID, ESTADO_CAMUFLAJE_ID } from "../catalog/estados";
 import { atributoEfectivo, aplicado } from "./derivados";
-import { criticoDesarmado, golpeDesarmado } from "./golpeDesarmado";
+import { criticoDesarmado, golpeDesarmado, type AfectacionGolpe } from "./golpeDesarmado";
 import { ID_RETROCESO_ENTROPICO, retrocesoEntropico } from "./retrocesoEntropico";
 import { bloqueoCamuflajeIntegrado, FATIGA_INTEGRADO, notaIntegrado, subsistemasIntegrados, type SubsistemaIntegrado } from "./integracionTactica";
 import { ESPECIALIDAD_ARMA, ESPECIALIDAD_ATAQUE_ESPECIAL, ESPECIALIDAD_LANZAR } from "../catalog/especialidadesArma";
@@ -880,6 +880,7 @@ function tiradaDeArmaMelee(
   instanciaId: string,
   sutilPermitido: boolean,
   modificaciones?: ModificacionArmaId[],
+  afectacion?: AfectacionGolpe,
 ): Accion {
   const perfil = perfilGolpe(arma, modificaciones);
   const nombre = nombreArmaModificada(arma, modificaciones ?? []);
@@ -897,7 +898,7 @@ function tiradaDeArmaMelee(
   // Con armadura (Ligera/Intermedia/Pesada) y Refuerzo de Combate: +N al daño, letal y
   // aturdimiento del crítico; con el Chasis Osteomuscular (E5b), letal y +N (golpeDesarmado.ts). La
   // Pelea no se modifica (S87): sin perfil.
-  const conArmadura = esDesarmado ? golpeDesarmado(sheet) : null;
+  const conArmadura = esDesarmado ? golpeDesarmado(sheet, afectacion) : null;
   const bonoArmadura = conArmadura?.bonoDanio ?? 0;
 
   // `arma.efectos` (Crítico de X, Ignora N de blindaje...) es hoy puramente
@@ -1494,6 +1495,7 @@ type GeneradorDeAtaque = (
   cat: Equipo,
   mods: ModificadorConFuente[],
   permisos: PermisosDeDotes,
+  afectacion?: AfectacionGolpe,
 ) => Accion[];
 
 const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> = {
@@ -1509,18 +1511,18 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
       ...(bloqueoBayoneta ? [bloqueoBayoneta] : []),
     ];
   },
-  armaMelee: (sheet, pieza, cat, mods, permisos) => {
+  armaMelee: (sheet, pieza, cat, mods, permisos, afectacion) => {
     const arma = cat as ArmaMelee;
     const lanzar = tiradaLanzarArmaMelee(sheet, mods, arma, pieza.instanciaId, pieza.modificaciones);
     const filas = [
-      tiradaDeArmaMelee(sheet, mods, arma, pieza.instanciaId, permisos.sutil.includes("ataque_melee"), pieza.modificaciones),
+      tiradaDeArmaMelee(sheet, mods, arma, pieza.instanciaId, permisos.sutil.includes("ataque_melee"), pieza.modificaciones, afectacion),
       ...(lanzar ? [lanzar] : []),
       tiradaBloqueoDeArmaMelee(
         arma,
         pieza.instanciaId,
         permisos.sutil.includes("bloquear_melee"),
         pieza.modificaciones,
-        golpeDesarmado(sheet)?.bloqueoSinPenalizador,
+        golpeDesarmado(sheet, afectacion)?.bloqueoSinPenalizador,
       ),
     ];
     // Escudo roto (S86): sus filas salen, apagadas con el motivo, hasta que se repare.
@@ -1615,7 +1617,14 @@ function accionesDeGranadas(sheet: Sheet): Accion[] {
 // ocultas no se devuelven, ni a la pantalla ni al servidor), y el estilo Sutil solo
 // con Combate Sutil. Obligatorio a propósito: sin él no hay forma de saber qué se ve.
 // Las mejoras que su arma no admite (td-03) no aportan nada: se calcula sin ellas.
-export function accionesDeAtaque(ficha: Sheet, mods: ModificadorConFuente[], permisos: PermisosDeDotes): Accion[] {
+// `afectacion`: las piezas apagadas o penalizadas por el Shock (FichaResuelta), para lo que va
+// metido en el daño de la fila (golpe desarmado del Chasis, golpeDesarmado.ts).
+export function accionesDeAtaque(
+  ficha: Sheet,
+  mods: ModificadorConFuente[],
+  permisos: PermisosDeDotes,
+  afectacion?: AfectacionGolpe,
+): Accion[] {
   const sheet = sinMejorasNoAdmitidas(ficha);
   const tiradas: Accion[] = [];
   const brazo = brazoBionico(sheet);
@@ -1627,10 +1636,10 @@ export function accionesDeAtaque(ficha: Sheet, mods: ModificadorConFuente[], per
     if (!generaAccionPropia(cat, pieza.nivel)) continue;
     // El ítem que crea la fila es la pieza (la del Lanzagranadas o la Bayoneta lo dice ella).
     const origen = origenDePieza("equipo", cat, pieza.instanciaId);
-    const generadas = generador(sheet, pieza, cat, mods, permisos).map((t) => (t.origen ? t : { ...t, origen }));
+    const generadas = generador(sheet, pieza, cat, mods, permisos, afectacion).map((t) => (t.origen ? t : { ...t, origen }));
     tiradas.push(...(brazo ? generadas.map((t) => conBrazo(t, pieza, brazo)) : generadas));
   }
-  const bloqueoBrazo = brazo ? tiradaBloqueoBrazo(brazo, golpeDesarmado(sheet)?.bloqueoSinPenalizador ?? null) : null;
+  const bloqueoBrazo = brazo ? tiradaBloqueoBrazo(brazo, golpeDesarmado(sheet, afectacion)?.bloqueoSinPenalizador ?? null) : null;
   if (bloqueoBrazo) tiradas.push(bloqueoBrazo);
   // Integración táctica del Chasis Osteomuscular (E5b): el Proyector anclado en el cuerpo.
   for (const s of subsistemasIntegrados(sheet)) {

@@ -9,14 +9,28 @@
 // E5b (sync Drive 2026-11-14): el Chasis Osteomuscular hace letal el golpe desarmado y, desde el
 // nivel 2, le suma +1/+2/+3, con armadura o sin ella (`NivelImplante.desarmado`). golpeDesarmado
 // junta las dos cosas; golpeDesarmadoConArmadura sigue siendo solo lo de la armadura.
-// TODO(revisar) (S111): como el de la armadura, el bono va metido en el daño de la fila: el Shock que
-// penaliza el implante no lo baja (apagado, el Chasis no llega a la ficha en uso, pero la fila de
-// ataque se genera con la ficha entera).
+// El Shock (S73, §7): la fila se genera con la ficha entera, así que lo mira aquí con `afectacion`
+// (FichaResuelta.piezasInutilizadas / piezasPenalizadas). Pieza apagada: no aporta nada, ni letal ni
+// +N. Penalizada: su +N pierde el −N del grado sin bajar de 0 y el letal se queda (no es un bono
+// numérico). El Refuerzo de Combate es inmune al Shock (catálogo), así que hoy solo toca al Chasis.
 import { equipoPorId, type Armadura } from "../catalog/equipo";
 import { aumentoPorId } from "./aumentos";
 import { nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
 import type { EfectoEnTirada } from "./efectosArma";
+import type { PiezaPenalizada } from "./shock";
+
+export type AfectacionGolpe = {
+  inutilizadas?: ReadonlyMap<string, string>;
+  penalizadas?: ReadonlyMap<string, PiezaPenalizada>;
+};
+
+const apagada = (a: AfectacionGolpe | undefined, instanciaId: string) => Boolean(a?.inutilizadas?.has(instanciaId));
+// El bono de la pieza con el −N del Shock (sin bajar de 0) y su fuente con la marca «(shock)».
+function conShock(a: AfectacionGolpe | undefined, instanciaId: string, bono: number, fuente: string): { bono: number; fuente: string } {
+  const p = a?.penalizadas?.get(instanciaId);
+  return p ? { bono: Math.max(0, bono - p.valor), fuente: `${fuente} (shock)` } : { bono, fuente };
+}
 
 export type GolpeDesarmadoConArmadura = {
   bonoDanio: number;
@@ -40,7 +54,7 @@ function armaduraQueCuenta(sheet: Pick<Sheet, "equipo">): { pieza: PiezaEquipada
   return null;
 }
 
-export function golpeDesarmadoConArmadura(sheet: Pick<Sheet, "equipo">): GolpeDesarmadoConArmadura | null {
+export function golpeDesarmadoConArmadura(sheet: Pick<Sheet, "equipo">, afectacion?: AfectacionGolpe): GolpeDesarmadoConArmadura | null {
   const armadura = armaduraQueCuenta(sheet);
   if (!armadura) return null;
   const fuentes: string[] = [];
@@ -56,12 +70,13 @@ export function golpeDesarmadoConArmadura(sheet: Pick<Sheet, "equipo">): GolpeDe
   let aturdimiento: GolpeDesarmadoConArmadura["aturdimiento"] = null;
   const pieza = sheet.equipo.find((p) => p.catalogoId === "refuerzo_combate" && p.instaladoEnId === armadura.pieza.instanciaId);
   const cat = pieza ? equipoPorId(pieza.catalogoId) : null;
-  if (pieza?.nivel !== undefined && cat?.familia === "mejoraEstandar") {
+  if (pieza?.nivel !== undefined && cat?.familia === "mejoraEstandar" && !apagada(afectacion, pieza.instanciaId)) {
     const refuerzo = ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel), "refuerzoDesarmado")?.refuerzoDesarmado;
     if (refuerzo) {
       const fuente = `${cat.label} ${pieza.nivel}`;
-      bonoDanio += refuerzo.bonoDanio;
-      fuentes.push(`${fuente} +${refuerzo.bonoDanio}`);
+      const conElShock = conShock(afectacion, pieza.instanciaId, refuerzo.bonoDanio, fuente);
+      bonoDanio += conElShock.bono;
+      fuentes.push(`${conElShock.fuente} +${conElShock.bono}`);
       letal = fuente;
       aturdimiento = { dificultad: refuerzo.aturdimiento, fuente };
       bloqueoSinPenalizador ??= fuente;
@@ -73,21 +88,26 @@ export function golpeDesarmadoConArmadura(sheet: Pick<Sheet, "equipo">): GolpeDe
 
 // Lo que los implantes hacen al golpe desarmado (Chasis Osteomuscular, E5b): letal y +N, el del nivel
 // más alto que lo trae. Una línea por pieza.
-export function golpeDesarmadoDeAumentos(sheet: Pick<Sheet, "equipo">): { bonoDanio: number; fuente: string; letal: boolean }[] {
+export function golpeDesarmadoDeAumentos(
+  sheet: Pick<Sheet, "equipo">,
+  afectacion?: AfectacionGolpe,
+): { bonoDanio: number; fuente: string; letal: boolean }[] {
   return sheet.equipo.flatMap((pieza) => {
     const cat = aumentoPorId(pieza.catalogoId);
-    if (cat?.familia !== "implante" || pieza.nivel === undefined) return [];
+    if (cat?.familia !== "implante" || pieza.nivel === undefined || apagada(afectacion, pieza.instanciaId)) return [];
     const d = ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel), "desarmado")?.desarmado;
-    return d ? [{ bonoDanio: d.bonoDanio, fuente: `${cat.label} ${pieza.nivel}`, letal: d.letal }] : [];
+    if (!d) return [];
+    const { bono, fuente } = conShock(afectacion, pieza.instanciaId, d.bonoDanio, `${cat.label} ${pieza.nivel}`);
+    return [{ bonoDanio: bono, fuente, letal: d.letal }];
   });
 }
 
 // El golpe desarmado de la ficha: lo de la armadura (golpeDesarmadoConArmadura) y lo de los
 // implantes. El letal de un implante también quita el −3 al bloquear desarmado (Bloqueo: «si el
 // ataque desarmado de quien bloquea causa daño letal no se considera desarmado»).
-export function golpeDesarmado(sheet: Pick<Sheet, "equipo">): GolpeDesarmadoConArmadura | null {
-  const armadura = golpeDesarmadoConArmadura(sheet);
-  const aumentos = golpeDesarmadoDeAumentos(sheet);
+export function golpeDesarmado(sheet: Pick<Sheet, "equipo">, afectacion?: AfectacionGolpe): GolpeDesarmadoConArmadura | null {
+  const armadura = golpeDesarmadoConArmadura(sheet, afectacion);
+  const aumentos = golpeDesarmadoDeAumentos(sheet, afectacion);
   if (aumentos.length === 0) return armadura;
   const letal = aumentos.find((a) => a.letal)?.fuente ?? null;
   const conBono = aumentos.filter((a) => a.bonoDanio > 0);
