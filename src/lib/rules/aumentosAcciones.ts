@@ -37,7 +37,6 @@ import { duracionDe, estadoActivoCon, textoDuracionActivable, type DuracionEstad
 import type { CondicionTirada } from "./condiciones";
 import type { OperacionEstado } from "./vidaPorEstados";
 import { ajustarVida, pagarFatiga, topesDeVida } from "./vitalidad";
-import { conContador, contadorEscena } from "./usosEscena";
 import type { Sheet } from "./sheet";
 import { origenDePieza, type OrigenAporte } from "./origen";
 import { bloqueadaPor, motivoDeBloqueo } from "./habilitacion";
@@ -55,12 +54,6 @@ import { esEstadoDeAumento, estadoPorId } from "../catalog/estados";
 //   accionAdicional (A5b, Neuroprótesis 3-4) no hace nada más que cobrar; con la casilla "ya
 //              usada" (ID_ACCION_REPETIDA) cobra `repetida.costeFatiga` en vez de `costeFatiga`
 //              y, si trae `activar`, pone ese estado propio (el de 1 ronda del nivel 4).
-//   contador   (Sanar grave del Enjambre 2; usuario, 2026-10-28) cada uso cobra y sube un
-//              contador de la escena (sheet.usosEscena, usosEscena.ts); al llegar a `cada` suma
-//              `vida` (como "vida", con ajustarVida) y vuelve a 0. La fila dice por qué
-//              pulsación va; con el contador en marcha sale detrás "Reiniciar" (sin coste), y
-//              "Terminar escena" también lo vacía.
-//   reiniciarContador  lo genera la fila de reiniciar: pone a 0 el contador de `accionId`.
 export type EfectoAccionAumento =
   | { tipo: "estado"; estadoId: string; desde?: string; a: string | null }
   | { tipo: "vida"; delta: number }
@@ -74,9 +67,7 @@ export type EfectoAccionAumento =
   | {
       tipo: "accionAdicional";
       repetida: { costeFatiga: number; activar?: { estadoId: string; duracion: DuracionEstado } };
-    }
-  | { tipo: "contador"; cada: number; vida: number }
-  | { tipo: "reiniciarContador"; accionId: string };
+    };
 
 // El selector del modal de activar (UsarModal): su valor llega al servidor como `eleccion`.
 export const ID_ELECCION_ACTIVABLE = "aum_eleccion_activable";
@@ -189,24 +180,18 @@ function casillaRepetida(
   };
 }
 
-// "pulsación 3/5": la que toca ahora (las hechas + 1).
-const textoPulsacion = (hechas: number, cada: number) => `pulsación ${hechas + 1}/${cada}`;
-
-function directa(a: AccionAumentoCatalogo, fuente: string, fatigaActual: number, estados: readonly EstadoActivo[], usos: readonly string[]): AccionDeAumento {
+function directa(a: AccionAumentoCatalogo, fuente: string, fatigaActual: number, estados: readonly EstadoActivo[]): AccionDeAumento {
   const coste = a.costeFatiga ?? 0;
-  const contador = a.efecto?.tipo === "contador" ? a.efecto : null;
-  const hechas = contador ? contadorEscena(usos, a.id) : 0;
   const adicional = a.efecto?.tipo === "accionAdicional" ? a.efecto : null;
   const cabecera = [a.economia, coste > 0 ? fatigaTexto(coste) : "sin coste"].filter(Boolean).join(", ");
   const activar = a.efecto?.tipo === "activar" ? a.efecto : null;
   const puesto = activar ? estados.find((e) => e.estadoId === activar.estadoId) : undefined;
   const yaActiva = puesto ? ` Ya está activa (${textoDuracionActivable(duracionDe(puesto))}): reactivarla renueva la duración, no la apila.` : "";
-  const pulsacion = contador ? ` Llevas ${hechas} de ${contador.cada}.` : "";
   return {
     id: a.id,
-    label: contador ? `${a.label} (${textoPulsacion(hechas, contador.cada)})` : a.label,
+    label: a.label,
     grupo: "Aumentos",
-    nota: `${cabecera}. ${a.nota}${yaActiva}${pulsacion} (${fuente})`,
+    nota: `${cabecera}. ${a.nota}${yaActiva} (${fuente})`,
     ...(activar?.eleccion && { condiciones: [selectorEleccion(activar.eleccion)] }),
     ...(adicional && { condiciones: [casillaRepetida(adicional, coste, fatigaActual)] }),
     ...(activar && { confirmarLabel: puesto ? "Renovar" : "Activar" }),
@@ -228,19 +213,6 @@ function desactivar(estado: EstadoActivo): AccionDeAumento {
     confirmarLabel: "Desactivar",
     fuente: label,
     efecto: { tipo: "desactivar", estadoId: estado.estadoId },
-  };
-}
-
-// La fila de reiniciar un contador en marcha (Sanar grave): sin coste.
-function reiniciar(a: AccionAumentoCatalogo, fuente: string, hechas: number, cada: number): AccionDeAumento {
-  return {
-    id: `${a.id}_reiniciar`,
-    label: `Reiniciar ${a.label.toLocaleLowerCase("es")}`,
-    grupo: "Aumentos",
-    nota: `Sin coste. Llevas ${hechas} de ${cada}: vuelve a 0 (la fatiga no se devuelve). (${fuente})`,
-    confirmarLabel: "Reiniciar",
-    fuente,
-    efecto: { tipo: "reiniciarContador", accionId: a.id },
   };
 }
 
@@ -275,13 +247,12 @@ const estadoQuePone = (e: EfectoAccionAumento): string | null =>
 // desactivar. `fatiga`: la que se comprueba para bloquear por coste, la en juego (td-25: en
 // combate, la de la foto; FichaResuelta.fatigaEnJuego). Sin ella, la de la ficha.
 export function accionesDeAumentos(
-  sheet: Pick<Sheet, "equipo" | "fatigaActual"> & Partial<Pick<Sheet, "usosEscena">>,
+  sheet: Pick<Sheet, "equipo" | "fatigaActual">,
   estados: readonly EstadoActivo[] = [],
   fatiga: number = sheet.fatigaActual,
 ): AccionesDeAumentos {
   const filas: FilaAumento[] = [];
   const informativas: InfoDeAumento[] = [];
-  const usos = sheet.usosEscena ?? [];
   // Las de un implante apagado por el Shock (rules/shock.ts) siguen en la lista: las bloquea
   // habilitacionEnFicha (resolverFicha), y el servidor las rechaza con FichaResuelta.accionesAumentos.
   for (const ap of aportes(sheet)) {
@@ -289,12 +260,8 @@ export function accionesDeAumentos(
       filas.push(
         a.tirada
           ? { tipo: "tirada", accion: { ...conTirada(a, a.tirada, ap.fuente, fatiga), origen: ap.origen } }
-          : { tipo: "directa", accion: { ...directa(a, ap.fuente, fatiga, estados, usos), origen: ap.origen } },
+          : { tipo: "directa", accion: { ...directa(a, ap.fuente, fatiga, estados), origen: ap.origen } },
       );
-      const hechas = a.efecto?.tipo === "contador" ? contadorEscena(usos, a.id) : 0;
-      if (a.efecto?.tipo === "contador" && hechas > 0) {
-        filas.push({ tipo: "directa", accion: { ...reiniciar(a, ap.fuente, hechas, a.efecto.cada), origen: ap.origen } });
-      }
     }
     if (ap.defensa) {
       const d = ap.defensa;
@@ -443,22 +410,6 @@ export function usoDeAccionAumento(
   if (efecto?.tipo === "desactivar") {
     const op = operacionDeEfecto(efecto, estados);
     return { ok: true, accion, sheet: pagado, op, mensaje: op ? `Desactivada: ${accion.fuente}.` : "Ya no estaba activa.", coste: cobrado };
-  }
-  if (efecto?.tipo === "reiniciarContador") {
-    return { ok: true, accion, sheet: conContador(sheet, efecto.accionId, 0), op: null, mensaje: "Pulsaciones a 0.", coste: 0 };
-  }
-  if (efecto?.tipo === "contador") {
-    const hechas = contadorEscena(sheet.usosEscena, accion.id) + 1;
-    if (hechas < efecto.cada) {
-      const texto = `Pulsación ${hechas}/${efecto.cada}.`;
-      return { ok: true, accion, sheet: conContador(pagado, accion.id, hechas), op: null, mensaje: [coste, texto].filter(Boolean).join(" "), coste: cobrado };
-    }
-    const curado = ajustarVida(conContador(pagado, accion.id, 0), efecto.vida, estados);
-    const max = topesDeVida(curado, estados).vida;
-    const vida =
-      curado.vidaActual === pagado.vidaActual ? "Ya estabas al máximo de vida." : `+${curado.vidaActual - pagado.vidaActual} de vida (${curado.vidaActual}/${max}).`;
-    const texto = `Pulsación ${efecto.cada}/${efecto.cada}: ${vida} Vuelve a 0.`;
-    return { ok: true, accion, sheet: curado, op: null, mensaje: [coste, texto].filter(Boolean).join(" "), coste: cobrado };
   }
   if (efecto?.tipo === "vida") {
     const curado = ajustarVida(pagado, efecto.delta, estados);

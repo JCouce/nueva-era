@@ -2072,28 +2072,22 @@ export const IMPLANTES: Implante[] = [
             nota: "Sanas un nivel de daño letal de forma automática: +1 a la vida actual, sin pasar del máximo.",
             efecto: { tipo: "vida", delta: 1 },
           },
-          // TODO(revisar) (sync Drive 2026-11-14, T2.M4.3 sin hacer): la foto nueva dice «si consume 4
-          // se inicia la sanación de 1 nivel de daño grave, la regeneración en este caso tarda en
-          // resolverse un minuto». Pasar de este contador de 5 pulsaciones a 4 de golpe deja sin uso
-          // el efecto `contador` (es su único caso) y cambia sus contadores guardados en
-          // sheet.usosEscena: falta decidir la forma (un botón que cobra 4 y cura al pulsarlo al
-          // minuto, cobra al empezar y cura a mano, u otra).
+          // Sync Drive 2026-11-14 (usuario): un botón que cobra 4 y cura 1 grave en el acto; el minuto
+          // que tarda, en la nota (la app no mide el tiempo). Antes, 5 pulsaciones de 1 con contador.
           {
             id: "aumentos_enjambre_sanar_grave",
             label: "Sanar grave",
-            economia: "Un punto por turno, pudiendo actuar",
-            costeFatiga: 1,
-            nota: "Cada pulsación cobra 1 de fatiga, una por turno. A la quinta sanas un nivel grave: +1 a la vida actual (se suma sola) y la cuenta vuelve a 0.",
-            // Contador de pulsaciones en la escena (usuario, 2026-10-28): se reinicia a mano
-            // (fila «Reiniciar») y con «Terminar escena».
-            efecto: { tipo: "contador", cada: 5, vida: 1 },
+            economia: "Tarda un minuto (10 turnos)",
+            costeFatiga: 4,
+            nota: "Inicias la sanación de un nivel grave: +1 a la vida actual, sin pasar del máximo. La regeneración tarda un minuto (10 turnos) en resolverse: la app la suma ya.",
+            efecto: { tipo: "vida", delta: 1 },
           },
         ],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "ficha" }, mecanismo: "nota_fija", estado: "pendiente" },
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_sanar_letal" }, mecanismo: "accion_equipo", estado: "construido" },
-          // Sanar grave: contador de pulsaciones en la escena; a la quinta, +1 de vida.
+          // Sanar grave: 4 de fatiga y +1 de vida (sync Drive 2026-11-14; antes, contador de 5).
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_enjambre_sanar_grave" }, mecanismo: "accion_equipo", estado: "construido" },
         ],
       },

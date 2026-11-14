@@ -262,6 +262,8 @@ const ESPERADO: Record<string, Vista> = {
       "usar:aumentos_cortar_exanguinante": "No te llega la fatiga: cuesta 2 y te quedan 1.",
       // Sanar letal cuesta 2 desde el sync Drive 2026-11-14 (antes 1).
       "usar:aumentos_enjambre_sanar_letal": "No te llega la fatiga: cuesta 2 y te quedan 1.",
+      // Sanar grave cuesta 4 desde el sync Drive 2026-11-14 (antes, pulsaciones de 1).
+      "usar:aumentos_enjambre_sanar_grave": "No te llega la fatiga: cuesta 4 y te quedan 1.",
     },
   },
   doteGastada: {

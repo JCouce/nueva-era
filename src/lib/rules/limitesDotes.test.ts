@@ -135,11 +135,12 @@ describe("N por turno, solo en combate (Mirada desafiante)", () => {
 });
 
 describe("contadores en sheet.usosEscena", () => {
-  test("lectura tolerante: contadores del catálogo sí, inventados no", () => {
-    assert.deepEqual(normalizarUsosEscena(["dotes_apoyo@ckira#1", "dotes_inventada#1", "dotes_apoyo#0", "aumentos_enjambre_sanar_grave#3"]), [
-      "dotes_apoyo@ckira#1",
-      "aumentos_enjambre_sanar_grave#3",
-    ]);
+  // Sync Drive 2026-11-14: Sanar grave ya no lleva contador; una entrada vieja suya se descarta.
+  test("lectura tolerante: contadores del catálogo sí, inventados y huérfanos no", () => {
+    assert.deepEqual(
+      normalizarUsosEscena(["dotes_apoyo@ckira#1", "dotes_inventada#1", "dotes_apoyo#0", "dotes_humor_de_afrontamiento#2", "aumentos_enjambre_sanar_grave#3"]),
+      ["dotes_apoyo@ckira#1", "dotes_humor_de_afrontamiento#2"],
+    );
   });
 
   test("gastarUsosEscena (casillas por escena) no admite contadores", () => {
@@ -148,9 +149,9 @@ describe("contadores en sheet.usosEscena", () => {
   });
 
   test("conContador: a 0 quita la entrada; una clave que no es del catálogo no hace nada", () => {
-    const s = conContador(defaultSheet(), "aumentos_enjambre_sanar_grave", 2);
-    assert.deepEqual(s.usosEscena, ["aumentos_enjambre_sanar_grave#2"]);
-    assert.deepEqual(conContador(s, "aumentos_enjambre_sanar_grave", 0).usosEscena, []);
+    const s = conContador(defaultSheet(), "dotes_humor_de_afrontamiento", 2);
+    assert.deepEqual(s.usosEscena, ["dotes_humor_de_afrontamiento#2"]);
+    assert.deepEqual(conContador(s, "dotes_humor_de_afrontamiento", 0).usosEscena, []);
     assert.equal(conContador(s, "inventada", 1), s);
   });
 });

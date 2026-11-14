@@ -10,8 +10,9 @@
 // Contadores (usuario, 2026-10-28): en la misma lista, una entrada "<clave>#<n>" por contador,
 // con n ≥ 1 (a 0 no hay entrada). Se vacían igual con "Terminar escena" y se liberan igual en
 // Recursos. La clave es el id de la acción y, si el contador va por algo más, detrás:
-//   "<id>"                  límite "N veces por escena" de una acción de dote; las pulsaciones
-//                           de Sanar grave (Enjambre 2).
+//   "<id>"                  límite "N veces por escena" de una acción de dote. (Las pulsaciones
+//                           de Sanar grave se fueron con el sync Drive 2026-11-14: una entrada
+//                           vieja suya se descarta al leer, como cualquier clave fuera del catálogo.)
 //   "<id>@<aliadoId>"       límite "por aliado" (y escena) de una acción de dote (Apoyo).
 //   "<id>~<turno>"          límite "por turno": solo en combate, con el turno del combate en
 //                           curso (claveDeTurno); una entrada de otro turno ya no cuenta.
@@ -54,16 +55,12 @@ export function esCasillaPorEscena(id: string): boolean {
 
 let cacheContadores: ReadonlyMap<string, string> | null = null;
 
-// Id de acción con contador → su etiqueta: las acciones de dote con límite y las acciones de
-// aumento con efecto "contador". Perezoso, como el de arriba.
+// Id de acción con contador → su etiqueta: las acciones de dote con límite. Perezoso, como el
+// de arriba.
 function contadoresDelCatalogo(): ReadonlyMap<string, string> {
   if (cacheContadores) return cacheContadores;
   const mapa = new Map<string, string>();
   for (const d of DOTES) for (const e of d.efectos) if (e.tipo === "accion" && e.accion.limite) mapa.set(e.accion.id, e.accion.label);
-  for (const a of AUMENTOS) {
-    const acciones = a.familia === "operacionGenetica" ? [...(a.acciones ?? []), ...(a.eleccion?.opciones ?? []).flatMap((o) => o.acciones ?? [])] : a.niveles.flatMap((n) => n.acciones ?? []);
-    for (const x of acciones) if (x.efecto?.tipo === "contador") mapa.set(x.id, `${x.label} · ${a.label}`);
-  }
   cacheContadores = mapa;
   return mapa;
 }

@@ -2171,7 +2171,7 @@ sobreesfuerzo.
     gratuita como cortar: el texto no lo dice; usuario 2026-10-22, pendiente de Murillo),
     Sacudir miedo y Dominar terror (Estabilización, sin coste), Mensaje subvocal (MQE; desde el
     nivel 2 a varias personas, usuario 2026-10-22) y Telemetría (MQE 2+), Sanar letal (Enjambre
-    2+, 2 desde el sync Drive 2026-11-14) y Sanar grave (Enjambre 2+, 1 cada pulsación). Sin fatiga suficiente, la acción sale bloqueada.
+    2+, 2 desde el sync Drive 2026-11-14) y Sanar grave (Enjambre 2+, 4 desde el sync). Sin fatiga suficiente, la acción sale bloqueada.
   - **Estados (usuario, 2026-10-22):** Cortar hemorragia quita `hemorragia`; Sacudir miedo
     quita `miedo` en Asustado; Dominar terror lo pasa de Aterrorizado a Asustado (con la misma
     duración). Si la ficha no tiene el estado, la acción se cobra igual y lo dice. La
@@ -2184,12 +2184,12 @@ sobreesfuerzo.
   - **Sanar letal:** 2 de fatiga (sync Drive 2026-11-14; antes 1), +1 a la vida actual, sin
     pasar del máximo en reposo; acción gratuita,
     **sin tope por ronda** (la prosa no lo pone; usuario, D2 del triaje 2026-10-28). **Sanar
-    grave:** contador de pulsaciones (usuario, 2026-10-28; efecto `contador` de
-    `aumentosAcciones.ts`): la fila dice «pulsación N/5»; cada uso cobra 1 de fatiga y sube el
-    contador (en `sheet.usosEscena`, como los usos por escena); a la quinta suma sola +1 de vida
-    (`ajustarVida`, como *Sanar letal*) y vuelve a 0. Se reinicia a mano (fila «Reiniciar sanar
-    grave», sin coste ni devolver fatiga) y con «Terminar escena». Que sean turnos seguidos no
-    se comprueba. Lo de "sin penalizadores por fatiga" del Enjambre es solo de la regeneración
+    grave** `[FIRME · AUMENTOS 2026-11-14 + usuario]`: un botón que cobra **4** de fatiga y suma
+    +1 a la vida en el acto (`ajustarVida`, como *Sanar letal*); el minuto que tarda en
+    resolverse va en la nota (la app no mide el tiempo). Sustituye al contador de 5 pulsaciones
+    de 1 (2026-10-28): el efecto `contador` y su fila «Reiniciar» se borraron (era su único
+    uso); una entrada vieja «aumentos_enjambre_sanar_grave#N» en `sheet.usosEscena` se descarta
+    al leer, sin migración. Lo de "sin penalizadores por fatiga" del Enjambre es solo de la regeneración
     pasiva (fuera de A4a).
   - **Defensa del MQE:** fila informativa sin botón con alcance, dificultad de infiltración
     (+1 por turno), defensa y contragolpe del nivel que se tenga; el nivel 4 dice que el cepo
@@ -2414,11 +2414,8 @@ sobreesfuerzo.
     utiliza medicinas para sanar al personaje… también se aplica el bonificador». Sin cambio de
     motor (au-07 b): la casilla «Sobre ti mismo» sigue igual y su nota avisa de que, si te los
     aplica otro, él suma el +3 en su tirada.
-  - **Nivel 2, sanar:** Sanar letal cuesta **2** de fatiga. Sanar grave pasa a «si consume 4 se
-    inicia la sanación de 1 nivel de daño grave, la regeneración en este caso tarda en
-    resolverse un minuto»: **sin construir** (`TODO(revisar)`, T2.M4.3). La app sigue con el
-    contador de 5 pulsaciones de 1: cambiarlo deja sin uso el efecto `contador` (es su único
-    caso) y sus contadores guardados, y falta decidir cómo se lleva el minuto.
+  - **Nivel 2, sanar:** Sanar letal cuesta **2** de fatiga. Sanar grave, **4** de fatiga y +1 de
+    vida en el acto; el minuto que tarda, nota (usuario, 2026-11-14; A4a, abajo).
   - **Nivel 3, Densificar:** «red defensiva contra traumatismos»: el +3 de blindaje solo contra
     el daño Cinético (A4b, abajo). El +3 a la salvación contra el aturdimiento de ese golpe no
     cambia.
@@ -3320,7 +3317,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S104 | **Sobreesfuerzo (T6a, 2026-11-13)**, supuestos al construirlo (§10.7), todos `TODO(revisar)`: (1) **«fatigado» es el umbral tras pagar el poder** (el que ve el servidor al aplicar el fallo): un gasto que te deja fatigado ya lo dispara; la prosa dice «estando fatigado» sin aclarar si antes o después. (2) **Aturdido sin duración** («queda aturdido», «causa aturdimiento») = 1 turno; el fracaso crítico exhausto que solo cambia el daño (Arianyi y Maestría, implante 3) conserva el Aturdido. (3) **Más suave** casilla a casilla, daño antes que estados (con el implante 1 exhausto, «1 grave» frente a «1 letal y Aturdido» gana Maestría). (4) **Dos fuentes** a la vez (Maolher con implante): vale la que salte con más dificultad. (5) **Prolongar Proeza** no vuelve a tirar sobreesfuerzo (solo el uso). (6) **Muerte cerebral** (implante 1 y 2, exhausto, fracaso crítico): la app la avisa, no la aplica. (7) El **NPC del máster** (modo libre) no mira quién puede tener poderes. | Construcción de T6a; formas de es-01, au-04, au-05, ps-01…04 decididas por el usuario. |
 | S105 | **Poderes sueltos (T6b, 2026-11-13)**, supuestos al construirlos (§10.6b), `TODO(revisar)`: (1) **«La misma fatiga» del Sondeo** = la del uso con lo que el servidor sabe (tramo, descuentos por nivel y los Supresores puestos); las casillas que se marcaron al usarlo (Xovromium) y lo pagado con cargas de Derivación no cuentan al prolongar. (2) **Prolongar el Sondeo** cobra contra la fatiga efectiva; si cruza a exhausto, avisa de la sobrecarga (la salvación, a mano) y no vuelve a saltar el sobreesfuerzo (como prolongar Proeza, S104). (3) Fuera de combate las rondas no corren: el estado sigue hasta quitarlo y prolongar solo cobra. (4) **Proyección**: «por cada 200 kg adicionales» se cuenta por tramos completos (299 kg sobre 100 no suma); sin peso escrito, objeto de hasta 100 kg. (5) **Alerta pasiva**: exhausto es el umbral de la fatiga efectiva (la temporal de Proeza cuenta), como la sobrecarga. | Construcción de T6b; formas de ps-05…08 decididas por el usuario. |
 | S106 | **Bajón y rechazo de fármacos (T7c, 2026-11-14)**, supuestos al construir fa-03 (§12): (1) **Salvaciones incluidas** en «tiradas con atributos mentales» (el Ultra excluye las salvaciones de las «acciones físicas»; aquí el texto dice «tiradas»). (2) **Fatiga en combate**: a la foto que enseña la Mesa, como la pestaña Vida; fuera, a la ficha. (3) **Fatiga insuficiente** para el bajón: se cobra la que quede (hasta 0) y se avisa; no bloquea. (4) **El servidor acepta la consecuencia del fármaco ya agotado** (el cliente gasta la dosis antes; con la última, la fila ya no está): `accionesDeFarmacos(…, conAgotados)`. (5) ~~Los cinco estados los puede quitar el propio jugador~~: los bajones y el rechazo, solo el máster (usuario, 2026-11-14); los recordatorios, también el jugador. `TODO(revisar)` (4): no comprueba que la ficha haya tenido nunca esa dosis (solo se perjudica a sí mismo). | Construcción de T7c; decisiones de fa-03 del usuario. |
-| S107 | **Sync Drive 2026-11-14, tanda T2 (medianos)**, decisiones del usuario (2026-11-14) y supuestos al construirla (`docs/plan-sync-2026-11-14.md`): (1) **Brazo Biónico, blindaje (lectura A, usuario)**: compite contra la **suma** de armadura + armadura natural (especie y aumentos) y aporta lo que le falte; Deflector, blindaje reactivo y Contención suman aparte. Supuesto: el Tejido Conductor también suma aparte (`TODO(revisar)`). (2) **Requisito de atributo en los aumentos (usuario)**: se construye para el Brazo 4 Fuerte (Fuerza 2); supuesto: se mira solo al comprar, con la Fuerza permanente (la de los requisitos de dote), y no se rompe después. (3) **Brazo, ventaja por 2 de fatiga**: «prueba que utilice el brazo» = las de Fortaleza, Potencia o Reflejos sin salvaciones, con casilla (`TODO(revisar)`); límites por descanso, texto (usuario: límites de uso = texto salvo «por escena»). (4) **Densificar «contra traumatismos»** = solo daño Cinético (supuesto, como la Osteotendinosa). | Plan de sync, decisiones de arriba; supuestos, `TODO(revisar)`. |
+| S107 | **Sync Drive 2026-11-14, tanda T2 (medianos)**, decisiones del usuario (2026-11-14) y supuestos al construirla (`docs/plan-sync-2026-11-14.md`): (1) **Brazo Biónico, blindaje (lectura A, usuario)**: compite contra la **suma** de armadura + armadura natural (especie y aumentos) y aporta lo que le falte; Deflector, blindaje reactivo y Contención suman aparte. Supuesto: el Tejido Conductor también suma aparte (`TODO(revisar)`). (2) **Requisito de atributo en los aumentos (usuario)**: se construye para el Brazo 4 Fuerte (Fuerza 2); supuesto: se mira solo al comprar, con la Fuerza permanente (la de los requisitos de dote), y no se rompe después. (3) **Brazo, ventaja por 2 de fatiga**: «prueba que utilice el brazo» = las de Fortaleza, Potencia o Reflejos sin salvaciones, con casilla (`TODO(revisar)`); límites por descanso, texto (usuario: límites de uso = texto salvo «por escena»). (4) **Densificar «contra traumatismos»** = solo daño Cinético (supuesto, como la Osteotendinosa). (5) **Sanar grave (usuario)**: un botón que cobra 4 y cura 1 grave en el acto; «tarda un minuto», nota. Se borra el efecto `contador` (sin otro uso); las claves viejas de su contador se ignoran al leer, sin migración. | Plan de sync, decisiones de arriba; supuestos, `TODO(revisar)`. |
 
 ## Conflictos detectados
 

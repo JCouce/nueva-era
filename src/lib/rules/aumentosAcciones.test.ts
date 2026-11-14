@@ -4,8 +4,7 @@ import { motivoDeBloqueo } from "./habilitacion";
 import { defaultSheet, type Sheet } from "./sheet";
 import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { accionesDeAumentos, operacionDeEfecto, usoDeAccionAumento, type EfectoAccionAumento } from "./aumentosAcciones";
-import { terminarEscena, topesDeVida } from "./vitalidad";
-import { contadorEscena } from "./usosEscena";
+import { topesDeVida } from "./vitalidad";
 import type { EstadoActivo } from "./estados";
 import { montarTirada, SIN_ELECCION } from "./montaje";
 import { resolverDanio, type Accion } from "./acciones";
@@ -85,7 +84,7 @@ describe("acciones de aumento: cuáles salen y cuánto cuestan", () => {
     assert.equal(porId(conRecursos(con(defaultSheet(), ENJAMBRE, 1))).size, 0);
     const a = porId(conRecursos(con(defaultSheet(), ENJAMBRE, 4)));
     assert.equal(a.get("aumentos_enjambre_sanar_letal")?.costeFatiga, 2); // sync Drive 2026-11-14 (antes 1)
-    assert.equal(a.get("aumentos_enjambre_sanar_grave")?.costeFatiga, 1);
+    assert.equal(a.get("aumentos_enjambre_sanar_grave")?.costeFatiga, 4); // sync Drive 2026-11-14 (antes 1 por pulsación)
   });
 
   test("sin fatiga suficiente, la acción sale bloqueada y el servidor la rechaza", () => {
@@ -206,58 +205,20 @@ describe("usar una acción de aumento", () => {
     assert.match(entero.mensaje, /Ya estabas al máximo/);
   });
 
-  test("Sanar grave: cada pulsación cobra 1, sin tocar la vida", () => {
-    const s = conRecursos(con(defaultSheet(), ENJAMBRE, 2), 3, 4);
-    const uso = usoDeAccionAumento(s, [], "aumentos_enjambre_sanar_grave");
-    assert.ok(uso.ok);
-    assert.equal(uso.sheet.fatigaActual, 2);
-    assert.equal(uso.sheet.vidaActual, 4);
-  });
-
-  describe("Sanar grave: contador de pulsaciones (usuario, 2026-10-28)", () => {
-    const GRAVE = "aumentos_enjambre_sanar_grave";
-    const REINICIAR = `${GRAVE}_reiniciar`;
-    const pulsar = (s: Sheet) => {
-      const uso = usoDeAccionAumento(s, [], GRAVE);
-      assert.ok(uso.ok);
-      return uso;
-    };
-
-    test("la fila dice por qué pulsación va; sin pulsaciones, no hay fila de reiniciar", () => {
-      const s = conRecursos(con(defaultSheet(), ENJAMBRE, 2), 9, 4);
-      assert.equal(porId(s).get(GRAVE)?.label, "Sanar grave (pulsación 1/5)");
-      assert.equal(porId(s).has(REINICIAR), false);
-      const dos = pulsar(pulsar(s).sheet).sheet;
-      assert.equal(porId(dos).get(GRAVE)?.label, "Sanar grave (pulsación 3/5)");
-      assert.ok(porId(dos).has(REINICIAR));
-    });
-
-    test("cada pulsación cobra 1 y sube el contador; la quinta suma 1 de vida y vuelve a 0", () => {
-      let s = conRecursos(con(defaultSheet(), ENJAMBRE, 2), 9, 4);
-      for (let i = 1; i <= 4; i++) {
-        const uso = pulsar(s);
-        assert.equal(uso.sheet.vidaActual, 4, `pulsación ${i}`);
-        assert.equal(uso.sheet.fatigaActual, 9 - i);
-        assert.equal(contadorEscena(uso.sheet.usosEscena, GRAVE), i);
-        assert.match(uso.mensaje, new RegExp(`Pulsación ${i}/5`));
-        s = uso.sheet;
-      }
-      const quinta = pulsar(s);
-      assert.equal(quinta.sheet.vidaActual, 5);
-      assert.equal(quinta.sheet.fatigaActual, 4);
-      assert.equal(contadorEscena(quinta.sheet.usosEscena, GRAVE), 0);
-      assert.deepEqual(quinta.sheet.usosEscena, []);
-      assert.match(quinta.mensaje, /\+1 de vida/);
-    });
-
-    test("se reinicia a mano (sin coste) y con Terminar escena", () => {
-      const tres = pulsar(pulsar(pulsar(conRecursos(con(defaultSheet(), ENJAMBRE, 2), 9, 4)).sheet).sheet).sheet;
-      const reinicio = usoDeAccionAumento(tres, [], REINICIAR);
-      assert.ok(reinicio.ok);
-      assert.equal(reinicio.sheet.fatigaActual, tres.fatigaActual);
-      assert.equal(contadorEscena(reinicio.sheet.usosEscena, GRAVE), 0);
-      assert.equal(contadorEscena(terminarEscena(tres).usosEscena, GRAVE), 0);
-    });
+  // Sync Drive 2026-11-14 (M4.3b, usuario): 4 de fatiga y +1 de vida en el acto; el minuto que
+  // tarda es nota. Antes, 5 pulsaciones de 1 con contador en la escena.
+  test("Sanar grave: 4 de fatiga y +1 de vida, topado al máximo; sin contador", () => {
+    const base = con(defaultSheet(), ENJAMBRE, 2);
+    const max = topesDeVida(base).vida;
+    const herido = usoDeAccionAumento(conRecursos(base, 5, max - 1), [], "aumentos_enjambre_sanar_grave");
+    assert.ok(herido.ok);
+    assert.equal(herido.sheet.vidaActual, max);
+    assert.equal(herido.sheet.fatigaActual, 1);
+    assert.deepEqual(herido.sheet.usosEscena, []);
+    const fila = porId(conRecursos(base, 5)).get("aumentos_enjambre_sanar_grave")!;
+    assert.equal(fila.label, "Sanar grave");
+    assert.match(fila.nota ?? "", /tarda un minuto \(10 turnos\)/);
+    assert.equal(porId(conRecursos(base, 5)).has("aumentos_enjambre_sanar_grave_reiniciar"), false);
   });
 });
 
