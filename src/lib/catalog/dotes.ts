@@ -7312,6 +7312,72 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_as_de_exoarmadura",
+    "label": "As de Exoarmadura",
+    "grupo": "pilotaje",
+    "coste": 4,
+    "requisitos": [
+      {
+        "tipo": "dote",
+        "id": "dote_piloto_de_exoarmadura"
+      },
+      {
+        "tipo": "especialidad",
+        "habilidad": "pilotaje",
+        "id": "exoarmadura",
+        "min": 4
+      },
+      {
+        "tipo": "aplicado",
+        "id": "reflejos",
+        "min": 2
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": "dote_piloto_de_exoarmadura",
+    "visible": true,
+    "texto": "El personaje anula el penalizador de -1 en los ataques realizados mientras se encuentra utilizando la propulsión aérea de su exoarmadura. Además, reduce en 3 el penalizador por dificultad para maniobras de su propulsión aéra *(sic)* de la armadura o el traje cuando realiza acciones defensivas de esquiva.",
+    "efectos": [
+      {
+        "tipo": "bono",
+        "alcance": "defensa",
+        "valor": 3,
+        "condicion": "Esquivando en vuelo con la propulsión aérea (reduce 3 la dificultad de maniobra)",
+        "borrador": 0
+      },
+      {
+        "tipo": "texto",
+        "lugar": "ficha",
+        "texto": "En vuelo con la propulsión aérea no sufres el −1 a los ataques.",
+        "condicion": null,
+        "porque": "sin_regla",
+        "borrador": 1
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "numerico",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "defensa"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "ninguna"
+        },
+        "mecanismo": null,
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_movimiento_sigiloso",
     "label": "Movimiento Sigiloso",
     "grupo": "sigilo",
@@ -8941,9 +9007,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   217 efectos (207 en el borrador)
-//   construidos: 121
-//   texto: 96
+//   219 efectos (209 en el borrador)
+//   construidos: 122
+//   texto: 97
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

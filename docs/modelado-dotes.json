@@ -6851,6 +6851,49 @@
       "candidataUX": null
     },
     {
+      "id": "dote_as_de_exoarmadura",
+      "label": "As de Exoarmadura",
+      "grupo": "pilotaje",
+      "coste": 4,
+      "requisitos": [
+        {
+          "tipo": "dote",
+          "id": "dote_piloto_de_exoarmadura"
+        },
+        {
+          "tipo": "especialidad",
+          "habilidad": "pilotaje",
+          "id": "exoarmadura",
+          "min": 4
+        },
+        {
+          "tipo": "aplicado",
+          "id": "reflejos",
+          "min": 2
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": "dote_piloto_de_exoarmadura",
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "bono",
+          "alcance": "defensa",
+          "valor": 3,
+          "condicion": "Esquivando en vuelo con la propulsión aérea (reduce 3 la dificultad de maniobra)"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "ficha",
+          "texto": "En vuelo con la propulsión aérea no sufres el −1 a los ataques.",
+          "condicion": null,
+          "porque": "sin_regla"
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_movimiento_sigiloso",
       "label": "Movimiento Sigiloso",
       "grupo": "sigilo",

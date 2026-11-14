@@ -151,3 +151,26 @@ describe("Piloto de Exoarmadura", () => {
     assert.deepEqual(casillasDe(fija(sin, "defensa"), "dote_piloto_de_exoarmadura"), []);
   });
 });
+
+describe("As de Exoarmadura", () => {
+  const piloto = { id: "dote_piloto_de_exoarmadura" };
+  const as = { id: "dote_as_de_exoarmadura" };
+
+  test("con Piloto, vale la mejor: una sola casilla, +3", () => {
+    const f = resolver(ficha([piloto, as]));
+    const t = fija(f, "defensa");
+    assert.deepEqual(casillasDe(t, "dote_piloto_de_exoarmadura"), []);
+    const [c] = casillasDe(t, "dote_as_de_exoarmadura");
+    assert.match(c.etiqueta, /reduce 3 la dificultad de maniobra/);
+    assert.equal(total(f, t, [c.id]) - total(f, t), 3);
+  });
+
+  test("pide Piloto de Exoarmadura: sin ella, no hace nada", () => {
+    assert.deepEqual(casillasDe(fija(resolver(ficha([as])), "defensa"), "dote_as_de_exoarmadura"), []);
+  });
+
+  test("el −1 a los ataques en vuelo no se aplica en la app: la anulación va en la tarjeta", () => {
+    const dote = DOTES.find((d) => d.id === "dote_as_de_exoarmadura")!;
+    assert.ok(dote.efectos.some((e) => e.tipo === "texto" && e.lugar === "ficha" && /no sufres el −1 a los ataques/.test(e.texto)));
+  });
+});

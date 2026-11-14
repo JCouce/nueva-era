@@ -16,8 +16,8 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **119 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 1 · Sigilo 8 ·
+> Recuento: **120 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 2 · Sigilo 8 ·
 > Tecnociencia 1 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
@@ -1240,6 +1240,18 @@ Si el personaje fracasa en una tirada de **investigación** o se queda estancado
 
 **Efecto:**
 El personaje reduce en 2 el penalizador por dificultad para maniobras de su propulsión aéra *(sic)* de la armadura o el traje cuando realiza acciones defensivas de esquiva.
+
+### As de Exoarmadura
+
+**Coste:** 4
+
+**Requisitos:**
+- Piloto de Exoarmadura · dote previa
+- Exoarmadura 4 · especialidad (Pilotaje)
+- Reflejos 2 · atributo aplicado
+
+**Efecto:**
+El personaje anula el penalizador de -1 en los ataques realizados mientras se encuentra utilizando la propulsión aérea de su exoarmadura. Además, reduce en 3 el penalizador por dificultad para maniobras de su propulsión aéra *(sic)* de la armadura o el traje cuando realiza acciones defensivas de esquiva.
 
 ## Sigilo
 
