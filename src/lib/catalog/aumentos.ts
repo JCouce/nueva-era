@@ -1,7 +1,7 @@
-// Catálogo de aumentos (docs/sistema.md §11): 26 operaciones genéticas y 9 implantes (los 6
-// primeros y, desde E5a del sync Drive 2026-11-14, Metabolismo Sintético, Control Anímico y Control
-// Sensorial). Chasis Osteomuscular y Módulo de Respaldo siguen "en proceso" en docs/aumentos.md
-// (después de la partida, usuario 2026-11-14).
+// Catálogo de aumentos (docs/sistema.md §11): 26 operaciones genéticas y 10 implantes (los 6
+// primeros; desde E5a del sync Drive 2026-11-14, Metabolismo Sintético, Control Anímico y Control
+// Sensorial; desde E5b, Chasis Osteomuscular). Módulo de Respaldo sigue "en proceso" en
+// docs/aumentos.md.
 //
 // Escrito a mano a partir de docs/modelado-aumentos.json (ids, rareza, coste,
 // requisitos, niveles, variantes, elección y MotorMetadata) y de la prosa literal de
@@ -70,7 +70,7 @@ import type { CondicionTirada } from "../rules/condiciones";
 import type { Modificador } from "../rules/modificadores";
 import type { MotorMetadata } from "../rules/motor";
 import type { AfectaShock } from "../rules/shock";
-import type { BlindajeReactivo, EfectoSalvacion, EfectosTiradaAumento, TextoDeNivel } from "../rules/aumentosTiradas";
+import type { ArmaduraNaturalAumento, BlindajeReactivo, EfectoSalvacion, EfectosTiradaAumento, TextoDeNivel } from "../rules/aumentosTiradas";
 import type { AccionAumentoCatalogo, DefensaIntrusion } from "../rules/aumentosAcciones";
 import type { ActivoAumento } from "../rules/aumentosActivables";
 import type { ExtremidadBionica } from "../rules/brazoBionico";
@@ -80,6 +80,7 @@ import { SOBREESFUERZO_IRM } from "./sobreesfuerzos";
 import { VISION_AUMENTADA } from "./mejorasArma";
 import { NO_APILA_COBERTURA, NOTA_COBERTURA } from "./cobertura";
 import { NO_APILA_NANOMEDICINA } from "./medicina";
+import { TIPOS_DANIO } from "./tiposDanio";
 
 // au-06 (usuario, 2026-11-13): lo que deja percibir cada sentido, una línea en Buscar / percibir.
 const BUSCAR = { tipo: "tiradaId", id: "alerta_activa" } as const;
@@ -177,7 +178,15 @@ export type NivelImplante = NivelModulo & {
   // nivel: vale el del nivel más alto que lo trae. (No es `NivelModulo.reducePenalizador`, el del
   // equipo, que va por alcance.)
   reduceUmbrales?: ReduccionPenalizadorAumento[];
+  // E5b (Chasis Osteomuscular): armadura natural del implante, como la de las operaciones (R6). Total
+  // del nivel: vale el del nivel más alto que la trae (armaduraNaturalDeAumentos).
+  armaduraNatural?: ArmaduraNaturalAumento;
+  // E5b (Chasis Osteomuscular): el golpe desarmado (toda la Pelea) pasa a letal y suma `bonoDanio`.
+  // Total del nivel: vale el del nivel más alto que lo trae (golpeDesarmado, rules/golpeDesarmado.ts).
+  desarmado?: DesarmadoDeAumento;
 };
+
+export type DesarmadoDeAumento = { bonoDanio: number; letal: true };
 
 export type Implante = {
   familia: "implante";
@@ -1511,6 +1520,28 @@ const MOTOR_SENSORIAL: MotorMetadata[] = [
   { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
 ];
 
+// Chasis Osteomuscular (E5b, sync Drive 2026-11-14; docs/sistema.md §11.1 y S111). Sin software:
+// inmune al hacking, al rastreo remoto y al sabotaje informático (`sabotaje: false`); sí le afecta el
+// Shock del cuerpo, como a todo implante. Por nivel N: Fuerza +N (atributo, como las operaciones),
+// armadura natural N (malla subdérmica, contra todo lo que para el blindaje) y el golpe desarmado
+// letal; desde el 2, +N−1 al daño desarmado.
+const ARMADURA_CHASIS = (valor: number): ArmaduraNaturalAumento => ({
+  valor,
+  tipos: TIPOS_DANIO.map((t) => t.id),
+  nota: "Malla subdérmica de cerámica no newtoniana; se suma a la armadura puesta.",
+});
+// Lo común a cada nivel: Fuerza, armadura natural y golpe desarmado.
+const MOTOR_NIVEL_CHASIS: MotorMetadata[] = [
+  // Fuerza +N: Modificador "atributo" (atributos, aplicados, derivados y daño de Fuerza).
+  { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
+  // Armadura natural: línea propia en Resistir daño (desgloseBlindaje).
+  { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_danio" }, mecanismo: "suma_derivado", estado: "construido" },
+  // Golpe desarmado letal (y, desde el 2, +N al daño): el daño de la Pelea (golpeDesarmado).
+  { tipo: "resolucion", afecta: { modo: "accion_existente", id: "ataque_melee" }, mecanismo: "suma_derivado", estado: "construido" },
+  // Letal: bloquear desarmado sin el −3 («no se considera desarmado», Bloqueo).
+  { tipo: "numerico", afecta: { modo: "accion_existente", id: "bloquear_melee" }, mecanismo: "eleccion_jugador", estado: "construido" },
+];
+
 export const IMPLANTES: Implante[] = [
   {
     familia: "implante",
@@ -2427,6 +2458,69 @@ export const IMPLANTES: Implante[] = [
           ...MOTOR_SENSORIAL,
           { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
         ],
+      },
+    ],
+  },
+  {
+    familia: "implante",
+    id: "aum_chasis_osteomuscular",
+    label: "Chasis Osteomuscular",
+    resumen: "+1 a +4 en Fuerza, armadura natural 1 a 4 y golpes desarmados letales; desde el 2, salvaciones contra derribo y aturdimiento y un subsistema táctico integrado.",
+    descripcion:
+      "El Chasis Osteomuscular es una intervención quirúrgica radical que fusiona la biología con la tecnología avanzada mediante la osteointegración de nanotubos de carbono en la matriz ósea, la sustitución parcial de la musculatura por polímeros electroactivos y el anclaje subdérmico de una malla de cerámica no newtoniana. Esta densificación estructural altera de forma permanente la morfología del usuario y satura su espacio tisular, bloqueando por completo la regeneración celular acelerada o la genética hiperplásica. Al carecer por completo de microprocesadores lógicos o software, el sistema es absolutamente inmune al hacking, al rastreo remoto y al sabotaje informático. Sin embargo, sí le afecta el shock en su funcionamiento físico: al utilizar micro-corrientes eléctricas para accionar sus polímeros sintéticos, las descargas directas o los pulsos EMP inducen picos de voltaje analógicos que desestabilizan los actuadores, provocando espasmos neuromusculares y el fallo temporal del implante bajo las reglas estándar de shock para sistemas biónicos. Este implante es completamente incompatible con los aumentos genéticos de: Integridad Osteotendinosa, Matriz Ósea Adaptativa, Hipertrofia Miofibrilar, Sincronización Neuromotora Profunda y Regeneración Tisular Acelerada, ya que la presencia masiva de hardware sintético y la saturación tisular del chasis sustituyen las estructuras orgánicas que estos tratamientos pretenden modificar, impidiendo la aceleración celular y provocando un rechazo metabólico catastrófico si se intenta su combinación.",
+    // «Inmune al hacking, al rastreo remoto y al sabotaje informático»: sin sabotaje.
+    sabotaje: false,
+    shock: "cuerpo",
+    extraible: null,
+    niveles: [
+      {
+        nivel: 1,
+        rareza: "Poco Habitual",
+        coste: 18000,
+        detalle: [
+          "Primera fase de osteointegración de nanotubos y micro-actuadores básicos en las extremidades principales.",
+          "El personaje adquiere un aumento efectivo de +1 en Fuerza, +1 punto de Armadura Natural (por la malla subdérmica de cerámica) y transforma el daño de sus golpes desarmados en Letal.",
+        ],
+        modificadores: [{ tipo: "atributo", id: "fuerza", valor: 1 }],
+        armaduraNatural: ARMADURA_CHASIS(1),
+        desarmado: { bonoDanio: 0, letal: true },
+        motor: MOTOR_NIVEL_CHASIS,
+      },
+      {
+        nivel: 2,
+        rareza: "Extraño",
+        coste: 36000,
+        detalle: [
+          "Sustitución parcial de la musculatura profunda por polímeros electroactivos y densificación total de la caja torácica y la faja pélvica.",
+          "El aumento de Fuerza asciende a +2, la Armadura Natural sube a 2 puntos y el daño desarmado aumenta en 1 nivel adicional. Otorga un bonificador pasivo de +2 a las tiradas de salvación contra derribo y aturdimiento por impactos.",
+          "Integración Táctica: Permite anclar quirúrgicamente en el cuerpo un subsistema táctico de hasta Nivel 2 como los que utilizan las armaduras. El personaje podrá elegir exclusivamente entre: el Proyector de Pulso o el Camuflaje Trifásico. Al alimentarse directamente de la bioelectricidad y el metabolismo del usuario en lugar de baterías externas, cada uso o activación consume 2 puntos de fatiga del personaje. En el caso del El camuflaje subdérmico este puede «traspasar» o sincronizarse con Traje Ultra Ligero, Ropa Inteligente o Ropa Reforzada, pero queda bloqueado por armaduras más pesadas.",
+        ],
+        modificadores: [],
+        motor: [{ tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" }],
+      },
+      {
+        nivel: 3,
+        rareza: "Extraño",
+        coste: 72000,
+        detalle: [
+          "Redundancia de los actuadores sintéticos, blindaje de las articulaciones principales y anclajes estructurales de grado industrial pesado.",
+          "Otorga +3 en Fuerza, 3 puntos de Armadura Natural y el daño desarmado aumenta en 2. El bonificador contra derribo y aturdimiento físico sube a +3. El límite para subsistemas corporales integrados asciende a nivel 3.",
+          "La modificación a estos niveles suele hacerse muy evidente a simple vista alterando el aspecto físico del usuario.",
+        ],
+        modificadores: [],
+        motor: [{ tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" }],
+      },
+      {
+        nivel: 4,
+        rareza: "Muy Extraño",
+        coste: 144000,
+        detalle: [
+          "El cuerpo del usuario opera prácticamente como un exoesqueleto interno de aleación de titanio-carbono y polímeros de alto rendimiento, donde la carne restante sirve meramente como soporte vital auxiliar.",
+          "Otorga un aumento efectivo de +4 en Fuerza, 4 puntos de Armadura Natural y eleva el daño desarmado en 3 niveles. El bonificador contra derribo y aturdimiento físico alcanza un imponente +4. El límite de subsistemas corporales integrados llega a nivel 4.",
+          "Una vez por descanso, el usuario puede gastar 2 puntos de fatiga para duplicar durante un turno su capacidad de carga o para realizar una prueba de potencia o fortaleza que implique soportar o vencer una resistencia con ventaja: Realizar o evitar agarres y derribos, soportar impactos cinéticos extremos, resistir efectos de aturdimiento físico y llevar a cabo proezas de fuerza bruta como romper objetos.",
+        ],
+        modificadores: [],
+        motor: [{ tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" }],
       },
     ],
   },

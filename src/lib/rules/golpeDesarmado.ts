@@ -6,7 +6,14 @@
 //     Al ser letal, bloquear desarmado tampoco lleva el −3 ("si el ataque desarmado de quien
 //     bloquea causa daño letal no se considera desarmado", Bloqueo).
 // Cuenta la armadura que cuenta para el blindaje: la primera de la ficha.
+// E5b (sync Drive 2026-11-14): el Chasis Osteomuscular hace letal el golpe desarmado y, desde el
+// nivel 2, le suma +1/+2/+3, con armadura o sin ella (`NivelImplante.desarmado`). golpeDesarmado
+// junta las dos cosas; golpeDesarmadoConArmadura sigue siendo solo lo de la armadura.
+// TODO(revisar) (S111): como el de la armadura, el bono va metido en el daño de la fila: el Shock que
+// penaliza el implante no lo baja (apagado, el Chasis no llega a la ficha en uso, pero la fila de
+// ataque se genera con la ficha entera).
 import { equipoPorId, type Armadura } from "../catalog/equipo";
+import { aumentoPorId } from "./aumentos";
 import { nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import type { Sheet } from "./sheet";
 import type { EfectoEnTirada } from "./efectosArma";
@@ -20,6 +27,9 @@ export type GolpeDesarmadoConArmadura = {
   aturdimiento: { dificultad: number; fuente: string } | null;
   // Quién quita el −3 al bloquear desarmado, o null.
   bloqueoSinPenalizador: string | null;
+  // Lo que suman los aumentos (Chasis Osteomuscular 2: +1), aparte de `fuentes`, que es lo de la
+  // armadura. Solo lo pone golpeDesarmado.
+  deAumentos?: string[];
 };
 
 function armaduraQueCuenta(sheet: Pick<Sheet, "equipo">): { pieza: PiezaEquipada; cat: Armadura } | null {
@@ -59,6 +69,36 @@ export function golpeDesarmadoConArmadura(sheet: Pick<Sheet, "equipo">): GolpeDe
   }
   if (bonoDanio === 0 && !letal && !bloqueoSinPenalizador) return null;
   return { bonoDanio, fuentes, letal, aturdimiento, bloqueoSinPenalizador };
+}
+
+// Lo que los implantes hacen al golpe desarmado (Chasis Osteomuscular, E5b): letal y +N, el del nivel
+// más alto que lo trae. Una línea por pieza.
+export function golpeDesarmadoDeAumentos(sheet: Pick<Sheet, "equipo">): { bonoDanio: number; fuente: string; letal: boolean }[] {
+  return sheet.equipo.flatMap((pieza) => {
+    const cat = aumentoPorId(pieza.catalogoId);
+    if (cat?.familia !== "implante" || pieza.nivel === undefined) return [];
+    const d = ultimoQueDefine(nivelesHasta(cat.niveles, pieza.nivel), "desarmado")?.desarmado;
+    return d ? [{ bonoDanio: d.bonoDanio, fuente: `${cat.label} ${pieza.nivel}`, letal: d.letal }] : [];
+  });
+}
+
+// El golpe desarmado de la ficha: lo de la armadura (golpeDesarmadoConArmadura) y lo de los
+// implantes. El letal de un implante también quita el −3 al bloquear desarmado (Bloqueo: «si el
+// ataque desarmado de quien bloquea causa daño letal no se considera desarmado»).
+export function golpeDesarmado(sheet: Pick<Sheet, "equipo">): GolpeDesarmadoConArmadura | null {
+  const armadura = golpeDesarmadoConArmadura(sheet);
+  const aumentos = golpeDesarmadoDeAumentos(sheet);
+  if (aumentos.length === 0) return armadura;
+  const letal = aumentos.find((a) => a.letal)?.fuente ?? null;
+  const conBono = aumentos.filter((a) => a.bonoDanio > 0);
+  return {
+    bonoDanio: (armadura?.bonoDanio ?? 0) + conBono.reduce((t, a) => t + a.bonoDanio, 0),
+    fuentes: armadura?.fuentes ?? [],
+    letal: armadura?.letal ?? letal,
+    aturdimiento: armadura?.aturdimiento ?? null,
+    bloqueoSinPenalizador: armadura?.bloqueoSinPenalizador ?? letal,
+    ...(conBono.length > 0 && { deAumentos: conBono.map((a) => `${a.fuente} +${a.bonoDanio}`) }),
+  };
 }
 
 // El crítico del golpe con el aturdimiento del Refuerzo: la salvación contra Aturdido del

@@ -5946,6 +5946,152 @@
           ]
         }
       ]
+    },
+    {
+      "familia": "implante",
+      "id": "aum_chasis_osteomuscular",
+      "label": "Chasis Osteomuscular",
+      "descripcion": "El Chasis Osteomuscular es una intervención quirúrgica radical que fusiona la biología con la tecnología avanzada mediante la osteointegración de nanotubos de carbono en la matriz ósea, la sustitución parcial de la musculatura por polímeros electroactivos y el anclaje subdérmico de una malla de cerámica no newtoniana. Esta densificación estructural altera de forma permanente la morfología del usuario y satura su espacio tisular, bloqueando por completo la regeneración celular acelerada o la genética hiperplásica. Al carecer por completo de microprocesadores lógicos o software, el sistema es absolutamente inmune al hacking, al rastreo remoto y al sabotaje informático. Sin embargo, sí le afecta el shock en su funcionamiento físico: al utilizar micro-corrientes eléctricas para accionar sus polímeros sintéticos, las descargas directas o los pulsos EMP inducen picos de voltaje analógicos que desestabilizan los actuadores, provocando espasmos neuromusculares y el fallo temporal del implante bajo las reglas estándar de shock para sistemas biónicos. Este implante es completamente incompatible con los aumentos genéticos de: Integridad Osteotendinosa, Matriz Ósea Adaptativa, Hipertrofia Miofibrilar, Sincronización Neuromotora Profunda y Regeneración Tisular Acelerada, ya que la presencia masiva de hardware sintético y la saturación tisular del chasis sustituyen las estructuras orgánicas que estos tratamientos pretenden modificar, impidiendo la aceleración celular y provocando un rechazo metabólico catastrófico si se intenta su combinación.",
+      "sabotaje": false,
+      "extraible": null,
+      "electronico": true,
+      "incompatibleCon": [],
+      "niveles": [
+        {
+          "nivel": 1,
+          "rareza": "Poco Habitual",
+          "coste": 18000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "atributo",
+              "id": "fuerza",
+              "valor": 1
+            },
+            {
+              "tipo": "armadura_natural",
+              "valor": 1,
+              "tipos": "todos los que para el blindaje"
+            },
+            {
+              "tipo": "desarmado",
+              "letal": true,
+              "bonoDanio": 0
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "todas"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "bloquear_danio"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "resolucion",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "ataque_melee"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "bloquear_melee"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            }
+          ]
+        },
+        {
+          "nivel": 2,
+          "rareza": "Extraño",
+          "coste": 36000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "texto",
+              "texto": "Pendiente (E5b, siguiente commit)"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "todas"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "pendiente"
+            }
+          ]
+        },
+        {
+          "nivel": 3,
+          "rareza": "Extraño",
+          "coste": 72000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "texto",
+              "texto": "Pendiente"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "todas"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "pendiente"
+            }
+          ]
+        },
+        {
+          "nivel": 4,
+          "rareza": "Muy Extraño",
+          "coste": 144000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "texto",
+              "texto": "Pendiente"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "todas"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "pendiente"
+            }
+          ]
+        }
+      ]
     }
   ],
   "extraccion": {

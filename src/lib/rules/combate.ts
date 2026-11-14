@@ -43,7 +43,7 @@ import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type A
 import { RUIDO_DISPARO, modosDeOcultacion, textoSigiloAlAtacar, type SigiloAlAtacar } from "./sigilo";
 import { ESTADO_AGUIJON_ID, ESTADO_CAMUFLAJE_ID } from "../catalog/estados";
 import { atributoEfectivo, aplicado } from "./derivados";
-import { criticoDesarmado, golpeDesarmadoConArmadura } from "./golpeDesarmado";
+import { criticoDesarmado, golpeDesarmado } from "./golpeDesarmado";
 import { ID_RETROCESO_ENTROPICO, retrocesoEntropico } from "./retrocesoEntropico";
 import { ESPECIALIDAD_ARMA, ESPECIALIDAD_ATAQUE_ESPECIAL, ESPECIALIDAD_LANZAR } from "../catalog/especialidadesArma";
 import type { PermisosDeDotes } from "./dotesEfectos";
@@ -894,8 +894,9 @@ function tiradaDeArmaMelee(
   const esDesarmado = PELEA.some((p) => p.id === arma.id);
   const malla = esDesarmado ? mallaPlasmaticaEquipada(sheet) : null;
   // Con armadura (Ligera/Intermedia/Pesada) y Refuerzo de Combate: +N al daño, letal y
-  // aturdimiento del crítico (golpeDesarmado.ts). La Pelea no se modifica (S87): sin perfil.
-  const conArmadura = esDesarmado ? golpeDesarmadoConArmadura(sheet) : null;
+  // aturdimiento del crítico; con el Chasis Osteomuscular (E5b), letal y +N (golpeDesarmado.ts). La
+  // Pelea no se modifica (S87): sin perfil.
+  const conArmadura = esDesarmado ? golpeDesarmado(sheet) : null;
   const bonoArmadura = conArmadura?.bonoDanio ?? 0;
 
   // `arma.efectos` (Crítico de X, Ignora N de blindaje...) es hoy puramente
@@ -907,7 +908,8 @@ function tiradaDeArmaMelee(
     [
       arma.efectos,
       arma.alcance ? `Alcance ${arma.alcance}` : null,
-      conArmadura && bonoArmadura > 0 ? `Daño desarmado con la armadura: ${conArmadura.fuentes.join(" · ")}` : null,
+      conArmadura && conArmadura.fuentes.length > 0 && bonoArmadura > 0 ? `Daño desarmado con la armadura: ${conArmadura.fuentes.join(" · ")}` : null,
+      conArmadura?.deAumentos ? `Daño desarmado: ${conArmadura.deAumentos.join(" · ")}` : null,
       conArmadura?.letal ? `Daño letal (${conArmadura.letal})` : null,
     ],
     perfil,
@@ -1489,7 +1491,7 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
         pieza.instanciaId,
         permisos.sutil.includes("bloquear_melee"),
         pieza.modificaciones,
-        golpeDesarmadoConArmadura(sheet)?.bloqueoSinPenalizador,
+        golpeDesarmado(sheet)?.bloqueoSinPenalizador,
       ),
     ];
     // Escudo roto (S86): sus filas salen, apagadas con el motivo, hasta que se repare.
@@ -1597,7 +1599,7 @@ export function accionesDeAtaque(ficha: Sheet, mods: ModificadorConFuente[], per
     const generadas = generador(sheet, pieza, cat, mods, permisos).map((t) => (t.origen ? t : { ...t, origen }));
     tiradas.push(...(brazo ? generadas.map((t) => conBrazo(t, pieza, brazo)) : generadas));
   }
-  const bloqueoBrazo = brazo ? tiradaBloqueoBrazo(brazo, golpeDesarmadoConArmadura(sheet)?.bloqueoSinPenalizador ?? null) : null;
+  const bloqueoBrazo = brazo ? tiradaBloqueoBrazo(brazo, golpeDesarmado(sheet)?.bloqueoSinPenalizador ?? null) : null;
   if (bloqueoBrazo) tiradas.push(bloqueoBrazo);
   tiradas.push(...accionesDeGranadas(sheet));
   return tiradas

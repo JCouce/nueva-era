@@ -175,6 +175,8 @@ function deImplante(imp: Implante, nivel: number, origen: OrigenAporte): Aporte 
       salvaciones: acumulaPorClave(niveles.map((n) => n.salvaciones ?? []), (e) => e.contra.join("+")),
       textos: acumulaPorClave(niveles.map((n) => n.textos ?? []), (t) => t.id),
       blindajeReactivo: [...niveles].reverse().find((n) => n.blindajeReactivo)?.blindajeReactivo,
+      // E5b (Chasis Osteomuscular): la del nivel más alto que la trae.
+      armaduraNatural: [...niveles].reverse().find((n) => n.armaduraNatural)?.armaduraNatural,
     },
   };
 }
@@ -368,7 +370,8 @@ export function notasAlertaPasivaDeAumentos(sheet: Pick<Sheet, "equipo">): strin
   return aportesDeAumentos(sheet).flatMap((a) => (a.efectos.notaAlertaPasiva ? [`${a.efectos.notaAlertaPasiva} · ${a.fuente}`] : []));
 }
 
-// Armadura natural de los aumentos contra `tipo`, una línea por pieza (R6: con las dos, +2).
+// Armadura natural de los aumentos contra `tipo`, una línea por pieza (R6: con las dos, +2; E5b, la
+// del Chasis Osteomuscular por nivel).
 export function armaduraNaturalDeAumentos(
   sheet: Pick<Sheet, "equipo">,
   tipo: TipoDanio,
