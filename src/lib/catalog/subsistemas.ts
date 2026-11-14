@@ -114,10 +114,10 @@ const modo = (id: "estatico" | "dinamico", turnos: number, duracion: string, [vi
   cobertura: { visual, termica, acustica },
 });
 const OCULTACION_CAMUFLAJE: Record<1 | 2 | 3 | 4, Ocultacion> = {
-  1: { modos: [modo("estatico", 10, "1 minuto", [3, 3, 4]), modo("dinamico", 1, "1 turno", [2, 1, 2])], pasiva: { termica: 1, acustica: 1 } },
-  2: { modos: [modo("estatico", 50, "5 minutos", [4, 4, 4]), modo("dinamico", 2, "2 turnos", [2, 1, 2])], pasiva: { termica: 1, acustica: 1 } },
-  3: { modos: [modo("estatico", 100, "10 minutos", [4, 4, 4]), modo("dinamico", 4, "4 turnos", [3, 2, 3])], pasiva: { termica: 2, acustica: 2 } },
-  4: { modos: [modo("estatico", 200, "20 minutos", [4, 4, 4]), modo("dinamico", 6, "6 turnos", [4, 3, 3])], pasiva: { termica: 3, acustica: 3 } },
+  1: { modos: [modo("estatico", 100, "10 minutos", [3, 3, 4]), modo("dinamico", 5, "5 turnos", [2, 1, 2])], pasiva: { termica: 1, acustica: 1 } },
+  2: { modos: [modo("estatico", 200, "20 minutos", [4, 4, 4]), modo("dinamico", 10, "10 turnos", [2, 1, 2])], pasiva: { termica: 1, acustica: 1 } },
+  3: { modos: [modo("estatico", 300, "30 minutos", [4, 4, 4]), modo("dinamico", 15, "15 turnos", [3, 2, 3])], pasiva: { termica: 2, acustica: 2 } },
+  4: { modos: [modo("estatico", 600, "1 hora", [4, 4, 4]), modo("dinamico", 20, "20 turnos", [4, 3, 3])], pasiva: { termica: 3, acustica: 3 } },
 };
 const MOTOR_CAMUFLAJE: MotorMetadata[] = [
   // La cobertura por sentido, sumada a tu estado Sigilo al enseñarlo (rules/sigilo.ts).
@@ -166,7 +166,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         rareza: "Poco Habitual",
         coste: 8000,
         detalle: [
-          "Duración modo activo: 1 min estático / 1 turno dinámico.",
+          "Duración modo activo: 10 min estático / 5 turnos dinámico.",
           "Cobertura activa estático (Visual/Térmica/Acústica): 3 / 3 / 4.",
           "Cobertura activa dinámico (Visual/Térmica/Acústica): 2 / 1 / 2.",
           "Cobertura pasiva (Térmica/Acústica): 1 / 1.",
@@ -181,7 +181,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         rareza: "Extraño",
         coste: 48000,
         detalle: [
-          "Duración modo activo: 5 min estático / 2 turnos dinámico.",
+          "Duración modo activo: 20 min estático / 10 turnos dinámico.",
           "Cobertura activa estático (Visual/Térmica/Acústica): 4 / 4 / 4.",
           "Cobertura activa dinámico (Visual/Térmica/Acústica): 2 / 1 / 2.",
           "Cobertura pasiva (Térmica/Acústica): 1 / 1.",
@@ -195,7 +195,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         rareza: "Muy Extraño",
         coste: 96000,
         detalle: [
-          "Duración modo activo: 10 min estático / 4 turnos dinámico.",
+          "Duración modo activo: 30 min estático / 15 turnos dinámico.",
           "Cobertura activa estático (Visual/Térmica/Acústica): 4 / 4 / 4.",
           "Cobertura activa dinámico (Visual/Térmica/Acústica): 3 / 2 / 3.",
           "Cobertura pasiva (Térmica/Acústica): 2 / 2.",
@@ -209,7 +209,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         rareza: "Muy Extraño",
         coste: 144000,
         detalle: [
-          "Duración modo activo: 20 min estático / 6 turnos dinámico.",
+          "Duración modo activo: 1 hora estático / 20 turnos dinámico.",
           "Cobertura activa estático (Visual/Térmica/Acústica): 4 / 4 / 4.",
           "Cobertura activa dinámico (Visual/Térmica/Acústica): 4 / 3 / 3.",
           "Cobertura pasiva (Térmica/Acústica): 3 / 3.",

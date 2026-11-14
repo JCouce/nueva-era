@@ -131,9 +131,18 @@ describe("atacar estando en Sigilo (di-09)", () => {
 describe("Camuflaje Trifásico (eq-25, eq-26)", () => {
   test("«Activar» pone Camuflaje con el modo y la duración de su nivel", () => {
     const a = accionesDirectasDeAtaque(conCamuflaje(1)).find((x) => x.id === "activar_camuflaje_cam")!;
-    assert.deepEqual(estadoPorUso(a, "estatico"), { estadoId: ESTADO_CAMUFLAJE_ID, gradoId: "estatico", rondasRestantes: 10 });
-    assert.deepEqual(estadoPorUso(a, "dinamico"), { estadoId: ESTADO_CAMUFLAJE_ID, gradoId: "dinamico", rondasRestantes: 1 });
+    assert.deepEqual(estadoPorUso(a, "estatico"), { estadoId: ESTADO_CAMUFLAJE_ID, gradoId: "estatico", rondasRestantes: 100 });
+    assert.deepEqual(estadoPorUso(a, "dinamico"), { estadoId: ESTADO_CAMUFLAJE_ID, gradoId: "dinamico", rondasRestantes: 5 });
     assert.equal(estadoPorUso(a, "otro"), null);
+  });
+
+  test("duración por nivel (sync Drive 2026-11-14): 10/20/30 min y 1 h en estático; 5/10/15/20 turnos en dinámico", () => {
+    const esperado: [1 | 2 | 3 | 4, number, number][] = [[1, 100, 5], [2, 200, 10], [3, 300, 15], [4, 600, 20]];
+    for (const [nivel, estatico, dinamico] of esperado) {
+      const a = accionesDirectasDeAtaque(conCamuflaje(nivel)).find((x) => x.id === "activar_camuflaje_cam")!;
+      assert.equal(estadoPorUso(a, "estatico")?.rondasRestantes, estatico, `nivel ${nivel} estático`);
+      assert.equal(estadoPorUso(a, "dinamico")?.rondasRestantes, dinamico, `nivel ${nivel} dinámico`);
+    }
   });
 
   test("su cobertura se suma por sentido al Sigilo: activo; si no, la pasiva con carga", () => {

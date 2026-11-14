@@ -1850,11 +1850,11 @@ describe("Activar camuflaje trifásico (acción sin dado, 1 carga)", () => {
     // T4 (eq-25): los números de su nivel van en el selector de modo, no en la nota.
     const modo = a.condiciones?.find((c) => c.id === ID_MODO_CAMUFLAJE);
     assert.ok(modo?.tipo === "opcion");
-    assert.deepEqual(modo.opciones.map((o) => o.etiqueta), ["Estático (5 minutos)", "Dinámico (2 turnos)"]);
+    assert.deepEqual(modo.opciones.map((o) => o.etiqueta), ["Estático (20 minutos)", "Dinámico (10 turnos)"]);
     assert.equal(modo.opciones[0].nota, "Cobertura visual 4 · térmica 4 · acústica 4.");
     const alUsar = a.estadoAlUsar;
     assert.ok(alUsar && "opciones" in alUsar);
-    assert.deepEqual(alUsar.opciones, { estatico: { gradoId: "estatico", turnos: 50 }, dinamico: { gradoId: "dinamico", turnos: 2 } });
+    assert.deepEqual(alUsar.opciones, { estatico: { gradoId: "estatico", turnos: 200 }, dinamico: { gradoId: "dinamico", turnos: 10 } });
   });
 
   test("sin cargas sale bloqueada", () => {

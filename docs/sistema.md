@@ -769,7 +769,8 @@ imponen penalizadores por umbral:
     avisos «a la Alerta Activa de quien te detecta» de la pregunta 25b.
   - **Camuflaje Trifásico (eq-25, eq-26)**: «Activar camuflaje» (1 carga, como hoy) pregunta
     estático o dinámico y pone «Camuflaje» con la duración de su nivel (1 minuto = 10 turnos:
-    nivel 1, 10 / 1; nivel 2, 50 / 2; nivel 3, 100 / 4; nivel 4, 200 / 6). Mientras dura, su
+    nivel 1, 100 / 5; nivel 2, 200 / 10; nivel 3, 300 / 15; nivel 4, 600 / 20 — sync Drive
+    2026-11-14: 10 / 20 / 30 min y 1 hora en estático). Mientras dura, su
     cobertura por sentido se suma al Sigilo al enseñarlo; sin él, la pasiva (térmica/acústica)
     mientras la célula tenga carga. En la esquiva, «Tengo cobertura» (+2) sale **ya marcada**
     (`Estado.marcaCasillas`). Los números van como dato (`NivelModulo.ocultacion`). La Malla
