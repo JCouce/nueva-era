@@ -3,11 +3,12 @@
 // acción de aumento (aumentosAcciones.ts, efecto "activar") que cobra la fatiga y pone un estado
 // propio en Character.estados (catalog/estados.ts, ESTADOS_DE_AUMENTO). Mientras el estado está
 // puesto, Y la pieza sigue equipada y funcionando, cuenta lo que trae su `activo` en el catálogo:
-//   atributos         +N a atributos básicos, con origen "estado": entran en atributos efectivos,
-//                     aplicados y derivados, pero no en los requisitos de dote (R3; S30: los
-//                     requisitos no miran estados).
-//   mejora            el "en lugar de" del nivel 2: el atributo elegido al activar (el grado del
-//                     estado) recibe este valor en vez del de `atributos`.
+//   pruebas           +N a las tiradas que usan esos aplicados (Modificador de tirada con alcance
+//                     «aplicado», origen "estado"), salvaciones incluidas: sube la tirada, no el
+//                     atributo, así que no toca derivados, vida, carga, movimiento ni requisitos
+//                     (sync Drive 2026-11-14; antes, +N a atributos básicos).
+//   mejora            el "en lugar de" del nivel 2: el aplicado elegido al activar (el grado del
+//                     estado) recibe este valor en vez del de `pruebas`.
 //   reducePenalizadores  −N a cada penalizador por separado, sin pasar de 0: heridas y fatiga por
 //                     el ajuste de umbrales (se suma a especie y Estabilización, A3; solo el −N de
 //                     las tiradas, td-10) y cada modificador negativo de tirada o de atributo de
@@ -17,7 +18,7 @@
 //   anulaPenalizadores Modificador "anulaPenalizadores" (lo resuelve montarTirada).
 //   textos            textos en tiradas mientras dura (A5b: la segunda reacción de la
 //                     Neuroprótesis 3, en Defensa).
-//   sustituyeAtributosDe  (A5b) mientras este está encendido, los `atributos`/`mejora` del
+//   sustituyePruebasDe  (A5b) mientras este está encendido, las `pruebas`/`mejora` del
 //                     activable de ese estado no cuentan (Neuroprótesis 4: su +2 sustituye al
 //                     +1/+2 de la activa, no se suman). El resto de lo que hace aquel, sí.
 //   eliminaPenalizadoresUmbrales  (A5b) heridas y fatiga a 0 (Neuroprótesis 4), por el ajuste
@@ -25,7 +26,7 @@
 //                     la media velocidad y el recorte de carga de sus umbrales (td-10).
 // Sin la pieza (o con el requisito roto), el estado sigue en la lista hasta que caduque o se
 // desactive, pero no hace nada.
-import type { AtributoId } from "./atributos";
+import type { AplicadoId } from "./atributos";
 import type { EfectoSalvacion } from "./aumentosTiradas";
 import type { DestinoTexto } from "../catalog/especies";
 import type { TextoEnTirada } from "./especie";
@@ -38,13 +39,13 @@ import { origenDePieza, type OrigenAporte } from "./origen";
 
 export type ActivoAumento = {
   estadoId: string;
-  atributos?: Partial<Record<AtributoId, number>>;
-  mejora?: { atributos: AtributoId[]; valor: number };
+  pruebas?: Partial<Record<AplicadoId, number>>;
+  mejora?: { pruebas: AplicadoId[]; valor: number };
   reducePenalizadores?: number;
   salvaciones?: EfectoSalvacion[];
   anulaPenalizadores?: AlcanceModificador;
   textos?: { en: DestinoTexto; texto: string }[];
-  sustituyeAtributosDe?: string;
+  sustituyePruebasDe?: string;
   eliminaPenalizadoresUmbrales?: true;
 };
 
@@ -106,14 +107,14 @@ export function efectosDeActivables(sheet: Pick<Sheet, "equipo">, estados: reado
   const textos: TextoEnTirada[] = [];
   let reduccion: ReduccionDeEstados | null = null;
   let elimina: string | null = null;
-  const sustituidos = new Set(encendidos.flatMap(({ activo }) => (activo.sustituyeAtributosDe ? [activo.sustituyeAtributosDe] : [])));
+  const sustituidos = new Set(encendidos.flatMap(({ activo }) => (activo.sustituyePruebasDe ? [activo.sustituyePruebasDe] : [])));
   for (const { fuente, activo, grado, origen } of encendidos) {
-    const atributos = sustituidos.has(activo.estadoId) ? {} : { ...activo.atributos };
+    const pruebas = sustituidos.has(activo.estadoId) ? {} : { ...activo.pruebas };
     // "En lugar de": el elegido al activar recibe el valor de la mejora.
-    const elegido = activo.mejora?.atributos.find((a) => a === grado);
-    if (elegido && activo.mejora && !sustituidos.has(activo.estadoId)) atributos[elegido] = activo.mejora.valor;
-    for (const [id, valor] of Object.entries(atributos) as [AtributoId, number][]) {
-      modificadores.push({ tipo: "atributo", id, valor, origen: "estado", fuente, item: origen });
+    const elegido = activo.mejora?.pruebas.find((a) => a === grado);
+    if (elegido && activo.mejora && !sustituidos.has(activo.estadoId)) pruebas[elegido] = activo.mejora.valor;
+    for (const [id, valor] of Object.entries(pruebas) as [AplicadoId, number][]) {
+      modificadores.push({ tipo: "tirada", alcance: { tipo: "aplicado", aplicados: [id] }, valor, origen: "estado", fuente, item: origen });
     }
     for (const t of activo.textos ?? []) textos.push({ en: t.en, texto: t.texto, fuente, soloEnCritico: false, origen });
     if (activo.eliminaPenalizadoresUmbrales) elimina = fuente;

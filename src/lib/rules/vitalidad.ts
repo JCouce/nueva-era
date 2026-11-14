@@ -8,49 +8,24 @@
 // Deliberadamente fuera de este cambio: el snapshot de PG/fatiga que lleva
 // `Combatiente` en Fase 6b (master/combate) sigue igual — esto es para fuera
 // de combate (la ficha, RecursosTab), no sustituye esa foto.
-import { activosDeAumentos } from "./aumentosActivables";
 import { baseDeFicha, modificadoresDeBase } from "./baseFicha";
 import { salud } from "./derivados";
 import { desequipar } from "./equipo";
 import type { EstadoActivo } from "./estados";
 import type { Sheet } from "./sheet";
 import { acotarDanio, ajustarDanioVital, danioIgual, normalizarDanio, type CategoriaDanio, type DanioVida } from "./danio";
-import { estadoPorId } from "../catalog/estados";
 import { DESCANSO } from "../catalog/descanso";
 
 export type TopesVida = { vida: number; fatiga: number };
 
 // Tope de la vida y la fatiga actuales: el máximo que se ve (td-12, usuario 2026-11-14), el mismo
-// que FichaResuelta.salud. Con todos los estados: los activables de aumento lo suben (A5b, "con la
-// Neuroprótesis puesta el máximo real es 9 y tienes que poder curarte hasta 9") y los del máster
-// que bajan la Fortaleza o la Voluntad lo bajan: curar no pasa de ahí (antes topaba en reposo,
+// que FichaResuelta.salud. Con todos los estados: los del máster que bajan la Fortaleza o la
+// Voluntad lo bajan y curar no pasa de ahí (antes topaba en reposo,
 // S74, y podía verse «14 de 12»). Al quitarse el estado el máximo sube y la vida no (S75). Sale de
 // la misma base que resolverFicha (baseFicha.ts: Shock, inmunidades, Estabilizado); sin las dotes,
 // que solo dan bonos de tirada. Sin `estados`, el máximo en reposo de siempre.
 export function topesDeVida(sheet: Sheet, estados: readonly EstadoActivo[] = []): TopesVida {
   return salud(sheet, modificadoresDeBase(baseDeFicha(sheet, [...estados])));
-}
-
-// El tope más alto que podrían dar los activables equipados (cada estado propio, puesto o no,
-// en cada grado). Es lo que recorta parseSheet, que no conoce Character.estados: así nunca
-// baja una vida curada con la Neuroprótesis puesta. El recorte exacto, con los estados, lo
-// hace quien los lee (reconciliarVidaConEstados). Sin activables equipados, el de reposo.
-export function topesPosibles(sheet: Sheet): TopesVida {
-  const base = topesDeVida(sheet);
-  const ids = [...new Set(activosDeAumentos(sheet).map((a) => a.activo.estadoId))];
-  if (ids.length === 0) return base;
-  let combinaciones: EstadoActivo[][] = [[]];
-  for (const estadoId of ids) {
-    const grados = estadoPorId(estadoId)?.grados ?? [];
-    combinaciones = combinaciones.flatMap((c) => [
-      c,
-      ...grados.map((g) => [...c, { estadoId, gradoId: g.id, rondasRestantes: null }]),
-    ]);
-  }
-  return combinaciones.reduce((mejor, estados) => {
-    const t = topesDeVida(sheet, estados);
-    return { vida: Math.max(mejor.vida, t.vida), fatiga: Math.max(mejor.fatiga, t.fatiga) };
-  }, base);
 }
 
 // Delta manual sobre un valor con tope: [0, tope]. La usan la ficha (ajustarVida) y
@@ -62,7 +37,7 @@ export function vidaTrasAjuste(actual: number, tope: number, delta: number): num
 // Recorta vidaActual/fatigaActual a `topes` — nunca los sube solo (eso es
 // ajustarVida/ajustarFatiga, una acción explícita del jugador), solo los baja si el
 // máximo cayó por debajo de lo que había. Idempotente, sin efecto si ya está dentro de
-// rango. parseSheet lo llama con topesPosibles; quien conoce los estados, con
+// rango. parseSheet lo llama con el tope en reposo; quien conoce los estados, con
 // reconciliarVidaConEstados.
 // También normaliza el desglose del daño (danio.ts) contra la vida perdida con ese tope.
 export function reconciliarVida(sheet: Sheet, topes: TopesVida = topesDeVida(sheet)): Sheet {
@@ -79,16 +54,16 @@ function conDanio(sheet: Sheet, danio: DanioVida): Sheet {
   return danioIgual(danio, sheet.danio) ? sheet : { ...sheet, danio };
 }
 
-// Lo que hace parseSheet en cada lectura: recortar al tope posible (topesPosibles). El
-// centinela 999 de una ficha nueva cae aquí a un número de verdad.
+// Lo que hace parseSheet en cada lectura: recortar al tope en reposo (ningún estado lo sube desde
+// que la Neuroprótesis no toca atributos, sync Drive 2026-11-14). El centinela 999 de una ficha
+// nueva cae aquí a un número de verdad.
 // El desglose del daño no se normaliza: sin los estados no se sabe el tope de verdad, que puede
-// estar por encima del de reposo (Neuroprótesis, A5b) o por debajo (un estado del máster que baja
-// la Fortaleza, td-12). Solo se quita lo que pase de la pérdida con el tope posible (de lo más
-// leve); lo que falte lo pone como letal la normalización exacta (reconciliarVidaConEstados, o
-// la de resolverFicha al pintar). Rellenar aquí hasta la pérdida en reposo y luego normalizar
-// contra un tope más bajo se comería el no letal (sobraría y se quitaría lo más leve).
+// estar por debajo (un estado del máster que baja la Fortaleza, td-12). Solo se quita lo que pase
+// de la pérdida con el tope en reposo (de lo más leve); lo que falte lo pone como letal la
+// normalización exacta (reconciliarVidaConEstados, o la de resolverFicha al pintar). Rellenar aquí
+// hasta la pérdida en reposo y luego normalizar contra un tope más bajo se comería el no letal.
 export function reconciliarVidaAlLeer(sheet: Sheet): Sheet {
-  const posibles = topesPosibles(sheet);
+  const posibles = topesDeVida(sheet);
   const vidaActual = Math.min(sheet.vidaActual, posibles.vida);
   const fatigaActual = Math.min(sheet.fatigaActual, posibles.fatiga);
   return conDanio(
@@ -101,7 +76,7 @@ export function reconciliarVidaAlLeer(sheet: Sheet): Sheet {
 // una pieza que daba vida (Hipertrofia, un +1 a Agilidad o Aguante, A1) baja el máximo y
 // la pantalla no debe ver "12/10" hasta la próxima lectura. Ponerla no sube la actual
 // (como con la especie o el equipo: curar es ajustarVida).
-// `estados`: los del personaje, para no recortar lo que da un activable que sigue puesto.
+// `estados`: los del personaje (td-12: el tope que se ve).
 export function retirarPieza(sheet: Sheet, instanciaId: string, estados: readonly EstadoActivo[] = []): Sheet {
   return reconciliarVidaConEstados(desequipar(sheet, instanciaId), estados);
 }
@@ -113,8 +88,8 @@ export function reconciliarVidaConEstados(sheet: Sheet, estados: readonly Estado
 }
 
 // Delta manual (+/-), clamp [0, topesDeVida] — mismo patrón que ajustarRecurso() en
-// recursos.ts. `estados`: los del personaje (se cura hasta el máximo que se ve: con la
-// Neuroprótesis puesta, el suyo, A5b; con un estado que baja la Fortaleza, el bajado, td-12);
+// recursos.ts. `estados`: los del personaje (se cura hasta el máximo que se ve: con un estado que
+// baja la Fortaleza, el bajado, td-12);
 // sin ellos, el máximo en reposo. Sin categoría: el daño entra como letal y la
 // cura quita lo más leve primero (normalizarDanio).
 export function ajustarVida(sheet: Sheet, delta: number, estados: readonly EstadoActivo[] = []): Sheet {

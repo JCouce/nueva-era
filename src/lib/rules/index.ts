@@ -51,7 +51,7 @@
 //   aumentos.ts        aumentos: compra, subir de nivel, elección, bolsa y requisito roto (A0); +1 a atributos, vida de Hipertrofia y rebajas de coste (A1); reducción de penalizadores por heridas, fatiga y carga (A3)
 //   aumentosTiradas.ts lo que los aumentos ponen en tiradas y blindaje: casillas, selector "Contra…" de salvaciones, textos, Alerta pasiva y armadura natural (A2a)
 //   aumentosAcciones.ts acciones propias de aumento (sección Aumentos de Acciones: sin dado y con dado) y su uso en servidor (A4a, A4b)
-//   aumentosActivables.ts lo que hacen los activables encendidos (estado propio + pieza): atributos, penalizadores, "Contra…" (A5a)
+//   aumentosActivables.ts lo que hacen los activables encendidos (estado propio + pieza): tiradas, penalizadores, "Contra…" (A5a)
 //   brazoBionico.ts    Brazo Biónico: Fuerza y Agilidad del brazo, casilla en los ataques, bloqueo y blindaje (A6a)
 //   inmunidades.ts     inmunidades a estados (Ojo Biónico 2-4, Regeneración): bloqueo al aplicar, forzado (A7)
 //   usosEscena.ts      casillas "una vez por escena": gastar al tirar, bloquear, liberar y vaciar (A4a)

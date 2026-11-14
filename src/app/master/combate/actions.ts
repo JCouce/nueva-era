@@ -313,9 +313,7 @@ export async function avanzarTurnoAction(combateId: string): Promise<CombateResu
         select: { id: true, estados: true, stats: true },
       });
       // Al caerse un estado por rondas, su foto recalcula el máximo (sube) sin tocar la
-      // vida actual; vidaTrasCambioDeEstados solo restaría si el máximo bajara (S75). Si el que
-      // se cae es un activable de aumento (la Neuroprótesis, A5b), recorta la ficha y la foto
-      // a su máximo nuevo.
+      // vida actual; vidaTrasCambioDeEstados solo restaría si el máximo bajara (S75).
       const ids: string[] = [];
       for (const j of jugadores) {
         const estados = estadosAlCerrarVuelta(j.estados);

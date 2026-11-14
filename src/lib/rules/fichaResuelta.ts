@@ -405,7 +405,7 @@ export function resolverFicha(
   const base = baseDeFicha(sheet, estados);
   const { especie, afectacion, enUso, inmunidades, estabilizado } = base;
   const conEfecto = base.conEfecto;
-  // Los atributos de los activables van con origen "estado" y no entran en requisitosDotes (R3, S30).
+  // Lo de los activables va con origen "estado" y no entra en requisitosDotes (R3, S30).
   const activables = base.activables;
   const formulaMovimiento = formulaMovimientoDeEspecie(especie);
   const multiplicadorCarga = multiplicadorCargaDeEspecie(especie);

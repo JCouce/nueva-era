@@ -146,24 +146,6 @@ describe("parseSheet y el desglose", () => {
     assert.deepEqual(leida.danio, d(2, 0, 0));
   });
 
-  test("con un activable equipado no se come el no letal (rango, no normalización contra el posible)", () => {
-    // Neuroprótesis con Fuerza 2 y Aguante 1: +1 a la vida máxima mientras está puesta.
-    const base = defaultSheet();
-    const s: Sheet = {
-      ...base,
-      atributos: { ...base.atributos, fuerza: 2, aguante: 1 },
-      equipo: [{ instanciaId: "n", catalogoId: "aum_neuroprotesis_simpatica", nivel: 1 }],
-    };
-    const neuro: EstadoActivo = { estadoId: "aum_neuroprotesis", gradoId: "activo", rondasRestantes: 3 };
-    const reposo = topesDeVida(s, []).vida;
-    assert.equal(topesDeVida(s, [neuro]).vida, reposo + 1);
-    // Sin ella puesta: 2 de no letal perdidos de verdad.
-    const leida = parseSheet(JSON.parse(JSON.stringify({ ...s, vidaActual: reposo - 2, danio: d(2, 0, 0) })));
-    assert.deepEqual(leida.danio, d(2, 0, 0));
-    assert.deepEqual(reconciliarVidaConEstados(leida, []).danio, d(2, 0, 0));
-    // Con ella puesta el tope sube 1: ese punto que falta es letal.
-    assert.deepEqual(reconciliarVidaConEstados(leida, [neuro]).danio, d(2, 1, 0));
-  });
 });
 
 describe("categoriaDanioDeTexto", () => {

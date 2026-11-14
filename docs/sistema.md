@@ -2215,8 +2215,11 @@ sobreesfuerzo.
     entrada en el registro; sale aunque ya no se lleve la pieza.
   - **Efectos** (`rules/aumentosActivables.ts`): solo con el estado puesto **y** la pieza
     equipada y funcionando; sin ella, el estado sigue en la lista pero no hace nada.
-  - **Neuroprótesis 1:** +1 a Fuerza, Agilidad y Percepción con origen "estado": cuentan en
-    atributos, aplicados y derivados, **no en requisitos de dote** (R3, S30). **−1 a cada
+  - **Neuroprótesis 1:** ~~+1 a Fuerza, Agilidad y Percepción~~ **+1 a las tiradas que usan
+    Potencia, Reflejos y Perspicacia**, la Salvación de Reflejos incluida `[FIRME · sync Drive
+    2026-11-14 + usuario, 2026-11-14]` (Modificador de tirada con alcance «aplicado», origen
+    "estado"): sube la tirada, no el atributo; no toca vida, fatiga, carga, movimiento, Alerta
+    ni requisitos de dote. **−1 a cada
     penalizador por separado, sin pasar de 0:** heridas y fatiga por el ajuste de umbrales (se
     suma a especie y Estabilización: "Malherido (Neuroprótesis Simpática 1)" −2); cada
     modificador negativo **de tirada** de cada estado, con su línea ("Neuroprótesis Simpática 1
@@ -2225,17 +2228,18 @@ sobreesfuerzo.
     **−1 a las salvaciones de Fortaleza
     contra enfermedad, radiación, toxinas y venenos** por el selector "Contra…", solo mientras
     está activa; ese −1 no se reduce (no es un estado).
-  - **Neuroprótesis 2:** al activar se elige a qué va el +2 (Fuerza o Agilidad); ese sustituye
-    al +1 ("en lugar de") y el otro y Percepción reciben +1. La elección es el grado del
-    estado (`fuerza`/`agilidad`); con el nivel 1, un único grado.
+  - **Neuroprótesis 2:** al activar se elige a qué va el +2 (Potencia, Reflejos o Perspicacia,
+    sync Drive 2026-11-14; antes Fuerza o Agilidad); ese sustituye al +1 ("en lugar de") y los
+    otros dos reciben +1. La elección es el grado del estado (`potencia`/`reflejos`/
+    `perspicacia`; un estado guardado con el grado viejo `fuerza`/`agilidad` se descarta al
+    leerlo, `leerEstados`: dura 3 rondas, sin migración); con el nivel 1, un único grado.
   - **Proyección:** acción gratuita, 1 de fatiga. Mientras dura, **anula los penalizadores en
     cualquier tirada de Actitud** ("Convencer / mentir", "Iniciativa (distrayendo)"): heridas,
     fatiga y estados, con sus compensaciones (Neuroprótesis, Neurogénesis), una línea
     "Proyección Neuro-Expresiva (anula penalizadores)" que deja la suma a 0. No toca el
     circunstancial ni los bonos. Su +1 de Carácter es el permanente de A1.
-  - **Vida (supuesto):** el +1 a Fuerza puede subir la vida máxima; al caerse o desactivarse
-    la Neuroprótesis **no se resta vida** (S75 no cuenta los activables), para que activarla no
-    cueste vida de verdad. *(Matizado en A5b: si queda por encima del máximo nuevo, se recorta.)*
+  - ~~**Vida (supuesto):** el +1 a Fuerza puede subir la vida máxima…~~ Desde el sync Drive
+    2026-11-14 ningún activable mueve la vida ni la fatiga máximas.
 - *En la app (A5b, Neuroprótesis 3-4, recorte de vida y fatiga en combate; usuario, 2026-10-22):*
   - **Acción simple adicional (nivel 3):** acción de aumento sin dado (efecto
     `accionAdicional`), 2 de fatiga. Solo pide el implante (nivel 3+), no tenerlo activado; el
@@ -2248,34 +2252,19 @@ sobreesfuerzo.
   - **Nivel 4:** pagar 3 por la acción adicional (la casilla marcada) pone un estado propio,
     `aum_neuroprotesis_4`, de **1 ronda** (chip "1 ronda, en combate"), con registro como A5a.
     Va aparte del de la activa: conviven, y al caerse el de 1 ronda la activa sigue con lo que le
-    quede. Mientras dura: **+2 a Fuerza, Agilidad y Percepción que sustituye al +1/+2 de la
-    activa** (no se suman; también sin la activa), con origen "estado" (fuera de los requisitos
+    quede. Mientras dura: **+2 a las tiradas de Potencia, Reflejos y Perspicacia que sustituye
+    al +1/+2 de la activa** (sync Drive 2026-11-14; antes, a Fuerza, Agilidad y Percepción) (no se suman; también sin la activa), con origen "estado" (fuera de los requisitos
     de dote), y **sin penalizadores por heridas ni fatiga** (el ajuste de umbrales los deja a 0
     y, como «elimina por completo», quita también la media velocidad y el recorte de carga del
     umbral: `[FIRME · usuario 2026-11-13, td-10]`, §14.8). Los −1 de la activa a los
     estados y el −1 de Fortaleza siguen. "No se puede volver a usar hasta un descanso", texto en
     la nota.
-  - **Vida al caerse un activable (usuario, 2026-10-22; cambia A5a):** sigue sin restarse lo
-    que baja el máximo, pero **si la vida actual queda por encima del máximo nuevo, se recorta
-    a él** (como al desequipar, `retirarPieza`): nada de 9/8. Igual la fatiga y las fotos de
-    combate abiertas. Solo cuando cambian los activables (ponerse, caerse, desactivarse o
-    cambiar de grado); un estado normal sigue con S75 y S74. Lo recortado cuenta como restado:
-    deshacer en el registro lo devuelve.
-  - **Tope de la vida y la fatiga actuales con un activable puesto (usuario, 2026-10-22):**
-    "con la Neuroprótesis puesta el máximo real es 9 y tienes que poder curarte hasta 9". El
-    tope al que se cura (+/- de Recursos, Sanar letal, la pestaña Vida del máster sobre la
-    ficha) y al que se recorta es el **máximo en reposo más los activables puestos**
-    (`topesDeVida`); los estados del máster siguen fuera (S74). *(Desde td-12, 2026-11-14,
-    también cuentan: el tope es el máximo que se ve, §7.)* Al leer, `parseSheet` no conoce
-    `Character.estados` y recorta al **máximo posible** (`topesPosibles`: los activables
-    equipados en su mejor grado), así que nunca baja un 9 curado con ella puesta; el recorte
-    exacto (`reconciliarVidaConEstados`) lo hacen las lecturas que sí los conocen: la página de
-    la ficha, `loadEditable`, la Mesa, la pestaña Vida, los cambios de estado, "Siguiente
-    turno" y deshacer del registro. Así se llega a 9/9 y nunca se ve ni se guarda 9/8.
-    Recortes al caerse, por todos los caminos: "Desactivar" en la ficha, quitar desde la Mesa o
-    el combate, "Limpiar estados", caducar con "Siguiente turno" y deshacer "Activar" en el
-    registro (deshacer "Desactivar" devuelve lo recortado). Un NPC no tiene estados: su tope es
-    el de reposo.
+  - ~~**Vida al caerse un activable** y **tope de la vida con un activable puesto** (usuario,
+    2026-10-22): recorte al máximo nuevo al caerse, `topesPosibles` en `parseSheet`, recorte al
+    deshacer «Activar».~~ **Borrado (sync Drive 2026-11-14):** existían solo porque la
+    Neuroprótesis subía la Fuerza; ya ningún activable mueve el máximo. `parseSheet` topa en
+    reposo; el recorte exacto con los estados (`reconciliarVidaConEstados`, td-12) se queda. Un
+    NPC no tiene estados: su tope es el de reposo.
   - **Fatiga en combate:** en combate la vida y la fatiga que valen son las de la foto
     (`Combatiente`), y hasta A5b lo que cobraba la ficha (acciones de aumento, casillas de una
     tirada, poderes) solo bajaba `stats.fatigaActual`: la foto no se enteraba. Ahora la misma
@@ -2502,14 +2491,15 @@ sobreesfuerzo.
   - **Automatismo Bulboespinal**: solo quita el −3 de Sorprendido; Desprevenido sigue igual.
   - **Neuroprótesis Simpática**: segunda reacción por ronda. Nivel 1: reduce en 1
     **todos*** los penalizadores por estado, **heridas y fatiga incluidos**. Nivel 2: +2 a
-    Fuerza o Agilidad elegido en cada activación (el otro y Percepción, +1). Nivel 3: la
+    Fuerza o Agilidad elegido en cada activación (el otro y Percepción, +1) *(desde el sync Drive
+    2026-11-14, a las tiradas de Potencia, Reflejos o Perspicacia, ver A5a)*. Nivel 3: la
     acción simple extra solo pide que el implante **no esté saboteado ni apagado***, no que
     esté activado. Nivel 4: es el segundo uso del nivel 3, y el +2 sustituye al +1/+2.
     **Sync Drive 2026-11-14**: costes 18 000 / 36 000 / 72 000 / 144 000; la segunda reacción del
     nivel 3 no se apila con la de otros aumentos (texto); la fuente pasa a decir «−1 a los
-    penalizadores por heridas y fatiga» (antes, «por estado») y el bono, a las **pruebas** de
-    potencia, reflejos y perspicacia (antes, a Fuerza, Agilidad y Percepción). Esos dos cambios
-    siguen `TODO(revisar)` en `catalog/aumentos.ts`: la app hace lo de arriba hasta decidirlos.
+    penalizadores por heridas y fatiga» (antes, «por estado»), aún `TODO(revisar)` en
+    `catalog/aumentos.ts`; y el bono, a las **tiradas** de potencia, reflejos y perspicacia
+    (construido, ver A5a).
   - **Regulación Límbico-Prefrontal**: cualquier tirada para resistir la intimidación; +1
     aunque el efecto sea miedo y coerción a la vez. Con Matriz de Red (+2) se suma: +3.
     **Sync Drive 2026-11-14** `[FIRME · docs/fuente/aumentos.md + usuario, 2026-11-14]`: +1 a

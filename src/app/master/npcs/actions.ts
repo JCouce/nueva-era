@@ -95,8 +95,8 @@ function revalidateNpcs() {
   revalidatePath("/master/npcs");
 }
 
-// Un NPC no tiene estados: su tope de vida es el de reposo. parseSheet topa con el posible
-// (cuenta los activables de aumento que lleve equipados, A5b); aquí, el exacto.
+// Un NPC no tiene estados: su tope de vida es el de reposo, el mismo con el que topa parseSheet;
+// aquí, además, se normaliza el desglose del daño.
 const leerNpc = (stats: unknown): Sheet => reconciliarVida(parseSheet(stats));
 
 async function loadSheet(npcId: string): Promise<{ sheet: Sheet } | { error: string }> {

@@ -182,17 +182,12 @@ export type Aumento = OperacionGenetica | Implante;
 
 // Neuroprótesis Simpática (A5a): lo que hace mientras está activa (niveles 1 y 2; el 2 añade la
 // mejora) y su acción de activar. No reduce su propio −1 a las salvaciones: va en el selector
-// "Contra…", no es un estado.
-// TODO(revisar): T1.17 del plan del sync Drive 2026-11-14, sin construir. La fuente nueva pone
-// el +1 (N1), el +2 a elección (N2, ahora entre los tres aplicados) y el +2 del N4 en las
-// PRUEBAS de potencia, reflejos y perspicacia, no en los atributos. Es el único activable que
-// sube atributos: al cambiarlo, la vida máxima, la carga y el movimiento dejan de moverse con
-// él y se quedan sin caso los tests de vida con activables (A5b: topesDeVida, recorte al
-// caerse, parseSheet con el mejor grado, deshacer), umbrales-caracterización, Brazo Biónico y
-// daño. Decidir qué se hace con esa maquinaria antes de construirlo.
+// "Contra…", no es un estado. Sync Drive 2026-11-14: el +1 va a las tiradas de Potencia,
+// Reflejos y Perspicacia (la Salvación de Reflejos incluida, usuario 2026-11-14), no a los
+// atributos Fuerza, Agilidad y Percepción.
 const ACTIVO_NEUROPROTESIS: ActivoAumento = {
   estadoId: "aum_neuroprotesis",
-  atributos: { fuerza: 1, agilidad: 1, percepcion: 1 },
+  pruebas: { potencia: 1, reflejos: 1, perspicacia: 1 },
   // TODO(revisar): la fuente nueva (sync Drive 2026-11-14) dice «reducir penalizadores por heridas
   // y fatiga en 1»; antes, «por estado». `reducePenalizadores` sigue rebajando también los −N de
   // los estados (td-10, td-11): decidir si eso se cae.
@@ -207,8 +202,10 @@ function activarNeuroprotesis(conEleccion: boolean, segundaReaccion = false): Ac
     economia: "Acción gratuita en tu turno o reacción",
     costeFatiga: 2,
     nota:
-      (conEleccion ? "+2 a Fuerza o Agilidad (eliges al activar) y +1 a los otros dos de Fuerza, Agilidad y Percepción" : "+1 a Fuerza, Agilidad y Percepción") +
-      " (no cuenta para requisitos de dote), −1 a cada penalizador por estado, heridas y fatiga (sin pasar de 0) y −1 a las salvaciones de Fortaleza contra enfermedad, radiación, toxinas y venenos. Dura 3 rondas, que solo corren en combate: fuera de él, desactívala a mano." +
+      (conEleccion
+        ? "+2 a las tiradas de Potencia, Reflejos o Perspicacia (eliges al activar) y +1 a las de los otros dos"
+        : "+1 a las tiradas de Potencia, Reflejos y Perspicacia") +
+      " (sube la tirada, no el atributo), −1 a cada penalizador por estado, heridas y fatiga (sin pasar de 0) y −1 a las salvaciones de Fortaleza contra enfermedad, radiación, toxinas y venenos. Dura 3 rondas, que solo corren en combate: fuera de él, desactívala a mano." +
       (segundaReaccion ? " Mientras dura, segunda reacción por ronda (nivel 3; no se apila con la de otros aumentos)." : ""),
     efecto: {
       tipo: "activar",
@@ -218,8 +215,9 @@ function activarNeuroprotesis(conEleccion: boolean, segundaReaccion = false): Ac
         eleccion: {
           etiqueta: "El +2 va a",
           opciones: [
-            { id: "fuerza", label: "Fuerza" },
-            { id: "agilidad", label: "Agilidad" },
+            { id: "potencia", label: "Potencia" },
+            { id: "reflejos", label: "Reflejos" },
+            { id: "perspicacia", label: "Perspicacia" },
           ],
         },
       }),
@@ -232,16 +230,16 @@ function activarNeuroprotesis(conEleccion: boolean, segundaReaccion = false): Ac
 // A2b) sobre lo de los niveles 1-2.
 const ACTIVO_NEUROPROTESIS_3: ActivoAumento = {
   ...ACTIVO_NEUROPROTESIS,
-  mejora: { atributos: ["fuerza", "agilidad"], valor: 2 },
+  mejora: { pruebas: ["potencia", "reflejos", "perspicacia"], valor: 2 },
   textos: [{ en: { tipo: "grupo", grupo: "Defensa" }, texto: "Segunda reacción por ronda mientras la Neuroprótesis está activa (no se apila con la de otros aumentos)." }],
 };
 
 // A5b: Neuroprótesis 4, la acción adicional pagada a 3. Estado propio de 1 ronda que convive
-// con el de la activa: +2 a los tres sustituyendo al +1/+2 y heridas y fatiga a 0.
+// con el de la activa: +2 a las tiradas de los tres sustituyendo al +1/+2 y heridas y fatiga a 0.
 const ACTIVO_NEUROPROTESIS_4: ActivoAumento = {
   estadoId: "aum_neuroprotesis_4",
-  atributos: { fuerza: 2, agilidad: 2, percepcion: 2 },
-  sustituyeAtributosDe: "aum_neuroprotesis",
+  pruebas: { potencia: 2, reflejos: 2, perspicacia: 2 },
+  sustituyePruebasDe: "aum_neuroprotesis",
   eliminaPenalizadoresUmbrales: true,
 };
 
@@ -257,7 +255,7 @@ function accionAdicionalNeuroprotesis(nivel4: boolean): AccionAumentoCatalogo {
     nota:
       "Ganas una acción simple más este turno. No hace falta tener la Neuroprótesis activada, solo que el implante no esté saboteado ni apagado. Vuelve a usarla antes de un descanso corto o largo y cuesta 3 (marca la casilla; la app no lleva los descansos)." +
       (nivel4
-        ? " Nivel 4: pagando 3, durante esta ronda +2 a Fuerza, Agilidad y Percepción (sustituye al +1/+2 de la activa) y sin penalizadores por heridas ni fatiga; esa parte no se puede volver a usar hasta un descanso corto o largo."
+        ? " Nivel 4: pagando 3, durante esta ronda +2 a las tiradas de Potencia, Reflejos y Perspicacia (sustituye al +1/+2 de la activa) y sin penalizadores por heridas ni fatiga; esa parte no se puede volver a usar hasta un descanso corto o largo."
         : ""),
     efecto: {
       tipo: "accionAdicional",
@@ -1846,7 +1844,7 @@ export const IMPLANTES: Implante[] = [
     familia: "implante",
     id: "aum_neuroprotesis_simpatica",
     label: "Neuroprótesis Simpática",
-    resumen: "Se activa pagando fatiga: más Fuerza, Agilidad y Percepción durante unos turnos, y reacciones y acciones extra.",
+    resumen: "Se activa pagando fatiga: +1 a las tiradas de Potencia, Reflejos y Perspicacia durante unos turnos, y reacciones y acciones extra.",
     descripcion: "Implante biotecnológico acoplado al sistema nervioso autónomo y a las glándulas suprarrenales que fuerza una respuesta de \"lucha o huida\" bajo demanda: microestimuladores sinápticos y microbombas de neuromoduladores aceleran reflejos, contracción muscular y agudeza sensorial a cambio de exprimir la resistencia biológica del usuario.",
     sabotaje: true,
     shock: "cuerpo",
@@ -1857,7 +1855,7 @@ export const IMPLANTES: Implante[] = [
         rareza: "Poco Habitual",
         coste: 18000,
         detalle: [
-          "Como acción gratuita durante su turno o reacción en cualquier momento del turno, el personaje puede emplear 2 puntos de fatiga y de forma temporal adquirir un aumento de 1 punto en los atributos de fuerza, agilidad y percepción así como reducir penalizadores por estado en 1, en contrapartida mientras dure este efecto recibe un penalizador de -1 a tiradas de salvación de fortaleza contra enfermedades, radiación, toxinas y venenos. El efecto dura tres turnos.",
+          "Como acción gratuita durante su turno o reacción en cualquier momento del turno, el personaje puede emplear 2 puntos de fatiga y de forma temporal adquirir un bonificador de +1 en pruebas de potencia, reflejos y perspicacia así como reducir penalizadores por estado en 1, en contrapartida mientras dure este efecto recibe un penalizador de -1 a tiradas de salvación de fortaleza contra enfermedades, radiación, toxinas y venenos. El efecto dura tres turnos.",
         ],
         modificadores: [],
         // A5a: "tres turnos" = 3 rondas (R2). Las rondas solo corren en combate.
@@ -1865,9 +1863,7 @@ export const IMPLANTES: Implante[] = [
         activo: ACTIVO_NEUROPROTESIS,
         motor: [
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_activar_neuroprotesis" }, mecanismo: "accion_equipo", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:fuerza" }, mecanismo: "suma_derivado", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:percepcion" }, mecanismo: "suma_derivado", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:potencia|reflejos|perspicacia" }, mecanismo: "suma_derivado", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_activar_neuroprotesis" }, mecanismo: "nota_fija", estado: "construido" },
@@ -1878,14 +1874,14 @@ export const IMPLANTES: Implante[] = [
         rareza: "Extraño",
         coste: 36000,
         detalle: [
-          "Al activar el implante se recibe un aumento de 2 puntos en lugar de 1 en la fuerza o la agilidad, quedando a elección del usuario.",
+          "Al activar el implante se recibe un bonificador ampliado de +2 que solo afecta a uno de los atributos aplicados, quedando a elección del usuario.",
         ],
         modificadores: [],
         // A5a: la misma acción, ahora con la elección; el +2 sustituye al +1 en el elegido.
         acciones: [activarNeuroprotesis(true)],
-        activo: { ...ACTIVO_NEUROPROTESIS, mejora: { atributos: ["fuerza", "agilidad"], valor: 2 } },
+        activo: { ...ACTIVO_NEUROPROTESIS, mejora: { pruebas: ["potencia", "reflejos", "perspicacia"], valor: 2 } },
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:fuerza|agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:potencia|reflejos|perspicacia" }, mecanismo: "suma_derivado", estado: "construido" },
         ],
       },
       {
@@ -1910,16 +1906,14 @@ export const IMPLANTES: Implante[] = [
         rareza: "Muy Extraño",
         coste: 144000,
         detalle: [
-          "Si el personaje emplea 3 puntos de fatiga para conseguir una acción simple adicional durante un turno además durante ese turno obtiene un aumento de +2 a fuerza, agilidad y percepción de forma simultánea y elimina por completo penalizadores por heridas o fatiga. Esta habilidad de nivel 4 no se puede volver a usar hasta que el personaje realice un descanso corto o largo.",
+          "El personaje puede emplear 3 puntos de fatiga para conseguir una acción simple adicional durante un turno, durante ese turno obtiene un aumento de +2 a las pruebas de los tres atributos aplicados y elimina por completo penalizadores por heridas o fatiga. Esta habilidad de nivel 4 no se puede volver a usar hasta que el personaje realice un descanso corto o largo.",
         ],
         modificadores: [],
         // A5b: la misma acción, ahora con el estado de 1 ronda al pagar 3.
         acciones: [accionAdicionalNeuroprotesis(true)],
         activos: [ACTIVO_NEUROPROTESIS_4],
         motor: [
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:fuerza" }, mecanismo: "suma_derivado", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:agilidad" }, mecanismo: "suma_derivado", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "atributo:percepcion" }, mecanismo: "suma_derivado", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:potencia|reflejos|perspicacia" }, mecanismo: "suma_derivado", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "aumentos_accion_simple_adicional" }, mecanismo: "nota_fija", estado: "construido" },
         ],

@@ -23,8 +23,7 @@ export default async function CharacterPage({
 
   // Aparte de `sheet` (que la ficha guarda en useState): así el polling los refresca.
   const estados = leerEstados(character.estados);
-  // parseSheet topa la vida con el máximo posible; aquí, el exacto con los activables puestos
-  // (A5b): con la Neuroprótesis se ve 9/9, sin ella nunca 9/8.
+  // parseSheet topa la vida en reposo; aquí, el exacto con los estados (td-12).
   const sheet = reconciliarVidaConEstados(parseSheet(character.stats), estados);
 
   // Fase 6b bloque 3 (D5: combate → ficha, nunca al revés): si el personaje

@@ -188,14 +188,15 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_enjambre_nanobot 2": 2, // Sanar letal y Sanar grave (contador de 5 pulsaciones, usuario 2026-10-28)
     // A4b: Incorporar arma, Tempestad Nanobótica y su nota del blindaje del objetivo.
     "aum_enjambre_nanobot 4": 2,
-    // A5a: activables. Neuroprótesis 1 entera (activar, +1 a los tres, −1 a los penalizadores,
-    // −1 en "Contra…" y la nota) y la elección del 2.
-    "aum_neuroprotesis_simpatica 1": 7,
+    // A5a: activables. Neuroprótesis 1 entera (activar, +1 a las tiradas de los tres aplicados
+    // —una entrada desde el sync Drive 2026-11-14, antes una por atributo—, −1 a los
+    // penalizadores, −1 en "Contra…" y la nota) y la elección del 2.
+    "aum_neuroprotesis_simpatica 1": 5,
     "aum_neuroprotesis_simpatica 2": 1,
     // A5b: segunda reacción y acción adicional (3); el estado de 1 ronda con sus +2, la
     // eliminación de heridas y fatiga y la nota (4).
     "aum_neuroprotesis_simpatica 3": 2,
-    "aum_neuroprotesis_simpatica 4": 5,
+    "aum_neuroprotesis_simpatica 4": 3,
     // A6a: la casilla del brazo (1-4), el blindaje y el bloqueo (2-4), el letal en pelea (2) y la
     // fila "Bloquear con el brazo biónico" (2). El nivel 1 suma la casilla a Incorporar arma.
     // A6b: las notas del arma incorporada (cuerpo a cuerpo, fuego y desarme) en el nivel 1.

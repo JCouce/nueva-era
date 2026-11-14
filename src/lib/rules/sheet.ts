@@ -372,9 +372,8 @@ export function parseSheet(raw: unknown): Sheet {
   // existe, solo añade/quita para que coincida con sheet.equipo.
   //
   // reconciliarVidaAlLeer() después: recorta vidaActual/fatigaActual al tope
-  // posible (salud(), que depende de atributos/equipo/especie ya reconciliados,
-  // más lo que puedan dar los activables equipados: la ficha no conoce
-  // Character.estados, A5b) — el centinela 999 de una ficha nueva o recién
+  // en reposo (salud(), que depende de atributos/equipo/especie ya reconciliados;
+  // la ficha no conoce Character.estados) — el centinela 999 de una ficha nueva o recién
   // migrada cae aquí a un número de verdad, y una ficha vieja que perdiera un
   // bono de vida no se queda con un `actual` por encima de su nuevo máximo. El
   // recorte exacto con los estados lo hace quien los lee (reconciliarVidaConEstados).

@@ -227,14 +227,19 @@ describe("Brazo Biónico: casilla «Con el brazo biónico»", () => {
     assert.deepEqual(m.danio.ajustes, []);
   });
 
-  test("con un activable puesto, el brazo parte de la base permanente: puede quedar por debajo", () => {
+  // Sync Drive 2026-11-14: la Neuroprótesis ya no sube atributos, sino la tirada; con el brazo y
+  // sin él suma lo mismo, y el brazo sale de la misma base.
+  test("con la Neuroprótesis activa, su +1 va a la tirada, con el brazo y sin él; el brazo no cambia", () => {
     const s = con(conBrazo(con(ficha({ fuerza: 2, agilidad: 2 }), "aum_neuroprotesis_simpatica", 1), 1), "pelea_punetazo");
     const neuro: EstadoActivo = { estadoId: "aum_neuroprotesis", gradoId: "activo", rondasRestantes: 3 };
     const t = fila(s, "Golpear con Puñetazo", [neuro])!;
-    assert.equal(montar(s, t, false, false, [neuro]).aplicado.valor, 3); // 3 y 3 con la Neuroprótesis
-    const m = montar(s, t, true, false, [neuro]);
-    assert.equal(m.aplicado.valor, 1); // brazo: Fuerza 2, Agilidad 1 → ⌊3/2⌋, por debajo hasta de la base sin activable (2)
-    assert.deepEqual(m.danio.ajustes, [{ valor: -1, fuente: "Brazo Biónico 1: Fuerza 2 (tuya 3)" }]);
+    for (const marcada of [false, true]) {
+      const sin = montar(s, t, marcada);
+      const conNeuro = montar(s, t, marcada, false, [neuro]);
+      assert.equal(conNeuro.aplicado.valor, sin.aplicado.valor, `brazo ${marcada}`);
+      assert.equal(conNeuro.modificador - sin.modificador, 1, `brazo ${marcada}`);
+      assert.deepEqual(conNeuro.danio.ajustes, sin.danio.ajustes, `brazo ${marcada}`);
+    }
   });
 });
 

@@ -65,7 +65,7 @@ const objetivoDeFoto = (f: FotoLeida, recurso: RecursoVital): ObjetivoVidaActual
 async function fichasComoObjetivos(tx: Tx, ids: string[], recurso: RecursoVital) {
   const filas = await tx.character.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, stats: true, estados: true } });
   return filas.map((f) => {
-    // Tope y recorte con los activables puestos (A5b): parseSheet topa con el posible.
+    // Tope y recorte con los estados (td-12): parseSheet topa en reposo.
     const estados = leerEstados(f.estados);
     const sheet = reconciliarVidaConEstados(parseSheet(f.stats), estados);
     const objetivo: ObjetivoVidaActual = {

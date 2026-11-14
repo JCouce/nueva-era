@@ -63,7 +63,7 @@ async function cargarMesa() {
   });
   const jugadores: JugadorMesa[] = filas.map((f) => {
     const estados = leerEstados(f.estados);
-    // Recorte exacto con los activables puestos (A5b): parseSheet topa con el posible.
+    // Recorte exacto con los estados (td-12): parseSheet topa en reposo.
     const sheet = reconciliarVidaConEstados(parseSheet(f.stats), estados);
     const propias = fotos.filter((c) => c.characterId === f.id);
     // Los estados automáticos (Heridas, Fatiga, Inconsciencia) salen de la vida que se enseña:

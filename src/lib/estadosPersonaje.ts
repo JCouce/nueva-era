@@ -149,7 +149,7 @@ async function cambiarEstadosEnTx(
   const ops = operacionesDe(op);
   for (const f of filas) {
     const estados = leerEstados(f.estados);
-    // Con el recorte exacto de los activables puestos (A5b): parseSheet topa con el posible.
+    // Con el recorte exacto de los estados (td-12): parseSheet topa en reposo.
     const leida = reconciliarVidaConEstados(parseSheet(f.stats), estados);
     const primera = operacionConInmunidad(leida, ops[0], forzar);
     if (primera.tipo === "inmune") {

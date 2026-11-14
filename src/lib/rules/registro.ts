@@ -33,14 +33,13 @@ import { z } from "zod";
 import { leerEstados, ponerEstado, quitarEstado, type CambioEstadoNpc } from "./estadosFicha";
 import type { EstadoActivo } from "./estados";
 import {
-  cambianActivables,
   devolverVida,
   maximosConEstados,
   type CambioEstadoPersonaje,
   type ParVida,
 } from "./vidaPorEstados";
 import type { Sheet } from "./sheet";
-import { reconciliarVida, topesDeVida, vidaTrasAjuste } from "./vitalidad";
+import { topesDeVida, vidaTrasAjuste } from "./vitalidad";
 import { ajustarVidaDeObjetivo, type RecursoVital } from "./ajusteVida";
 import { CATEGORIAS_DANIO, danioIgual, danioSchema, normalizarDanio, type CategoriaDanio, type DanioVida } from "./danio";
 
@@ -350,9 +349,7 @@ export function planDeshacerEstados(
     enCurso.set(p.id, w);
   }
 
-  // Si deshacer pone o quita un activable de aumento (deshacer "Activar", A5b), la vida que
-  // quede por encima del máximo nuevo se recorta, como al caerse (vidaTrasCambioDeEstados).
-  // La ficha, a su tope (topesDeVida, también para devolver); la foto, a su máximo.
+  // La ficha devuelve hasta su tope (topesDeVida); la foto, hasta su máximo.
   // Los NPC (td-20): uno tras otro sobre su fila, con las mismas comprobaciones.
   const npcPorId = new Map(npcs.map((n) => [n.id, n]));
   const npcsEnCurso = new Map<string, EstadoActivo[]>();
@@ -373,17 +370,14 @@ export function planDeshacerEstados(
   for (const { p, estados, ficha, fotos } of enCurso.values()) {
     const maximos = maximosConEstados(p.sheet, estados);
     const topes = topesDeVida(p.sheet, estados);
-    const recorta = cambianActivables(p.estados, estados);
-    const devuelta = devolverVidaFicha(p.sheet, ficha, topes);
-    plan.personajes.push({ id: p.id, estados, sheet: recorta ? reconciliarVida(devuelta, topes) : devuelta });
-    const alTope = (n: number, max: number) => (recorta ? Math.min(n, Math.max(0, max)) : n);
+    plan.personajes.push({ id: p.id, estados, sheet: devolverVidaFicha(p.sheet, ficha, topes) });
     for (const f of combatientes.filter((f) => f.characterId === p.id)) {
       const devueltaFoto = fotos.get(f.id) ?? { vida: 0, fatiga: 0 };
       plan.combatientes.push({
         id: f.id,
-        pgActual: alTope(devolverVida(f.pgActual, devueltaFoto.vida, maximos.vida), maximos.vida),
+        pgActual: devolverVida(f.pgActual, devueltaFoto.vida, maximos.vida),
         pgMax: maximos.vida,
-        fatigaActual: alTope(devolverVida(f.fatigaActual, devueltaFoto.fatiga, maximos.fatiga), maximos.fatiga),
+        fatigaActual: devolverVida(f.fatigaActual, devueltaFoto.fatiga, maximos.fatiga),
         fatigaMax: maximos.fatiga,
       });
     }

@@ -979,6 +979,20 @@ export const ESTADOS: Estado[] = [
 // estado Y la pieza equipada (sin la pieza, el estado no hace nada).
 // TODO(revisar): el máster podría ponerlos por la API (validation.ts los acepta porque
 // estadoPorId los encuentra); no hay botón para ello y no hace daño.
+function gradoNeuroprotesis2(id: string, elegido: string, otros: string) {
+  return {
+    id,
+    label: `+2 ${elegido}`,
+    modificadores: [],
+    detalle: [
+      `+2 a las tiradas de ${elegido} y +1 a las de ${otros}. −1 a cada penalizador por estado, ` +
+        "heridas y fatiga, sin pasar de 0. −1 a las salvaciones de Fortaleza contra enfermedad, " +
+        "radiación, toxinas y venenos.",
+    ],
+    duracionTurnos: 3,
+  };
+}
+
 export const ESTADOS_DE_AUMENTO: Estado[] = [
   {
     id: "aum_neuroprotesis",
@@ -990,34 +1004,17 @@ export const ESTADOS_DE_AUMENTO: Estado[] = [
         label: "Nivel 1",
         modificadores: [],
         detalle: [
-          "+1 a Fuerza, Agilidad y Percepción (no cuenta para requisitos de dote). −1 a cada " +
+          "+1 a las tiradas de Potencia, Reflejos y Perspicacia. −1 a cada " +
             "penalizador por estado, heridas y fatiga, sin pasar de 0. −1 a las salvaciones de " +
             "Fortaleza contra enfermedad, radiación, toxinas y venenos.",
         ],
         duracionTurnos: 3,
       },
-      {
-        id: "fuerza",
-        label: "+2 Fuerza",
-        modificadores: [],
-        detalle: [
-          "+2 a Fuerza y +1 a Agilidad y Percepción (no cuenta para requisitos de dote). −1 a cada " +
-            "penalizador por estado, heridas y fatiga, sin pasar de 0. −1 a las salvaciones de " +
-            "Fortaleza contra enfermedad, radiación, toxinas y venenos.",
-        ],
-        duracionTurnos: 3,
-      },
-      {
-        id: "agilidad",
-        label: "+2 Agilidad",
-        modificadores: [],
-        detalle: [
-          "+2 a Agilidad y +1 a Fuerza y Percepción (no cuenta para requisitos de dote). −1 a cada " +
-            "penalizador por estado, heridas y fatiga, sin pasar de 0. −1 a las salvaciones de " +
-            "Fortaleza contra enfermedad, radiación, toxinas y venenos.",
-        ],
-        duracionTurnos: 3,
-      },
+      // Nivel 2: +2 a las tiradas del aplicado elegido (sync Drive 2026-11-14; antes, +2 a Fuerza o
+      // Agilidad, grados «fuerza» y «agilidad»).
+      gradoNeuroprotesis2("potencia", "Potencia", "Reflejos y Perspicacia"),
+      gradoNeuroprotesis2("reflejos", "Reflejos", "Potencia y Perspicacia"),
+      gradoNeuroprotesis2("perspicacia", "Perspicacia", "Potencia y Reflejos"),
     ],
   },
   // A5b: la acción simple adicional pagada a 3 con el nivel 4. Va aparte de aum_neuroprotesis
@@ -1025,15 +1022,15 @@ export const ESTADOS_DE_AUMENTO: Estado[] = [
   {
     id: "aum_neuroprotesis_4",
     label: "Neuroprótesis Simpática 4",
-    resumen: "Acción simple adicional a 3 de fatiga: +2 a Fuerza, Agilidad y Percepción esta ronda.",
+    resumen: "Acción simple adicional a 3 de fatiga: +2 a las tiradas de Potencia, Reflejos y Perspicacia esta ronda.",
     grados: [
       {
         id: "activo",
         label: "Nivel 4",
         modificadores: [],
         detalle: [
-          "+2 a Fuerza, Agilidad y Percepción, que sustituye al +1/+2 de la Neuroprótesis activa (no " +
-            "se suman; no cuenta para requisitos de dote). Sin penalizadores por heridas ni fatiga. No " +
+          "+2 a las tiradas de Potencia, Reflejos y Perspicacia, que sustituye al +1/+2 de la " +
+            "Neuroprótesis activa (no se suman). Sin penalizadores por heridas ni fatiga. No " +
             "se puede volver a usar hasta un descanso corto o largo.",
         ],
         duracionTurnos: 1,

@@ -125,6 +125,8 @@ function foto(f: FichaResuelta) {
   };
 }
 
+// Sync Drive 2026-11-14: la Neuroprótesis sube las tiradas de Potencia, Reflejos y Perspicacia,
+// no los atributos; sus casos ya no mueven la carga ni la carrera (las tiradas, igual que antes).
 const ESPERADO: Record<string, ReturnType<typeof foto>> = {
   "base · entero": {"umbral":[],"tiradas":{"salv_voluntad":2,"salv_reflejos":1,"defensa":3,"iniciativa_distraccion":0},"carrera":20,"vuelo":null,"levitacion":null,"carga":40},
   "base · herido": {"umbral":["Herido -1"],"tiradas":{"salv_voluntad":1,"salv_reflejos":0,"defensa":2,"iniciativa_distraccion":-1},"carrera":20,"vuelo":null,"levitacion":null,"carga":40},
@@ -151,8 +153,8 @@ const ESPERADO: Record<string, ReturnType<typeof foto>> = {
   "estabilizacion · 0": {"umbral":[],"tiradas":{"salv_voluntad":2,"salv_reflejos":1,"defensa":3,"iniciativa_distraccion":0},"carrera":20,"vuelo":null,"levitacion":null,"carga":40},
   "guerrero + estabilizacion · 0": {"umbral":[],"tiradas":{"salv_voluntad":2,"salv_reflejos":1,"defensa":3,"iniciativa_distraccion":-1},"carrera":21,"vuelo":null,"levitacion":null,"carga":60},
   "neurogenesis · 0": {"umbral":["Herido -1","Fatigado -1","Neurogénesis Hipocampal (Fatigado) 1 (compensa)"],"tiradas":{"salv_voluntad":1,"salv_reflejos":-1,"defensa":1,"iniciativa_distraccion":0},"carrera":20,"vuelo":null,"levitacion":null,"carga":40},
-  "neuroprotesis activa · 0": {"umbral":[],"tiradas":{"salv_voluntad":2,"salv_reflejos":2,"defensa":4,"iniciativa_distraccion":0},"carrera":21,"vuelo":null,"levitacion":null,"carga":60},
-  "neuroprotesis 4 · 0": {"umbral":[],"tiradas":{"salv_voluntad":2,"salv_reflejos":3,"defensa":5,"iniciativa_distraccion":0},"carrera":22,"vuelo":null,"levitacion":null,"carga":80},
+  "neuroprotesis activa · 0": {"umbral":[],"tiradas":{"salv_voluntad":2,"salv_reflejos":2,"defensa":4,"iniciativa_distraccion":0},"carrera":20,"vuelo":null,"levitacion":null,"carga":40},
+  "neuroprotesis 4 · 0": {"umbral":[],"tiradas":{"salv_voluntad":2,"salv_reflejos":3,"defensa":5,"iniciativa_distraccion":0},"carrera":20,"vuelo":null,"levitacion":null,"carga":40},
   "proyeccion activa · 0": {"umbral":["Herido -1","Fatigado -1"],"tiradas":{"salv_voluntad":1,"salv_reflejos":-1,"defensa":1,"iniciativa_distraccion":1},"carrera":20,"vuelo":null,"levitacion":null,"carga":40},
   "volador · 0": {"umbral":["Herido -1","Fatigado -1"],"tiradas":{"salv_voluntad":0,"salv_reflejos":-2,"defensa":0,"iniciativa_distraccion":-2},"carrera":19,"vuelo":50,"levitacion":20,"carga":40},
   "arkoru · 0": {"umbral":["Herido -1","Fatigado -1"],"tiradas":{"salv_voluntad":0,"salv_reflejos":-2,"defensa":0,"iniciativa_distraccion":-2},"carrera":20,"vuelo":null,"levitacion":null,"carga":96},
@@ -161,9 +163,9 @@ const ESPERADO: Record<string, ReturnType<typeof foto>> = {
   "estabilizacion · 1": {"umbral":["Malherido (Estabilización Autonómica) -2","Exhausto (Estabilización Autonómica) -1"],"tiradas":{"salv_voluntad":-1,"salv_reflejos":-2,"defensa":0,"iniciativa_distraccion":-3},"carrera":10,"vuelo":null,"levitacion":null,"carga":30},
   "guerrero + estabilizacion · 1": {"umbral":["Malherido (Manduk · Guerrero y Estabilización Autonómica) -1","Exhausto (Estabilización Autonómica) -1"],"tiradas":{"salv_voluntad":0,"salv_reflejos":-1,"defensa":1,"iniciativa_distraccion":-3},"carrera":10,"vuelo":null,"levitacion":null,"carga":45},
   "neurogenesis · 1": {"umbral":["Malherido -3","Exhausto -2","Neurogénesis Hipocampal (Exhausto) 1 (compensa)"],"tiradas":{"salv_voluntad":-2,"salv_reflejos":-4,"defensa":-2,"iniciativa_distraccion":-3},"carrera":10,"vuelo":null,"levitacion":null,"carga":30},
-  "neuroprotesis activa · 1": {"umbral":["Malherido (Neuroprótesis Simpática 1) -2","Exhausto (Neuroprótesis Simpática 1) -1"],"tiradas":{"salv_voluntad":-1,"salv_reflejos":-1,"defensa":1,"iniciativa_distraccion":-3},"carrera":10,"vuelo":null,"levitacion":null,"carga":45},
+  "neuroprotesis activa · 1": {"umbral":["Malherido (Neuroprótesis Simpática 1) -2","Exhausto (Neuroprótesis Simpática 1) -1"],"tiradas":{"salv_voluntad":-1,"salv_reflejos":-1,"defensa":1,"iniciativa_distraccion":-3},"carrera":10,"vuelo":null,"levitacion":null,"carga":30},
   // td-10 (usuario, 2026-11-13): la Neuroprótesis 4 quita también media velocidad y recorte de carga.
-  "neuroprotesis 4 · 1": {"umbral":[],"tiradas":{"salv_voluntad":2,"salv_reflejos":3,"defensa":5,"iniciativa_distraccion":0},"carrera":22,"vuelo":null,"levitacion":null,"carga":80},
+  "neuroprotesis 4 · 1": {"umbral":[],"tiradas":{"salv_voluntad":2,"salv_reflejos":3,"defensa":5,"iniciativa_distraccion":0},"carrera":20,"vuelo":null,"levitacion":null,"carga":40},
   "proyeccion activa · 1": {"umbral":["Malherido -3","Exhausto -2"],"tiradas":{"salv_voluntad":-2,"salv_reflejos":-4,"defensa":-2,"iniciativa_distraccion":1},"carrera":10,"vuelo":null,"levitacion":null,"carga":30},
   "volador · 1": {"umbral":["Malherido -3","Exhausto -2"],"tiradas":{"salv_voluntad":-3,"salv_reflejos":-5,"defensa":-3,"iniciativa_distraccion":-5},"carrera":9,"vuelo":25,"levitacion":10,"carga":30},
   "arkoru · 1": {"umbral":["Malherido -3","Exhausto -2"],"tiradas":{"salv_voluntad":-3,"salv_reflejos":-5,"defensa":-3,"iniciativa_distraccion":-5},"carrera":10,"vuelo":null,"levitacion":null,"carga":72},
@@ -172,8 +174,8 @@ const ESPERADO: Record<string, ReturnType<typeof foto>> = {
   "estabilizacion · 2": {"umbral":["Moribundo (Estabilización Autonómica) -4","Exhausto (Estabilización Autonómica) -1"],"tiradas":{"salv_voluntad":-3,"salv_reflejos":-4,"defensa":-2,"iniciativa_distraccion":-5},"carrera":10,"vuelo":null,"levitacion":null,"carga":20},
   "guerrero + estabilizacion · 2": {"umbral":["Moribundo (Manduk · Guerrero y Estabilización Autonómica) -3","Exhausto (Estabilización Autonómica) -1"],"tiradas":{"salv_voluntad":-2,"salv_reflejos":-3,"defensa":-1,"iniciativa_distraccion":-5},"carrera":10,"vuelo":null,"levitacion":null,"carga":30},
   "neurogenesis · 2": {"umbral":["Moribundo -5","Exhausto -2","Neurogénesis Hipocampal (Exhausto) 1 (compensa)"],"tiradas":{"salv_voluntad":-4,"salv_reflejos":-6,"defensa":-4,"iniciativa_distraccion":-5},"carrera":10,"vuelo":null,"levitacion":null,"carga":20},
-  "neuroprotesis activa · 2": {"umbral":["Moribundo (Neuroprótesis Simpática 1) -4","Exhausto (Neuroprótesis Simpática 1) -1"],"tiradas":{"salv_voluntad":-3,"salv_reflejos":-3,"defensa":-1,"iniciativa_distraccion":-5},"carrera":10,"vuelo":null,"levitacion":null,"carga":30},
-  "neuroprotesis 4 · 2": {"umbral":[],"tiradas":{"salv_voluntad":2,"salv_reflejos":3,"defensa":5,"iniciativa_distraccion":0},"carrera":22,"vuelo":null,"levitacion":null,"carga":80},
+  "neuroprotesis activa · 2": {"umbral":["Moribundo (Neuroprótesis Simpática 1) -4","Exhausto (Neuroprótesis Simpática 1) -1"],"tiradas":{"salv_voluntad":-3,"salv_reflejos":-3,"defensa":-1,"iniciativa_distraccion":-5},"carrera":10,"vuelo":null,"levitacion":null,"carga":20},
+  "neuroprotesis 4 · 2": {"umbral":[],"tiradas":{"salv_voluntad":2,"salv_reflejos":3,"defensa":5,"iniciativa_distraccion":0},"carrera":20,"vuelo":null,"levitacion":null,"carga":40},
   "proyeccion activa · 2": {"umbral":["Moribundo -5","Exhausto -2"],"tiradas":{"salv_voluntad":-4,"salv_reflejos":-6,"defensa":-4,"iniciativa_distraccion":1},"carrera":10,"vuelo":null,"levitacion":null,"carga":20},
   "volador · 2": {"umbral":["Moribundo -5","Exhausto -2"],"tiradas":{"salv_voluntad":-5,"salv_reflejos":-7,"defensa":-5,"iniciativa_distraccion":-7},"carrera":9,"vuelo":25,"levitacion":10,"carga":20},
   "arkoru · 2": {"umbral":["Moribundo -5","Exhausto -2"],"tiradas":{"salv_voluntad":-5,"salv_reflejos":-7,"defensa":-5,"iniciativa_distraccion":-7},"carrera":10,"vuelo":null,"levitacion":null,"carga":48},

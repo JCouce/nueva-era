@@ -225,7 +225,7 @@ async function loadEditable(characterId: string): Promise<Editable | { error: st
     return { error: "La ficha está en revisión: retírala para seguir editando" };
   }
   const estados = leerEstados(character.estados);
-  // Recorte exacto de la vida con los activables puestos (A5b): parseSheet topa con el posible.
+  // Recorte exacto de la vida con los estados (td-12): parseSheet topa en reposo.
   const sheet = reconciliarVidaConEstados(parseSheet(character.stats), estados);
   const ajuste = ajustesDeCoste(especieDeFicha(sheet));
   return {

@@ -9,16 +9,10 @@ import { montarTirada, SIN_ELECCION, type TiradaMontada } from "./montaje";
 import { accionesDeAumentos, ID_ACCION_REPETIDA, ID_ELECCION_ACTIVABLE, usoDeAccionAumento } from "./aumentosAcciones";
 import { ID_SELECTOR_CONTRA } from "./aumentosTiradas";
 import { descontarDuracion, describirEstadosActivos, type EstadoActivo } from "./estados";
-import { estadosAlCerrarVuelta, ponerEstado } from "./estadosFicha";
-import {
-  aplicarOperacionEstado,
-  fotoTrasCambioDeFicha,
-  quitarEstadosDe,
-  vidaTrasCambioDeEstados,
-} from "./vidaPorEstados";
-import { ajustarFatiga, ajustarVida, reconciliarVidaConEstados, topesDeVida } from "./vitalidad";
+import { ponerEstado } from "./estadosFicha";
+import { fotoTrasCambioDeFicha, vidaTrasCambioDeEstados } from "./vidaPorEstados";
+import { ajustarFatiga, ajustarVida, topesDeVida } from "./vitalidad";
 import { parseSheet } from "./sheet";
-import { planDeshacerEstados } from "./registro";
 import { ESTADOS } from "../catalog/estados";
 
 let n = 0;
@@ -134,43 +128,56 @@ describe("activables: activar, reactivar y desactivar", () => {
   });
 });
 
-describe("Neuroprótesis: atributos y elección del nivel 2", () => {
-  test("+1 a Fuerza, Agilidad y Percepción solo con el estado y la pieza", () => {
-    const base = resolver(conNeuro(), []).atributos;
-    const activa = resolver(conNeuro(), [neuro()]).atributos;
-    assert.equal(activa.fuerza - base.fuerza, 1);
-    assert.equal(activa.agilidad - base.agilidad, 1);
-    assert.equal(activa.percepcion - base.percepcion, 1);
-    assert.equal(activa.aguante, base.aguante);
+// Sync Drive 2026-11-14: el bono va a las tiradas de Potencia, Reflejos y Perspicacia (la
+// Salvación de Reflejos incluida, usuario 2026-11-14), no a los atributos.
+const TIRADA_DE: Record<"potencia" | "reflejos" | "perspicacia", string> = {
+  potencia: "atletismo",
+  reflejos: "salv_reflejos",
+  perspicacia: "alerta_activa",
+};
+const subida = (s: Sheet, estados: EstadoActivo[]) =>
+  (["potencia", "reflejos", "perspicacia"] as const).map(
+    (a) => montar(resolver(s, estados), TIRADA_DE[a]).modificador - montar(resolver(s, []), TIRADA_DE[a]).modificador,
+  );
+
+describe("Neuroprótesis: bono a las tiradas y elección del nivel 2", () => {
+  test("+1 a las tiradas de Potencia, Reflejos (también la salvación) y Perspicacia, solo con el estado y la pieza", () => {
+    assert.deepEqual(subida(conNeuro(), [neuro()]), [1, 1, 1]);
+    const m = montar(resolver(conNeuro(), [neuro()]), "salv_reflejos");
+    assert.deepEqual(linea(m, /^Neuroprótesis/), [{ etiqueta: "Neuroprótesis Simpática 1", valor: 1 }]);
+    // Ni Fortaleza ni Voluntad.
+    assert.equal(montar(resolver(conNeuro(), [neuro()]), "salv_fortaleza").modificador, montar(resolver(conNeuro(), []), "salv_fortaleza").modificador);
+    assert.equal(montar(resolver(conNeuro(), [neuro()]), "salv_voluntad").modificador, montar(resolver(conNeuro(), []), "salv_voluntad").modificador);
     // Estado sin la pieza: no hace nada.
-    const sinPieza = resolver(conRecursos(defaultSheet()), [neuro()]).atributos;
-    assert.equal(sinPieza.fuerza, base.fuerza);
+    const sinPieza = conRecursos(defaultSheet());
+    assert.deepEqual(subida(sinPieza, [neuro()]), [0, 0, 0]);
   });
 
-  test("no cuenta para los requisitos de dote", () => {
-    const base = resolver(conNeuro(), []);
-    const activa = resolver(conNeuro(), [neuro()]);
+  test("no toca atributos, vida, fatiga, carga, movimiento ni Alerta pasiva", () => {
+    const s = { ...conNeuro(), atributos: { ...conNeuro().atributos, fuerza: 2, aguante: 1 } };
+    const base = resolver(s, []);
+    const activa = resolver(s, [neuro()]);
+    assert.deepEqual(activa.atributos, base.atributos);
+    assert.deepEqual(activa.aplicados, base.aplicados);
+    assert.deepEqual(activa.salud, base.salud);
+    assert.deepEqual(activa.movimiento, base.movimiento);
+    assert.equal(activa.cargaMaxima, base.cargaMaxima);
     assert.deepEqual(activa.requisitosDotes, base.requisitosDotes);
   });
 
-  test("nivel 2: se elige al activar; el +2 sustituye al +1 en el elegido", () => {
+  test("nivel 2: se elige al activar entre los tres; el +2 sustituye al +1 en el elegido", () => {
     const s = conNeuro(2);
     const a = directa(s, [], ACTIVAR_NEURO)!;
     const sel = a.condiciones?.find((c): c is Extract<CondicionTirada, { tipo: "opcion" }> => c.id === ID_ELECCION_ACTIVABLE);
-    assert.deepEqual(sel?.opciones.map((o) => o.id), ["fuerza", "agilidad"]);
+    assert.deepEqual(sel?.opciones.map((o) => o.id), ["potencia", "reflejos", "perspicacia"]);
     assert.equal(usoDeAccionAumento(s, [], ACTIVAR_NEURO).ok, false, "sin elección no se activa");
-    const uso = usoDeAccionAumento(s, [], ACTIVAR_NEURO, { eleccion: "agilidad" });
+    const uso = usoDeAccionAumento(s, [], ACTIVAR_NEURO, { eleccion: "reflejos" });
     assert.ok(uso.ok && uso.op?.tipo === "poner");
-    assert.equal(uso.op.estado.gradoId, "agilidad");
+    assert.equal(uso.op.estado.gradoId, "reflejos");
 
-    const base = resolver(s, []).atributos;
-    const agi = resolver(s, [neuro("agilidad")]).atributos;
-    assert.deepEqual(
-      [agi.fuerza - base.fuerza, agi.agilidad - base.agilidad, agi.percepcion - base.percepcion],
-      [1, 2, 1],
-    );
-    const fue = resolver(s, [neuro("fuerza")]).atributos;
-    assert.deepEqual([fue.fuerza - base.fuerza, fue.agilidad - base.agilidad], [2, 1]);
+    assert.deepEqual(subida(s, [neuro("potencia")]), [2, 1, 1]);
+    assert.deepEqual(subida(s, [neuro("reflejos")]), [1, 2, 1]);
+    assert.deepEqual(subida(s, [neuro("perspicacia")]), [1, 1, 2]);
   });
 
   test("nivel 1: un único grado, sin selector", () => {
@@ -192,7 +199,7 @@ describe("Neuroprótesis: −1 a cada penalizador sin pasar de 0", () => {
   // Sync Drive 2026-11-14: «−1 a los penalizadores por heridas y fatiga», en todos los niveles.
   test("heridas y fatiga −1 con la activa, en los cuatro niveles", () => {
     for (const nivel of [1, 2, 3, 4]) {
-      const grado = nivel === 1 ? "activo" : "fuerza";
+      const grado = nivel === 1 ? "activo" : "potencia";
       const m = montar(resolver(conNeuro(nivel), [neuro(grado)], HERIDO_Y_FATIGADO), "atletismo");
       assert.deepEqual(linea(m, /^Malherido/), [{ etiqueta: `Malherido (Neuroprótesis Simpática ${nivel})`, valor: -2 }], `nivel ${nivel}`);
       assert.deepEqual(linea(m, /^Fatigado/), [], `nivel ${nivel}`);
@@ -285,20 +292,6 @@ describe("Proyección: anula los penalizadores en Actitud", () => {
   });
 });
 
-describe("activables y vida", () => {
-  test("que caduque la Neuroprótesis no resta vida aunque baje el máximo", () => {
-    // Fuerza 2 y Aguante 1: Fortaleza ⌊3/2⌋ = 1 (media hacia abajo); con +1 a Fuerza,
-    // ⌊4/2⌋ = 2 (+1 de vida máxima). Con Fuerza 1 y Aguante 1 el +1 no movería nada.
-    const s = { ...conNeuro(), atributos: { ...conNeuro().atributos, fuerza: 2, aguante: 1 } };
-    const max = resolver(s, []).salud.vida;
-    assert.equal(resolver(s, [neuro()]).salud.vida, max + 1, "sube el máximo mientras dura");
-    const llena = { ...s, vidaActual: max };
-    const r = vidaTrasCambioDeEstados(llena, [neuro()], []);
-    assert.equal(r.sheet.vidaActual, max);
-    assert.deepEqual(r.restado, { vida: 0, fatiga: 0 });
-  });
-});
-
 // --- A5b: Neuroprótesis 3 y 4 -----------------------------------------------
 
 const ADICIONAL = "aumentos_accion_simple_adicional";
@@ -344,24 +337,24 @@ describe("A5b: acción simple adicional (Neuroprótesis 3)", () => {
   test("segunda reacción: texto en Defensa solo con la Neuroprótesis activa", () => {
     const reaccion = (f: FichaResuelta) => f.textosTirada.filter((t) => /Segunda reacción por ronda mientras/.test(t.texto));
     assert.equal(reaccion(resolver(conNeuro(3), [])).length, 0);
-    const [t] = reaccion(resolver(conNeuro(3), [neuro("fuerza")]));
+    const [t] = reaccion(resolver(conNeuro(3), [neuro("potencia")]));
     assert.deepEqual(t.en, { tipo: "grupo", grupo: "Defensa" });
     assert.match(t.texto, /no se apila con la de otros aumentos/); // sync Drive 2026-11-14
     assert.equal(t.fuente, "Neuroprótesis Simpática 3");
-    assert.equal(reaccion(resolver(conNeuro(2), [neuro("fuerza")])).length, 0);
+    assert.equal(reaccion(resolver(conNeuro(2), [neuro("potencia")])).length, 0);
   });
 
   test("el selector de activar no enseña «+0»", () => {
     const sel = directa(conNeuro(2), [], ACTIVAR_NEURO)!.condiciones![0];
     assert.ok(sel.tipo === "opcion");
-    assert.deepEqual(sel.opciones.map(resumenOpcion), ["", ""]);
+    assert.deepEqual(sel.opciones.map(resumenOpcion), ["", "", ""]);
   });
 });
 
 describe("A5b: Neuroprótesis 4", () => {
   test("pagar 3 con el nivel 4 pone su estado de 1 ronda; pagar 2, no", () => {
     const s = conNeuro(4);
-    const r = usoDeAccionAumento(s, [neuro("fuerza")], ADICIONAL, { repetida: true });
+    const r = usoDeAccionAumento(s, [neuro("potencia")], ADICIONAL, { repetida: true });
     assert.ok(r.ok);
     assert.equal(r.coste, 3);
     assert.deepEqual(r.op, { tipo: "poner", estado: neuro4 });
@@ -372,43 +365,39 @@ describe("A5b: Neuroprótesis 4", () => {
   });
 
   test("convive con la activa: otro estado, y al caerse el de 1 ronda sigue la de 3", () => {
-    const tras = ponerEstado([neuro("fuerza", 3)], neuro4);
-    assert.deepEqual(tras, [neuro("fuerza", 3), neuro4]);
-    assert.deepEqual(descontarDuracion(tras), [neuro("fuerza", 2)]);
+    const tras = ponerEstado([neuro("potencia", 3)], neuro4);
+    assert.deepEqual(tras, [neuro("potencia", 3), neuro4]);
+    assert.deepEqual(descontarDuracion(tras), [neuro("potencia", 2)]);
     const [, chip] = describirEstadosActivos(tras);
     assert.equal(chip.duracionActivable, "1 ronda, en combate");
   });
 
-  test("+2 a los tres sustituyendo al +1/+2 de la activa, sin sumar", () => {
+  test("+2 a las tiradas de los tres sustituyendo al +1/+2 de la activa, sin sumar", () => {
     const s = conNeuro(4);
-    const base = resolver(s, []).atributos;
-    const delta = (estados: EstadoActivo[]) => {
-      const a = resolver(s, estados).atributos;
-      return [a.fuerza - base.fuerza, a.agilidad - base.agilidad, a.percepcion - base.percepcion];
-    };
-    assert.deepEqual(delta([neuro("fuerza")]), [2, 1, 1]);
-    assert.deepEqual(delta([neuro("fuerza"), neuro4]), [2, 2, 2]);
-    assert.deepEqual(delta([neuro4]), [2, 2, 2], "sin la activa, también");
+    assert.deepEqual(subida(s, [neuro("potencia")]), [2, 1, 1]);
+    assert.deepEqual(subida(s, [neuro("potencia"), neuro4]), [2, 2, 2]);
+    assert.deepEqual(subida(s, [neuro4]), [2, 2, 2], "sin la activa, también");
+    assert.deepEqual(resolver(s, [neuro("potencia"), neuro4]).atributos, resolver(s, []).atributos, "los atributos, quietos");
   });
 
   test("heridas y fatiga a 0 mientras dura; los estados siguen con su −1 de la activa", () => {
     const s = conNeuro(4);
-    const m = montar(resolver(s, [neuro("fuerza"), neuro4], HERIDO_Y_FATIGADO), "atletismo");
+    const m = montar(resolver(s, [neuro("potencia"), neuro4], HERIDO_Y_FATIGADO), "atletismo");
     assert.deepEqual(linea(m, /^(Malherido|Fatigado)/), []);
-    const sin = montar(resolver(s, [neuro("fuerza")], HERIDO_Y_FATIGADO), "atletismo");
+    const sin = montar(resolver(s, [neuro("potencia")], HERIDO_Y_FATIGADO), "atletismo");
     assert.deepEqual(linea(sin, /^Malherido/).map((l) => l.valor), [-2]);
     const aturdido: EstadoActivo = { estadoId: "aturdido", gradoId: "fracaso_critico", rondasRestantes: 1 };
-    const conEstado = montar(resolver(s, [aturdido, neuro("fuerza"), neuro4]), "defensa");
+    const conEstado = montar(resolver(s, [aturdido, neuro("potencia"), neuro4]), "defensa");
     assert.equal(linea(conEstado, /Aturdido/).reduce((t, l) => t + l.valor, 0), -1);
   });
 
   test("td-10: «elimina por completo» quita también la media velocidad y el recorte de carga", () => {
     const s = conNeuro(4);
-    const con4 = resolver(s, [neuro("fuerza"), neuro4], HERIDO_Y_FATIGADO);
+    const con4 = resolver(s, [neuro("potencia"), neuro4], HERIDO_Y_FATIGADO);
     assert.deepEqual(con4.umbrales.movimiento.mediaVelocidad, []);
     assert.equal(con4.umbrales.movimiento.reduccionCarga, null);
     assert.equal(con4.umbrales.salud, "malherido", "el umbral sigue ahí: solo se quitan sus penalizadores");
-    const sin4 = resolver(s, [neuro("fuerza")], HERIDO_Y_FATIGADO);
+    const sin4 = resolver(s, [neuro("potencia")], HERIDO_Y_FATIGADO);
     assert.deepEqual(sin4.umbrales.movimiento.mediaVelocidad, ["Malherido"]);
     assert.ok(con4.movimiento.carrera > sin4.movimiento.carrera);
     assert.ok(con4.cargaMaxima > sin4.cargaMaxima);
@@ -416,7 +405,7 @@ describe("A5b: Neuroprótesis 4", () => {
 
   test("no cuenta para los requisitos de dote", () => {
     const s = conNeuro(4);
-    assert.deepEqual(resolver(s, [neuro("fuerza"), neuro4]).requisitosDotes, resolver(s, []).requisitosDotes);
+    assert.deepEqual(resolver(s, [neuro("potencia"), neuro4]).requisitosDotes, resolver(s, []).requisitosDotes);
   });
 
   test("Desactivar sale detrás de la acción adicional", () => {
@@ -425,149 +414,38 @@ describe("A5b: Neuroprótesis 4", () => {
   });
 });
 
-describe("A5b: vida al caerse un activable", () => {
-  // Fuerza 2 y Aguante 1: +1 a Fuerza sube 1 la vida máxima (ver "activables y vida").
-  const s = { ...conNeuro(), atributos: { ...conNeuro().atributos, fuerza: 2, aguante: 1 } };
+// Sync Drive 2026-11-14: ningún activable mueve ya la vida ni la fatiga máximas (la Neuroprótesis
+// sube tiradas). Se fue el recorte al caerse uno y el tope «posible» de parseSheet (A5b).
+describe("activables y vida", () => {
+  const s = { ...conNeuro(2), atributos: { ...conNeuro(2).atributos, fuerza: 2, aguante: 1 } };
   const max = resolver(s, []).salud.vida;
 
-  test("por encima del máximo nuevo, se recorta a él (no 9/8); lo recortado se puede devolver", () => {
-    const llena = { ...s, vidaActual: max + 1 };
-    const r = vidaTrasCambioDeEstados(llena, [neuro()], []);
-    assert.equal(r.sheet.vidaActual, max);
-    assert.deepEqual(r.restado, { vida: 1, fatiga: 0 });
+  test("con la Neuroprótesis puesta, en cualquier grado, el máximo es el de siempre", () => {
+    for (const grado of ["potencia", "reflejos", "perspicacia"]) {
+      assert.deepEqual(topesDeVida(s, [neuro(grado)]), topesDeVida(s, []), grado);
+    }
+    assert.equal(ajustarVida({ ...s, vidaActual: max - 1 }, 5, [neuro("potencia")]).vidaActual, max);
   });
 
-  test("por debajo, no se resta nada (sigue sin S75 para los activables)", () => {
-    const r = vidaTrasCambioDeEstados({ ...s, vidaActual: max - 2 }, [neuro()], []);
-    assert.equal(r.sheet.vidaActual, max - 2);
-    assert.deepEqual(r.restado, { vida: 0, fatiga: 0 });
+  test("activarla o que se caiga no toca la vida", () => {
+    const llena = { ...s, vidaActual: max };
+    for (const [antes, despues] of [[[], [neuro("potencia")]], [[neuro("potencia")], []]] as EstadoActivo[][][]) {
+      const r = vidaTrasCambioDeEstados(llena, antes, despues);
+      assert.equal(r.sheet.vidaActual, max);
+      assert.deepEqual(r.restado, { vida: 0, fatiga: 0 });
+    }
   });
 
-  test("también en la foto del combate", () => {
-    const foto = { id: "c1", pgActual: max + 1, fatigaActual: 3 };
-    const [c] = vidaTrasCambioDeEstados({ ...s, vidaActual: max }, [neuro()], [], [foto]).combatientes;
-    assert.equal(c.pgActual, max);
-    assert.equal(c.pgMax, max);
-    assert.deepEqual(c.restado, { vida: 1, fatiga: 0 });
-  });
-
-  test("un estado que no es activable no recorta (S74 sigue igual)", () => {
+  test("un estado que no baja el máximo no recorta (S74 sigue igual)", () => {
     const encima = { ...s, vidaActual: max + 3 };
     const atrapado: EstadoActivo = { estadoId: "atrapado", gradoId: "activo", rondasRestantes: 3 };
     assert.equal(vidaTrasCambioDeEstados(encima, [atrapado], []).sheet.vidaActual, max + 3);
   });
-});
 
-describe("A5b: tope de la vida con los activables puestos", () => {
-  // Fuerza 2 y Aguante 1: la Neuroprótesis sube 1 la vida máxima (de max a max + 1).
-  const s = { ...conNeuro(), atributos: { ...conNeuro().atributos, fuerza: 2, aguante: 1 } };
-  const max = resolver(s, []).salud.vida;
-  const conMax = (v: number) => ({ ...s, vidaActual: v });
-
-  test("el tope es el máximo con la Neuroprótesis (el mismo que pinta la ficha)", () => {
-    assert.equal(topesDeVida(s, [neuro()]).vida, resolver(s, [neuro()]).salud.vida);
-    assert.equal(topesDeVida(s, [neuro()]).vida, max + 1);
-    assert.equal(topesDeVida(s, []).vida, max);
-  });
-
-  test("con ella puesta se cura hasta el máximo nuevo; sin ella, hasta el de siempre", () => {
-    assert.equal(ajustarVida(conMax(max - 1), 5, [neuro()]).vidaActual, max + 1);
-    assert.equal(ajustarVida(conMax(max - 1), 5, []).vidaActual, max);
-    assert.equal(ajustarVida(conMax(max - 1), 5).vidaActual, max);
-  });
-
-  test("Sanar letal también cura hasta el máximo con ella puesta", () => {
-    const ENJAMBRE = "aum_enjambre_nanobot";
-    const e = { ...con(s, ENJAMBRE, 2), vidaActual: max, fatigaActual: 5 };
-    const sin = usoDeAccionAumento(e, [], "aumentos_enjambre_sanar_letal");
-    const conElla = usoDeAccionAumento(e, [neuro()], "aumentos_enjambre_sanar_letal");
-    assert.ok(sin.ok && conElla.ok);
-    assert.equal(sin.sheet.vidaActual, max);
-    assert.equal(conElla.sheet.vidaActual, max + 1);
-    assert.match(conElla.mensaje, new RegExp(`\\(${max + 1}/${max + 1}\\)`));
-  });
-
-  test("parseSheet no baja una vida curada con ella puesta; el recorte exacto, con los estados", () => {
-    const leida = parseSheet(JSON.parse(JSON.stringify(conMax(max + 1))));
-    assert.equal(leida.vidaActual, max + 1, "parseSheet topa con el máximo posible");
-    assert.equal(reconciliarVidaConEstados(leida, [neuro()]).vidaActual, max + 1, "puesta: 12/12");
-    assert.equal(reconciliarVidaConEstados(leida, []).vidaActual, max, "sin ella: nunca 12/11");
-  });
-
-  test("parseSheet cuenta el mejor grado posible (Neuroprótesis 2, +2 a Fuerza)", () => {
-    const n2 = { ...conNeuro(2), atributos: { ...conNeuro(2).atributos, fuerza: 1, aguante: 1 } };
-    const mejor = Math.max(...["fuerza", "agilidad"].map((g) => topesDeVida(n2, [neuro(g)]).vida));
-    const leida = parseSheet(JSON.parse(JSON.stringify({ ...n2, vidaActual: 99 })));
-    assert.equal(leida.vidaActual, mejor);
-  });
-
-  test("sin activables equipados, parseSheet recorta al máximo en reposo como siempre", () => {
-    const sin = { ...defaultSheet(), atributos: { ...defaultSheet().atributos, fuerza: 1, aguante: 1 }, vidaActual: 99 };
-    const leida = parseSheet(JSON.parse(JSON.stringify(sin)));
-    assert.equal(leida.vidaActual, resolver(sin, []).salud.vida);
-    assert.equal(ajustarFatiga({ ...leida, fatigaActual: 0 }, 99).fatigaActual, resolver(sin, []).salud.fatiga);
-  });
-
-  test("desactivarla deja la vida en el máximo de siempre", () => {
-    const r = aplicarOperacionEstado({ id: "p", sheet: conMax(max + 1), estados: [neuro()] }, { tipo: "quitar", estadoId: "aum_neuroprotesis" });
-    assert.equal(r?.vida.sheet.vidaActual, max);
-  });
-
-  test("al caducar por Siguiente turno, la ficha y la foto quedan en el máximo de siempre", () => {
-    const antes = [neuro("activo", 1)];
-    const despues = estadosAlCerrarVuelta(antes);
-    assert.deepEqual(despues, []);
-    const foto = { id: "c1", pgActual: max + 1, fatigaActual: 3 };
-    const r = vidaTrasCambioDeEstados(conMax(max + 1), antes, despues ?? [], [foto]);
-    assert.equal(r.sheet.vidaActual, max);
-    assert.equal(r.combatientes[0].pgActual, max);
-    assert.equal(r.combatientes[0].pgMax, max);
-  });
-
-  test("al quitarla con Limpiar estados, la ficha y la foto quedan en el máximo de siempre", () => {
-    const atrapado: EstadoActivo = { estadoId: "atrapado", gradoId: "activo", rondasRestantes: 3 };
-    const foto = { id: "c1", pgActual: max + 1, fatigaActual: 3 };
-    const r = quitarEstadosDe({ id: "p", sheet: conMax(max + 1), estados: [atrapado, neuro()] }, [foto]);
-    assert.equal(r?.sheet.vidaActual, max);
-    assert.equal(r?.combatientes[0].pgActual, max);
-  });
-
-  // td-12 (usuario 2026-11-14): el tope ya no es el de reposo (S74) sino el que se ve, con el
-  // estado del máster dentro. Antes esperaba `max`, con un estado que en esta ficha no llegaba a
-  // bajar la vida (el primero con −Fuerza); ahora uno que sí la baja (Enfermedad 2).
-  test("con un estado del máster que baja el máximo, al caerse recorta al máximo que se ve (td-12)", () => {
-    const otro: EstadoActivo = { estadoId: "enfermedad", gradoId: "nivel_2", rondasRestantes: null };
-    const r = vidaTrasCambioDeEstados(conMax(max + 1), [otro, neuro()], [otro]);
-    const visto = resolver(s, [otro]).salud.vida;
-    assert.ok(visto < max, "el estado baja el máximo");
-    assert.equal(r.sheet.vidaActual, visto);
-  });
-
-  test("deshacer Activar la quita y recorta; deshacer Desactivar devuelve lo recortado", () => {
-    const activada = aplicarOperacionEstado({ id: "p", sheet: conMax(max), estados: [] }, { tipo: "poner", estado: neuro() });
-    assert.ok(activada);
-    // Curado hasta el máximo nuevo después de activarla.
-    const curado = conMax(max + 1);
-    const plan = planDeshacerEstados(
-      { tipo: "estado_poner", cambios: [activada.cambio] },
-      [{ id: "p", nombre: "P", sheet: curado, estados: activada.estados }],
-      [{ id: "c1", characterId: "p", pgActual: max + 1, fatigaActual: 3 }],
-      [],
-    );
-    assert.ok(plan.ok);
-    assert.equal(plan.plan.personajes[0].sheet.vidaActual, max);
-    assert.equal(plan.plan.combatientes[0].pgActual, max);
-
-    const desactivada = aplicarOperacionEstado({ id: "p", sheet: curado, estados: [neuro()] }, { tipo: "quitar", estadoId: "aum_neuroprotesis" });
-    assert.ok(desactivada);
-    const vuelta = planDeshacerEstados(
-      { tipo: "estado_quitar", cambios: [desactivada.cambio] },
-      [{ id: "p", nombre: "P", sheet: desactivada.vida.sheet, estados: desactivada.estados }],
-      [],
-      [],
-    );
-    assert.ok(vuelta.ok);
-    assert.equal(vuelta.plan.personajes[0].sheet.vidaActual, max + 1);
+  test("parseSheet recorta al máximo en reposo", () => {
+    const leida = parseSheet(JSON.parse(JSON.stringify({ ...s, vidaActual: 99 })));
+    assert.equal(leida.vidaActual, max);
+    assert.equal(ajustarFatiga({ ...leida, fatigaActual: 0 }, 99).fatigaActual, resolver(s, []).salud.fatiga);
   });
 });
 

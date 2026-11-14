@@ -11,9 +11,7 @@
 import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { ponerEstado, quitarEstado } from "./estadosFicha";
 import type { EstadoActivo } from "./estados";
-import { esEstadoDeAumento } from "../catalog/estados";
 import type { Sheet } from "./sheet";
-import { topesDeVida } from "./vitalidad";
 
 export type ParVida = { vida: number; fatiga: number };
 
@@ -46,37 +44,15 @@ export type CambioDeVida = {
   combatientes: FotoCombatienteNueva[];
 };
 
-// Resta la bajada (S75) y, con `tope`, recorta además al máximo nuevo (A5b, activables).
-function restar(actual: number, bajada: number, tope: number | null = null): { actual: number; restado: number } {
-  const tras = Math.max(0, actual - bajada);
-  const nuevo = tope !== null && tras > tope ? Math.max(0, tope) : tras;
+// Resta la bajada (S75), con suelo 0.
+function restar(actual: number, bajada: number): { actual: number; restado: number } {
+  const nuevo = Math.max(0, actual - bajada);
   return { actual: nuevo, restado: actual - nuevo };
 }
 
-// Los activables de los aumentos (A5a: Neuroprótesis, +1 a Fuerza) suben el máximo mientras
-// duran. No cuentan para la bajada: si no, activar y dejar que caduque costaría vida de verdad
-// (al activar la actual no sube; al caerse, S75 restaría lo que bajó el máximo). El máximo que
-// se escribe en las fotos sí los lleva.
-// Recorte (usuario, 2026-10-22, A5b; cambia A5a): si al caerse, desactivarse o cambiar un
-// activable la vida actual queda por encima del máximo nuevo, se recorta a él (como
-// retirarPieza/reconciliarVida al desequipar). Igual la fatiga y las fotos. Solo cuando cambian
-// los activables: un estado normal sigue con S75 y no toca la vida que esté por encima del
-// máximo por otra vía. Lo recortado cuenta como restado (deshacer lo devuelve).
-// La ficha se recorta a su tope (topesDeVida: el máximo que se ve con los estados que queden, el
-// mismo al que cura, td-12); la foto, a su máximo con todos los estados, que es el suyo.
-const sinActivables = (estados: EstadoActivo[]) => estados.filter((e) => !esEstadoDeAumento(e.estadoId));
-const claveActivables = (estados: readonly EstadoActivo[]) =>
-  estados
-    .filter((e) => esEstadoDeAumento(e.estadoId))
-    .map((e) => `${e.estadoId}:${e.gradoId}`)
-    .sort()
-    .join("|");
-
-// Si entre dos listas de estados cambian los activables (alguno se pone, se cae o cambia de
-// grado; las rondas no cuentan). Es cuando toca recortar.
-export const cambianActivables = (antes: readonly EstadoActivo[], despues: readonly EstadoActivo[]) =>
-  claveActivables(antes) !== claveActivables(despues);
-
+// Los activables de los aumentos (Neuroprótesis, Proyección) no mueven la vida ni la fatiga
+// máximas desde el sync Drive 2026-11-14 (la Neuroprótesis sube tiradas, no atributos): ya no
+// hay recorte al caerse uno (A5b), solo S75.
 export function vidaTrasCambioDeEstados(
   sheet: Sheet,
   antes: EstadoActivo[],
@@ -84,23 +60,17 @@ export function vidaTrasCambioDeEstados(
   combatientes: FotoCombatiente[] = [],
 ): CambioDeVida {
   const maximos = maximosConEstados(sheet, despues);
-  const bajada = bajadaDeMaximos(
-    maximosConEstados(sheet, sinActivables(antes)),
-    maximosConEstados(sheet, sinActivables(despues)),
-  );
-  const recorta = cambianActivables(antes, despues);
-  const tope = (n: number) => (recorta ? n : null);
-  const topes = topesDeVida(sheet, despues);
-  const vida = restar(sheet.vidaActual, bajada.vida, tope(topes.vida));
-  const fatiga = restar(sheet.fatigaActual, bajada.fatiga, tope(topes.fatiga));
+  const bajada = bajadaDeMaximos(maximosConEstados(sheet, antes), maximos);
+  const vida = restar(sheet.vidaActual, bajada.vida);
+  const fatiga = restar(sheet.fatigaActual, bajada.fatiga);
   const cambia = vida.restado > 0 || fatiga.restado > 0;
   return {
     sheet: cambia ? { ...sheet, vidaActual: vida.actual, fatigaActual: fatiga.actual } : sheet,
     restado: { vida: vida.restado, fatiga: fatiga.restado },
     maximos,
     combatientes: combatientes.map((c) => {
-      const pg = restar(c.pgActual, bajada.vida, tope(maximos.vida));
-      const fat = restar(c.fatigaActual, bajada.fatiga, tope(maximos.fatiga));
+      const pg = restar(c.pgActual, bajada.vida);
+      const fat = restar(c.fatigaActual, bajada.fatiga);
       return {
         id: c.id,
         pgActual: pg.actual,
