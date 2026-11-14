@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { defaultSheet, type Sheet } from "./sheet";
+import { defaultSheet, parseSheet, type Sheet } from "./sheet";
 import { HABILIDAD_MAX_CREACION } from "./habilidades";
 import { PUNTOS_ATRIBUTOS_POR_LETRA, PUNTOS_HABILIDADES_POR_LETRA } from "./prioridad";
 import {
@@ -14,7 +14,8 @@ import {
   resetBuild,
   setPrioridad,
 } from "./creacion";
-import { AJUSTE_NEUTRO } from "./progresion";
+import { AJUSTE_NEUTRO, costeSiguienteNivel } from "./progresion";
+import { especialidadesDe } from "../catalog/especialidades";
 
 // Atajos para no repetir setPrioridad en cada test.
 const conLetraAtributos = (letra: "A" | "B" | "C" | "D" | "E") =>
@@ -188,5 +189,32 @@ describe("reset", () => {
     assert.equal(r.especieId, "arkoru");
     assert.equal(r.trasfondo, "algo");
     assert.equal(r.edad, 40);
+  });
+});
+
+describe("Pilotaje (foto de Drive 2026-11-14): una habilidad más, sin coste para las fichas que ya había", () => {
+  test("una ficha guardada sin Pilotaje la lee sin entrenar y gasta lo mismo", () => {
+    let s = conLetraHabilidades("A");
+    s = setHabilidadValue(s, "sigilo", 2, AJUSTE_NEUTRO);
+    const { pilotaje: _p, ...sinPilotaje } = s.habilidades;
+    void _p;
+    const vieja = parseSheet({ ...s, habilidades: sinPilotaje });
+    assert.deepEqual(vieja.habilidades.pilotaje, { valor: -1, especialidades: [] });
+    assert.equal(puntosHabilidadesDisponibles(vieja, AJUSTE_NEUTRO), puntosHabilidadesDisponibles(s, AJUSTE_NEUTRO));
+  });
+
+  test("cuesta como cualquier otra: en creación y en XP, con sus tres especialidades", () => {
+    let s = conLetraHabilidades("A");
+    s = setHabilidadValue(s, "pilotaje", 2, AJUSTE_NEUTRO);
+    s = addEspecialidad(s, "pilotaje", "exoarmadura", AJUSTE_NEUTRO);
+    s = addEspecialidad(s, "pilotaje", "aereo", AJUSTE_NEUTRO);
+    assert.deepEqual(s.habilidades.pilotaje, { valor: 2, especialidades: ["exoarmadura", "aereo"] });
+    assert.equal(PUNTOS_HABILIDADES_POR_LETRA.A - puntosHabilidadesDisponibles(s, AJUSTE_NEUTRO), costeHabilidad(2, 2, undefined));
+    assert.deepEqual(especialidadesDe("pilotaje").map((e) => e.id), ["terrestre", "aereo", "exoarmadura"]);
+    for (const nivel of [0, 1, 3])
+      assert.deepEqual(
+        costeSiguienteNivel({ tipo: "habilidad", id: "pilotaje" }, nivel, AJUSTE_NEUTRO),
+        costeSiguienteNivel({ tipo: "habilidad", id: "sigilo" }, nivel, AJUSTE_NEUTRO),
+      );
   });
 });

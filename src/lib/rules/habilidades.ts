@@ -10,6 +10,8 @@ export const HABILIDADES = [
   { id: "combate_melee", label: "Combate Melee" },
   { id: "cultura", label: "Cultura" },
   { id: "interpretacion", label: "Interpretación" },
+  // Foto de Drive 2026-11-14: habilidad nueva, como cualquier otra (S110).
+  { id: "pilotaje", label: "Pilotaje" },
   { id: "sigilo", label: "Sigilo" },
   // Sustituye a Supervivencia (C4/C12 de docs/sistema.md): Supervivencia no
   // se usaba en ninguna regla de los dos documentos, mientras que Exploración

@@ -46,6 +46,7 @@ describe("catálogo de especialidades", () => {
       combate_melee: 7,
       cultura: 4,
       interpretacion: 0,
+      pilotaje: 3,
       sigilo: 3,
       exploracion: 3,
       tecnociencia: 5,

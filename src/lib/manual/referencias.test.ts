@@ -104,6 +104,12 @@ describe("contra los documentos de hoy (docs/fuente)", () => {
     assert.equal(indice["habilidad:interpretacion"], undefined);
   });
 
+  test("Pilotaje es habilidad (E6): tiene su apartado y corta el de Interpretación sin corte fijo", () => {
+    const { indice, apartados } = montarManualFicha(documentos);
+    assert.equal(indice["habilidad:pilotaje"]?.ancla, "pilotaje");
+    assert.match(apartados.habilidades.pilotaje.markdown, /Exoarmadura/);
+  });
+
   // Informativo: nunca falla. Que falte una referencia no es un error.
   test("cobertura (informativo)", (t) => {
     const { indice, apartados } = montarManualFicha(documentos);
