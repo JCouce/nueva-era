@@ -138,7 +138,7 @@ const SALIDA = new URL("src/lib/catalog/dotes.ts", RAIZ);
 // 2026-10-23, tanda de especialidades de Combate a Distancia) + las de la foto del 2026-11-14
 // que no dependen de habilidades nuevas (T2.M1 del plan de sync: Ataque Coordinado…) + las que
 // dependen de Ocultación, Mimetismo, Juego de Manos y Exoarmadura (E6).
-const TOTAL_ESPERADO = 117;
+const TOTAL_ESPERADO = 118;
 
 const CLAVES_V2 = new Set([
   "id",
@@ -737,6 +737,9 @@ const AJUSTES_ACCION: Readonly<Record<string, AjusteAccion>> = {
     },
   },
 };
+// TODO(revisar): Finta de Manos (E6) pide «Combate Melee» sin número en la fuente; el borrador
+// pone Combate Melee 1. Su ataque «con el arma sutil» y el sorprendido/desprevenido van como
+// texto del resultado, como la Finta.
 // TODO(revisar): Agarre Rápido (pregunta a Murillo, tareas.md; Zafarse confirmado por el
 // usuario: regla de Atrapado). La prosa da la economía pero no la tirada; el borrador supone
 // Reflejos + Atletismo (Escalada) y Potencia + Atletismo (Escapismo; docs/fuente/reglas-base.md,

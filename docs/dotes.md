@@ -16,8 +16,8 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **117 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 0 · Sigilo 7 ·
+> Recuento: **118 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 0 · Sigilo 8 ·
 > Tecnociencia 1 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
@@ -1308,6 +1308,20 @@ Aprovechando las dinámicas de las masas y la indiferencia de las grandes ciudad
 **Efecto:**
 El personaje puede realizar una prueba de juego de manos para hurtar o depositar un objeto en la ropa o en un recipiente del objetivo mientras está en movimiento como parte de la misma acción de movimiento.
 
+### Finta de Manos
+
+**Coste:** 2
+
+**Requisitos:**
+- Reflejos 1 · atributo aplicado
+- Juego de Manos 1 · especialidad (Sigilo)
+- Combate Melee *(sin nivel en la fuente)* · habilidad
+
+**Efecto:**
+Como acción simple o reacción, el personaje realiza una tirada de **reflejos + juego de manos** empleando los sutiles micromovimientos de un arma blanca o ligera **(arma sutil)** para engañar la percepción visual de un enemigo con amagos de hoja o distracciones manuales. El enemigo se defenderá haciendo una tirada enfrentada de **perspicacia + exploración**. Si la finta tiene **éxito,** puedes realizar un ataque con el arma sutil en tu siguiente acción contra el enemigo, el cual se considerará **sorprendido** ante dicho ataque. Si obtienes un **éxito crítico,** el engaño es perfecto y el enemigo pasa a estar **desprevenido** frente a tu acometida.
+
+A diferencia de la finta convencional, esta finta puede repetirse sin penalizador contra el mismo objetivo de forma indefinida.
+
 
 ## Tecnociencia
 
@@ -1466,6 +1480,8 @@ Para canalizar la energía sin lesionarse, el personaje deberá realizar de form
   2026-11-14, que lo trae.
 - Ninguna dote sin coste ni sin requisito.
 - **Movimiento Sigiloso Constante**: el efecto acaba sin punto final.
+- **Finta de Manos** (foto del 2026-11-14): el requisito «Combate Melee» no lleva número; se lee
+  como Combate Melee 1 (`TODO(revisar)` en el borrador).
 
 **Bloques que no son efecto de la dote**
 - **Bloqueo**: "Se aplican los factores circunstanciales habituales" + tamaño del atacante

@@ -7726,6 +7726,92 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_finta_de_manos",
+    "label": "Finta de Manos",
+    "grupo": "sigilo",
+    "coste": 2,
+    "requisitos": [
+      {
+        "tipo": "aplicado",
+        "id": "reflejos",
+        "min": 1
+      },
+      {
+        "tipo": "especialidad",
+        "habilidad": "sigilo",
+        "id": "juego_de_manos",
+        "min": 1
+      },
+      {
+        "tipo": "habilidad",
+        "id": "combate_melee",
+        "min": 1
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "Como acción simple o reacción, el personaje realiza una tirada de **reflejos + juego de manos** empleando los sutiles micromovimientos de un arma blanca o ligera **(arma sutil)** para engañar la percepción visual de un enemigo con amagos de hoja o distracciones manuales. El enemigo se defenderá haciendo una tirada enfrentada de **perspicacia + exploración**. Si la finta tiene **éxito,** puedes realizar un ataque con el arma sutil en tu siguiente acción contra el enemigo, el cual se considerará **sorprendido** ante dicho ataque. Si obtienes un **éxito crítico,** el engaño es perfecto y el enemigo pasa a estar **desprevenido** frente a tu acometida.\n\nA diferencia de la finta convencional, esta finta puede repetirse sin penalizador contra el mismo objetivo de forma indefinida.",
+    "efectos": [
+      {
+        "tipo": "accion",
+        "accion": {
+          "id": "dotes_finta_de_manos",
+          "label": "Finta de manos",
+          "economia": [
+            "simple",
+            "reaccion"
+          ],
+          "limite": null,
+          "resolucion": {
+            "tipo": "enfrentada",
+            "aplicado": "reflejos",
+            "habilidad": "sigilo",
+            "especialidad": "juego_de_manos"
+          },
+          "objetivoTira": [
+            {
+              "que": "Perspicacia + Exploración, enfrentada"
+            }
+          ],
+          "resultados": {
+            "exito": {
+              "texto": "Tu siguiente acción puede ser un ataque con el arma sutil contra este enemigo, que estará sorprendido."
+            },
+            "critico": {
+              "texto": "El engaño es perfecto: el enemigo pasa a estar desprevenido frente a ese ataque."
+            }
+          },
+          "notas": [
+            {
+              "texto": "Con los micromovimientos de un arma blanca o ligera (arma sutil): amagos de hoja o distracciones manuales.",
+              "condicion": null
+            },
+            {
+              "texto": "A diferencia de la Finta, se puede repetir contra el mismo objetivo sin penalizador.",
+              "condicion": null
+            }
+          ]
+        },
+        "borrador": 0
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "accion",
+        "afecta": {
+          "modo": "accion_nueva",
+          "id": "dotes_finta_de_manos"
+        },
+        "mecanismo": "accion_sin_equipo",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_diagnostico_de_sistemas",
     "label": "Diagnóstico de Sistemas",
     "grupo": "tecnociencia",
@@ -8809,8 +8895,8 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   215 efectos (205 en el borrador)
-//   construidos: 119
+//   216 efectos (206 en el borrador)
+//   construidos: 120
 //   texto: 96
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0

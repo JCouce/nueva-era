@@ -95,3 +95,30 @@ describe("Sustracción Rápida", () => {
     assert.match(lineaAntes(t), /mientras te mueves, como parte de la misma acción de movimiento/);
   });
 });
+
+describe("Finta de Manos", () => {
+  const deDote = (f: FichaResuelta, id: string) => f.accionesDotes.tiradas.find((t) => t.id === id);
+
+  test("acción de dote: simple o reacción, Reflejos + Sigilo en Juego de Manos, enfrentada", () => {
+    const f = resolver(ficha([{ id: "dote_finta_de_manos" }]));
+    const t = deDote(f, "dotes_finta_de_manos")!;
+    assert.deepEqual([t.grupo, t.aplicado, t.habilidad, t.especialidadesAccion], ["Dotes", "reflejos", "sigilo", ["juego_de_manos"]]);
+    assert.match(t.nota ?? "", /arma sutil/);
+    assert.match(t.nota ?? "", /se puede repetir contra el mismo objetivo sin penalizador/);
+    // Atributos a 4 (Reflejos 4) + Sigilo 4 entera, en especialidad.
+    assert.equal(total(f, t), 8);
+  });
+
+  test("solo tu tirada: lo que tira el enemigo y lo que pasa por grado, como texto", () => {
+    const t = deDote(resolver(ficha([{ id: "dote_finta_de_manos" }])), "dotes_finta_de_manos")!;
+    assert.match(t.poder!.resultados.exito!, /estará sorprendido/);
+    assert.match(t.poder!.resultados.critico!, /desprevenido/);
+    assert.match(t.poder!.objetivoTira[0].que, /Perspicacia \+ Exploración/);
+  });
+
+  test("sin Juego de Manos no sale", () => {
+    const s = ficha([{ id: "dote_finta_de_manos" }]);
+    const sin = { ...s, habilidades: { ...s.habilidades, sigilo: { valor: 4, especialidades: ["ocultacion" as const] } } };
+    assert.equal(deDote(resolver(sin), "dotes_finta_de_manos"), undefined);
+  });
+});
