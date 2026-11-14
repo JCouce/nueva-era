@@ -179,11 +179,11 @@ Daño por Plasma:** El daño por plasma es de categoría grave y puede causar ef
 ***Efectos y Estados** **\***
 Los efectos imponen estados, que suelen acarrear penalizadores y obstáculos a los personajes que son objeto de ellos. Los efectos a veces se suceden por el mismo detonante, pero no están estrictamente sujetos al daño; ciertos ataques o eventos causan efectos de manera particular.\
 \
-**Asfixia:** El personaje puede contener la respiración o operar sin oxígeno durante un número de turnos igual a su atributo de **fortaleza**. Superado este límite, el estado avanza por grados:\
+**Asfixia:** El personaje puede contener la respiración o operar sin oxígeno durante 1 minuto por cada punto en el atributo de **voluntad** (mínimo 1). Superado este límite, el estado avanza por grados:\
 
-- **Grado 1:** Cada acción realizada consume obligatoriamente un punto de fatiga adicional (se le suma un punto extra a cualquier acción, independientemente de si la acción ya requería gasto de fatiga de forma nativa o no). Si el personaje agota todos sus niveles de fatiga pasa a **grado 3**, si es reanimado recupera la mitad de los puntos de fatiga consumidos por la asfixia. Este grado de asfixia dura un total de turno igual al atributo de **fortaleza**, terminado este tiempo si no ha caido inconsciente avanza al grado 2.
-- **Grado 2:** Mantiene los efectos de coste adicional de fatiga del Grado 1, pero aplica un penalizador de **-4** a todas las tiradas. El personaje cae **derribado**, y se exige una tirada de salvación de **fortaleza (Dificultad 9 + turnos en este grado)** al final de cada turno para evitar descender al Grado 3.
-- **Grado 3:** El personaje queda **inconsciente** y sufre automáticamente **1 nivel de daño letal por turno** de forma continua hasta morir. Si el personaje es reanimado antes de que se produzca el fallecimiento, el total de daño letal acumulado específicamente por la asfixia se reduce a la mitad de forma automática.
+- **Grado 1:** Cada acción realizada consume obligatoriamente un punto de fatiga adicional (se le suma un punto extra a cualquier acción, independientemente de si la acción ya requería gasto de fatiga de forma nativa o no). Si el personaje agota todos sus niveles de fatiga pasa a **grado 3**, si es reanimado recupera la mitad de los puntos de fatiga consumidos por la asfixia. Este grado de asfixia dura un total de turno igual al atributo de **voluntad**, terminado este tiempo si no ha caido inconsciente avanza al grado 2.
+- **Grado 2:** Mantiene los efectos de coste adicional de fatiga del Grado 1, pero aplica un penalizador de **-4** a todas las tiradas. El personaje cae **derribado**, y se exige una tirada de salvación de **voluntad (Dificultad 9 + turnos en este grado)** al final de cada turno para evitar descender al Grado 3.
+- **Grado 3:** El personaje queda **inconsciente** y sufre automáticamente **1 nivel de daño letal por turno** de forma continuada hasta morir. Si el personaje es reanimado antes de que se produzca el fallecimiento, el total de daño letal acumulado específicamente por la asfixia se reduce a la mitad de forma automática.
 
 **Atrapado:** Un personaje atrapado no puede moverse de la casilla en la que se encuentra en este estado. No podrá emplear acciones que requieran el uso de ambas manos y obtendrá un penalizador de -2 a la hora de emplear acciones con una sola mano. Como hay distintos escenarios para estar atrapado, la tirada para liberarse varía, pero normalmente requerirá del empleo de su potencia o fortaleza + atletismo, o bien de una maniobra de pelea enfrentada si está atrapado por un agarre enemigo.
 
@@ -328,4 +328,35 @@ Muerte:**Se produce cuando el personaje acumula un daño letal o grave crítico 
 - **Regenerable:** Condición en la que un personaje fallecido o con daño letal puede ser reanimado con asistencia médica, siempre y cuando no acumule un valor de puntos de golpe negativos que iguale o supere el total de sus puntos de golpe.
 - **Muerte Definitiva:** Estado en el que el personaje acumula un valor negativo de vida igual o superior al total de sus puntos de golpe, o supera los límites críticos de daño grave o letal, convirtiéndose en una baja irremediable que no puede ser revertida.
 
+**\
+***Puntos Heroicos*****
+
+\
+Los puntos heroicos sirven para realizar acciones épicas y son exclusivos de los personajes jugadores y de los antagonistas principales. Representan una voluntad extraordinaria y están relacionados con la motivación de los personajes.\
+Como regla general se obtiene un punto heroico al principio del capítulo, pero el Narrador puede escoger acciones acontecidas en las que el personaje ejecutase actos notables, importantes para la trama y el desarrollo del personaje o afines a sus motivaciones, y otorgarle un punto heroico. La única condición es que no se hayan empleado puntos heroicos para la resolución de la acción que los proporciona.\
+También, episodios que inspiren o afecten enormemente al personaje pueden proporcionar circunstancialmente un punto heroico durante el desarrollo de una escena; por ejemplo: observar el sacrificio de un aliado, presenciar la destrucción de algo o alguien trascendente, alcanzar una revelación crucial o sufrir una traición inesperada.
+
+\
+Por el gasto de **un** **punto** **heroico,** el personaje obtiene los siguientes beneficios:**\
+\**
+· Repetir una tirada de habilidad o salvación ya resuelta, revaleciendo el nuevo resultado aunque sea peor. Solo puede realizarse una vez por escena. **\
+\**
+· Ganar una acción simple gratuita durante su turno. Solo puede realizarse una vez por escena. **\
+\**
+· Reducir en un grado el nivel de **Miedo** del personaje.**\
+\**
+Por el gasto de **dos puntos heroicos,** se obtienen los siguientes beneficios:\
 **\**
+· Obtener **ventaja** en una prueba: Lanzar dos dados para cualquier tirada del personaje y escoger el resultado que más convenga. Solo puede realizarse una vez por escena. **\
+\**
+· Convertir un éxito en una prueba en éxito crítico. Solo puede realizarse una vez por escena.\
+\
+· Convertir un fracaso crítico en una prueba en fracaso. Solo puede realizarse una vez por escena. **\
+\**
+· Ganar ****una ****reacción que especifique el jugador, en la que el personaje podrá emplear una acción simple o una reacción de otro tipo. Solo puede hacerse una vez por escena y siempre que el personaje no esté desprevenido.\
+\
+· Eliminar por completo el estado de **Miedo** del personaje.\
+\
+Por el gasto de **tres puntos heroicos,** se obtienen los siguiente beneficios:\
+\
+· Estabilizarse automaticamente tras caer muerto: El personaje disfruta de un turno de consciencia y capacidad de acción, aunque se le aplican penalizadores de moribundo. Finalizado el turno vuelve a caer muerto. Solo puede realizarse esta acción una vez por capítulo.**\**

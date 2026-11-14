@@ -68,7 +68,7 @@ Especialidades:** Biónica, Bioquímica, Biotecnología, Ingeniería Genética, 
 \
 **Combate Melee\
 \
-Especialidades:** Armas Cortas, Armas de Asta, Escudos, Espadas y Dagas, Flagelos, Pelea.\
+Especialidades:** Armas Cortas, Armas de Asta, Escudos, Espadas y Dagas, Flagelos, Pelea, Armas Mecánicas.\
 \
 **Acciones:** Carga, Derribo, Desarme, Guardia, Presa, Placaje.\
 \
@@ -99,7 +99,8 @@ Especialidades:** Armas Arrojadizas, Armas Impulsoras, Pistolas, Escopetas, Subf
 **Acciones:** Apuntar, Disparo a la Carrera.\
 \
 · **Apuntar:** El personaje se toma un momento para apuntar a un objetivo y afinar el disparo.**\**
-Esta acción se resuelve como una acción simple, se realiza una tirada de **perspicacia** + **combate a distancia**, la dificultad para un objetivo de tamaño medio es de 6, a esta dificultad se le aplican posibles penalizadores por cobertura y visibilidad. Si el objetivo tiene otro tamaño, se le aplican modificadores de dificultad también (+1 bonificador por cada tamaño mayor; -1 penalizador por cada tamaño menor). Si la tirada tiene éxito, el tirador gana un bonificador de +1 a su siguiente ataque a distancia, si tiene éxito crítico además omite 1 nivel de cobetura.\
+Esta acción se resuelve como una acción simple, se realiza una tirada de **perspicacia** + **combate a distancia**, la **dificultad** para un objetivo de tamaño medio es de **6,** a esta dificultad se le aplican posibles penalizadores por cobertura y visibilidad. Si el objetivo tiene otro tamaño, se le aplican modificadores de dificultad también: **-1** por cada **tamaño** **mayor;** +**1** por cada **tamaño** **menor**.\
+Si la tirada tiene **éxito,** el tirador gana un **bonificador** de **+1** a su siguiente ataque a distancia, si tiene **éxito** **crítico** además **omite** **1 nivel de cobetura**.\
 El ataque debe resolverse antes del final del próximo turno o se perderán los bonificadores, si el objetivo desaparece del campo de visión del personaje antes de que realice el ataque no se obtiene ningún beneficio.\
 \
 · **Disparo a la Carrera:** El personaje puede realizar un ataque a distancia de tipo simple o estándar a la par que una acción simple de movimiento (salvo especificado), esto se resuelve como acción estándar recibiendo un penalizador de -2 por dificultad al ataque.\
@@ -153,13 +154,18 @@ La exploración es la capacidad analítica para percibir, interpretar y procesar
 **\
 Interpretación\
 \
+Pilotaje\
+\
+Especialidades:** Terrestre, Aéreo, Exoarmadura.**\
+\
 Sigilo\
 \
-Especialidades:** Esconderse, Hurto.\
+Especialidades:** Ocultación, Mimetismo, Juego de Manos.\
 \
-**· Esconderse:** Un personaje puede esconderse y permanecer en sitio fijo en sigilo o podrá desplazarse de esta forma con distintos tipos de acciones según su dificultad. En todo caso, deberá lanzar una tirada de **reflejos + esconderse** contra la **alerta** de posibles testigos.\
+**·Ocultación:** Es la capacidad de interactuar con el entorno para volverse invisible e inaudible. Permite esconderse en las sombras, usar coberturas, avanzar a ****hurtadillas****, moverse sin hacer ruido y camuflarse en terreno natural o urbano.\
+Un personaje puede ocultarse y permanecer en sitio fijo en sigilo o podrá desplazarse en silencio con distintos tipos de acciones según su dificultad. En todo caso, deberá lanzar una tirada de **reflejos + ocultación** contra la **alerta** de posibles testigos.\
 \
-Puede ocultarse en una posición como acción simple, aunque si lo hace siendo observado recibe un penalizador de dificultad de -6 contra ese objetivo. Permanecer en una posición en la que ya se estaba oculto se resuelve como acción gratuita.\
+Puede ocultarse en una posición como **acción** **simple,** aunque si lo hace siendo observado recibe un penalizador de dificultad de -6 contra ese objetivo. **Permanecer** **en** **una** **posición** en la que ya se estaba oculto se resuelve como **acción** **gratuita.**\
 \
 · Moverse en sigilo a mitad de velocidad tiene un penalizador de -2 por dificultad.\
 \
@@ -167,7 +173,11 @@ Puede ocultarse en una posición como acción simple, aunque si lo hace siendo o
 \
 · Esprintando tiene un penalizador de -8 por dificultad.\
 \
-**· Hurto:** El hurto se resuelva como acción simple o reacción con una prueba enfrentada de **reflejos + hurto** con penalizador de dificultad variable según el elemento en cuestión y la dificultad de acceso a este contra una de **perspicacia + exploración** del objetivo.**\
+**· Mimetismo:** Es el arte de pasar desapercibido a plena vista manipulando la percepción de los demás. Permite mantener un perfil bajo en aglomeraciones, mezclarse con la multitud, adoptar la actitud de un "rostro común" y actuar con naturalidad extrema bajo presión para no levantar sospechas. Tiene un condicionante social y de aspecto importante. La tirada se resuelve como una habilidad social de **expresión + mimetismo** y se enfrenta a una alerta por **empatía** de posibles testigos.\
+\
+**· Juego de Manos:** Es la destreza manual aplicada a la interacción con objetos sin alertar a nadie. ermite hurtar carteras, vaciar bolsillos, ocultar objetos pequeños en la ropa, sabotear mecanismos simples o plantar pruebas en el inventario de otra persona.
+
+Se resuelva como acción simple o reacción con una prueba enfrentada de **reflejos + juego de manos** con penalizador de dificultad variable según el elemento en cuestión y la dificultad de acceso a este contra una de **perspicacia + exploración** del objetivo.**\
 \
 Tecnociencia\
 \

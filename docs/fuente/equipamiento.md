@@ -7,19 +7,22 @@
 <tr>
 <td><strong>Modelo</strong></td>
 <td><strong>Blindaje</strong></td>
-<td><strong>Bonificador Máximo de Agilidad</strong></td>
+<td><strong>Máxima Agilidad</strong></td>
 <td><strong>Subsistema</strong></td>
-<td><strong>Exoesqueleto</strong></td>
-<td><strong>Mov. Aérea</strong></td>
+<td><strong>Máximo<br />
+Exoesqueleto</strong></td>
+<td><strong>Máxima Propulsión Aérea</strong></td>
+<td><strong>Peso</strong></td>
 <td><strong>Rareza/Coste</strong></td>
 </tr>
 <tr>
 <td><strong>Ropa Reforzada</strong></td>
 <td>1</td>
-<td>+4</td>
-<td>No.</td>
-<td>No.</td>
-<td>No.</td>
+<td>4</td>
+<td>Ninguno</td>
+<td>Ninguno</td>
+<td>Ninguna</td>
+<td>2kg</td>
 <td>Común.<br />
 100 créditos.</td>
 </tr>
@@ -28,90 +31,94 @@
 <td>3</td>
 <td>Ilimitado</td>
 <td>1</td>
-<td>Max. Nivel 1</td>
-<td>No.</td>
+<td>Nivel 1</td>
+<td>Ninguna</td>
+<td>1kg</td>
 <td>Común. 4000 créditos.</td>
 </tr>
 <tr>
 <td><strong>Ropa Inteligente</strong></td>
-<td>2</td>
+<td>3</td>
 <td>Ilimitado</td>
 <td>1</td>
-<td>Max. Nivel 1</td>
-<td>No.</td>
+<td>Nivel 1</td>
+<td>Ninguna</td>
+<td>2kg</td>
 <td>Poco Habitual. 5000 créditos.</td>
 </tr>
 <tr>
 <td><strong>Armadura Ligera</strong></td>
 <td>4</td>
-<td>+4</td>
+<td>4</td>
 <td>1</td>
-<td>Máx. Nivel 2</td>
-<td>Máx. Nivel 2</td>
+<td>Nivel 2</td>
+<td>Nivel 2</td>
+<td>7kg</td>
 <td>Común. 6000 créditos.</td>
 </tr>
 <tr>
 <td><strong>Armadura<br />
 Intermedia</strong></td>
 <td>6</td>
-<td>+2</td>
+<td>2</td>
 <td>1</td>
-<td>Máx. Nivel 3</td>
-<td>Máx. Nivel 3</td>
+<td>Nivel 3</td>
+<td>Nivel 3</td>
+<td>14kg</td>
 <td>Poco Habitual. 12000 créditos.</td>
 </tr>
 <tr>
 <td><strong>Armadura Pesada</strong></td>
 <td>8</td>
-<td>+0</td>
+<td>0</td>
 <td>2</td>
-<td>Máx. Nivel 4</td>
-<td>Máx. Nivel 4</td>
+<td>Nivel 4</td>
+<td>Nivel 4</td>
+<td>28kg</td>
 <td>Extraño. 20000 créditos.</td>
 </tr>
-</tbody>
-</table>
-
-<table>
-<tbody>
 <tr>
 <td><strong>Ultra Ligero Avanzado</strong></td>
 <td>4</td>
 <td>Ilimitado</td>
 <td>2</td>
-<td>Max. Nivel 1</td>
-<td>Máx. Nivel 1</td>
+<td>Nivel 2</td>
+<td>Nivel 1</td>
+<td>1,5kg</td>
 <td>Muy Extraño.<br />
 100000 créditos.</td>
 </tr>
 <tr>
 <td><strong>Armadura Ligera Avanzada</strong></td>
 <td>5</td>
-<td>+4</td>
+<td>5</td>
 <td>2</td>
-<td>Máx. Nivel 3</td>
-<td>Máx. Nivel 2</td>
+<td>Nivel 3</td>
+<td>Nivel 3</td>
+<td>5,5kg</td>
 <td>Muy Extraño. 105000 créditos.</td>
 </tr>
 <tr>
 <td><strong>Armadura<br />
 Intermedia<br />
 Avanzada</strong></td>
-<td>6</td>
-<td>+3</td>
+<td>7</td>
+<td>3</td>
 <td>2</td>
-<td>Máx. Nivel 4</td>
-<td>Máx. Nivel 3</td>
+<td>Nivel 4</td>
+<td>Nivel 4</td>
+<td>11kg</td>
 <td>Muy Extraño. 120000 créditos.</td>
 </tr>
 <tr>
 <td><strong>Armadura Pesada<br />
 Avanzada</strong></td>
-<td>8</td>
-<td>+1</td>
+<td>9</td>
+<td>1</td>
 <td>3</td>
-<td>Máx. Nivel 4</td>
-<td>Máx. Nivel 4</td>
+<td>Nivel 4</td>
+<td>Nivel 4</td>
+<td>22kg</td>
 <td>Muy Extraño. 200000 créditos.</td>
 </tr>
 </tbody>
@@ -120,7 +127,7 @@ Avanzada</strong></td>
 **\
 Traje Ultra Ligero:** Un ****sofisticado traje de nanomateriales apilados que forman pequeñas láminas, fabricado con láser, sellado termicamente para mejor adaptabilidad y cobertura. El traje otorga un bonificador en tiradas de salvación contra congelación y llamarada de +1.\
 \
-**Ropa Inteligente:** Usando los mismos materiales que el traje ultra ligero, la ropa inteligente ofrece una defensa casi tan óptima pero con la apariencia de un conjunto de ropa normal. Habitualmente dividido en tres piezas (chaqueta, pantalón y calzado), la variedad de prendas confeccionadas con esta teconología, abarca todas las tendencias, de lo más elegante a lo puramente casual.\
+**Ropa Inteligente:** Usando los mismos materiales que el traje ultra ligero, la ropa inteligente ofrece una defensa óptima pero con la apariencia de un conjunto de ropa normal. Habitualmente dividido en tres piezas (chaqueta, pantalón y calzado), el conjunto incluye un elegante casco cuyo aspecto no imita la ropa. La variedad de prendas confeccionadas con esta teconología, abarca todas las tendencias, de lo más elegante a lo puramente casual.\
 Al igual que el traje, otorga un bonificador en tiradas de salvación contra congelación y llamarada de +1.\
 \
 **Armadura Ligera:** La armadura ligera añade al traje una coraza parcial y zonas blindadas en las extermidades. Su estructura permite integrar exoesqueleto biomécanico para mejorar el rendimiento físico del usuario. Su naturaleza aislante otorga un bonificador en tiradas de salvación contra congelación y llamarada de +1. La armadura aumenta el daño de ataques desarmado en +1 y permite usar acciones de **bloqueo** estando desarmado contra armas melee sin penalizador.\
@@ -138,10 +145,10 @@ Su mejoría es evidente en todos los aspectos, tanto a nivel defensivo como en e
 \
 Mejoras Estándar**\
 **\
-Soporte Vital** **(Nivel 1-3)\
+Soporte Vital** **(Nivel 1-4)\
 \**
 Un red de micro-conductos de purificación, intercambiadores de calor de fase y membranas de filtración osmótica tejida en las capas internas del traje. Este sistema de circuito cerrado aísla por completo al usuario del exterior, reciclando el aire, neutralizando agentes químicos y disipando la radiación ambiental antes de que penetre en el tejido orgánico.\
-El **Soporte Vital** no es un módulo táctico opcional (como un camuflaje o un arma oculta); es el estándar industrial y militar de habitabilidad. Por esta razón, se integra directamente en la arquitectura hermética de cualquier armadura de serie, sin consumir ranuras de personalización ni costar espacio modular adicional como otros subsistemas.**\
+El **Soporte Vital** no es un subsistema al uso (como un camuflaje trifásico o un escudo deflector); es el estándar industrial y militar de habitabilidad. Por esta razón, se integra directamente en la arquitectura hermética de cualquier armadura de serie, sin consumir ranuras de subsistema.**\
 \
 Nivel 1\**
 
@@ -173,7 +180,17 @@ Nivel 1\**
 
 - **Blindaje Ambiental Avanzado:** Equipado con un circuito de filtración de alta capacidad, el personaje recibe un **bonificador de +3** contra efectos tóxicos cuando el traje o el usuario sufren daño en ambientes corrosivos o venenosos.
 
-*Objeto Extraño: 24000 créditos.\*
+*Objeto Extraño: 24000 créditos.\
+\*
+**Nivel 4\**
+
+- **Duración:** Aumenta la autonomía del soporte vital básico a **288 horas**.
+
+<!-- -->
+
+- **Blindaje Ambiental Élite:** Equipado con un circuito de filtración de alta capacidad, el personaje recibe un **bonificador de +4** contra efectos tóxicos cuando el traje o el usuario sufren daño en ambientes corrosivos o venenosos.
+
+*Objeto Extraño: 48000 créditos.\*
 **\
 Compartimento Oculto (Nivel 1-2)\
 \
@@ -337,7 +354,7 @@ El sistema cuenta con dos modos operativos:
 \
 **Nivel 1\**
 
-- **Duración en Modo Activo:** 1 minuto en estático / 1 turno en dinámico.
+- **Duración en Modo Activo:** 10 minutos en estático / 5 turnos en dinámico.
 
 <!-- -->
 
@@ -357,7 +374,7 @@ El sistema cuenta con dos modos operativos:
 \
 Nivel 2\**
 
-- **Duración en Modo Activo:** 5 minutos en estático / 2 turnos en dinámico.
+- **Duración en Modo Activo:** 20 minutos en estático / 10 turnos en dinámico.
 
 <!-- -->
 
@@ -377,7 +394,7 @@ Nivel 2\**
 \
 Nivel 3\**
 
-- **Duración en Modo Activo:** 10 minutos en estático / 4 turnos en dinámico.
+- **Duración en Modo Activo:** 30 minutos en estático / 15 turnos en dinámico.
 
 <!-- -->
 
@@ -398,7 +415,7 @@ Nivel 3\**
 Nivel 4\
 \**
 
-- **Duración en Modo Activo:** 20 minutos en estático / 6 turnos en dinámico.
+- **Duración en Modo Activo:** 1 hora en estático / 20 turnos en dinámico.
 
 <!-- -->
 
@@ -427,7 +444,7 @@ El usuario puede optar por gastar las cargas de la célula de alimentación de l
 
 **Conversión Psiónica:** Se requieren **4 cargas** de la batería para absorber **1 punto de fatiga** psiónica.\
 \
-**Ventaja Táctica:** *Estabilizador Neuronal Básico.* El blindaje mitiga el eco mental inicial, otorgando un bonificador de +1 a las tiradas para resistir el retroceso o la desorientación provocada por el uso prolongado de disciplinas psiónicas.\
+**Ventaja Táctica:** *Estabilizador Neuronal Básico.* El blindaje mitiga el eco mental inicial, otorgando un bonificador de +1 a las tiradas para resistir los efectos del sobreesfuerzo por el uso de disciplinas psiónicas.\
 \
 *Objeto Extraño: 12000 créditos\
 \*
@@ -443,7 +460,7 @@ El usuario puede optar por gastar las cargas de la célula de alimentación de l
 \
 Conversión Psiónica:** Se requieren **2 cargas** de la batería para absorber **1 punto de fatiga** psiónica.\
 \
-**Ventaja Táctica:** *Blindaje Psico-Reactivo.* La matriz noética del traje crea una sutil barrera de contención electromagnética alrededor del usuario, otorgando una bonificación pasiva de cobertura o resistencia frente a ataques mentales o interferencias psiónicas externas, esta bonificación se traduce en un bonificador de +1 para resistir los efectos de poderes de metasensoria contra el usuario.\
+**Ventaja Táctica:** *Blindaje Psico-Reactivo.* La matriz noética del traje crea una sutil barrera de contención electromagnética alrededor del usuario, otorgando una bonificación pasiva de cobertura o resistencia frente a ataques mentales o interferencias psiónicas externas, esta bonificación se traduce en un bonificador de +1 para resistir los efectos de poderes de metasensoria utilizados contra el usuario.\
 \
 *Objeto Muy Extraño: 144000 créditos* \
 \
@@ -451,7 +468,7 @@ Conversión Psiónica:** Se requieren **2 cargas** de la batería para absorber 
 \
 **Conversión Psiónica:** Se requiere **1 sola carga** de la batería para absorber **1 punto de fatiga** psiónica, alcanzando su máxima eficiencia.\
 \
-**Ventaja Táctica:** *Simbiosis Sináptica Total.* El traje y la mente del operador actúan como una sola entidad tecnológica. El usuario reduce en 1 los penalizadores por fatiga cuando vaya a realizar una tirada relacionada con el empleo de un poder psiónico.\
+**Ventaja Táctica:** *Simbiosis Sináptica Total.* El traje y la mente del operador actúan como una sola entidad tecnológica. El usuario reduce en 1 los penalizadores por fatiga cuando vaya a realizar una tirada relacionada con el empleo de un poder psiónico. Además, otorga un bonificador de +2 a las tiradas para resistir los efectos del sobreesfuerzo por el uso de disciplinas psiónicas.\
 \
 *Objeto Singular: 216000 créditos*
 
@@ -465,25 +482,25 @@ A diferencia de otros subsistemas, el escudo deflector tiene una batería autore
 
 Mientras el escudo permanezca activo, el personaje gana un bonificador de aborción de daño de 1 punto contra impactos físicos y energéticos.\
 \
-*Objeto Común: 5000 créditos\
+*Objeto Común: 4000 créditos\
 \*
 **Nivel 2***\
 \*
 Aumenta la defensa a 2.\
 \
-*Objeto Poco Habitual: 30000 créditos* \
+*Objeto Poco Habitual: 20000 créditos* \
 \
 **Nivel 3 \
 \**
 Aumenta la defensa a 3.\
 \
-*Objeto Poco Habitual: 60000 créditos* \
+*Objeto Poco Habitual: 40000 créditos* \
 \
 **Nivel 4** \
 \
 Aumenta la defensa a 4.\
 \
-*Objeto Extraño: 90000 créditos\
+*Objeto Extraño: 80000 créditos\
 \*
 **Malla Plasmática (Nivel 1-4)\
 \**
@@ -498,7 +515,7 @@ Activar la armadura se resuelve como una **reacción** ante un ataque entrante o
 \
 La malla de plasma confiere un colchón de daño de 10 puntos de golpe mientras esté activa, colchón que absorbe tanto daño kinético como energético. Además, si recibe daño sin ser destruida, regenera un 1 punto del colchón por turno.\
 Una vez destruida, no podrá volver a ser utilizada hasta transcurrir 4 turnos completos.\
-Si se sacrifican 2 puntos del colchón, como acción gratuita se puede sumar 1 nivel de daño de plasma a un golpe melee desarmado. Este ataque a diferencia de otros de plasma no se beneficia de sus posibles efectos a no ser que se obtenga un golpe crítico, en cuyo caso puede causar uno de los efectos habituales del plasma (shock, llamarada o fusión) con una dificultad de absorción igual a 6 + el nivel de la Malla Plasmática. Debe realizarse el gasto antes de realizar la tirada de ataque.\
+Si se sacrifican 2 puntos del colchón, como acción gratuita se puede sumar 1 nivel de daño de plasma a un golpe melee desarmado. Este ataque a diferencia de otros de plasma no se beneficia de sus posibles efectos a no ser que se obtenga un golpe crítico, en cuyo caso puede causar uno de los efectos habituales del plasma (shock, llamarada o fusión) a elección del personaje, con una dificultad de absorción igual a 6 + el nivel de la Malla Plasmática. Debe realizarse el gasto antes de realizar la tirada de ataque.\
 Si el usuario es impactado por un golpe melee devuelve daño al objeto con el que es golpeado o al sujeto en caso de ser un golpe desarmado, el daño es de plasma y es igual al nivel de subsistema.\
 Al activarse este subsistema el usuario recibe un penalizador de -8 al sigilo que solo afecta a la percepción visual, pero su uso neutraliza por completo los beneficios activos del subsistema de camuflaje.\
 \
@@ -550,9 +567,9 @@ Los modos de ataque son los siguientes:\
 <tr>
 <td>Pulso</td>
 <td>Simple</td>
-<td>1</td>
+<td>1 carga x 3 disparos</td>
 <td>-2</td>
-<td>7 + Nivel </td>
+<td>8 + Nivel </td>
 <td>· Corto: 20 + (10 x nivel)<br />
 <br />
 · Medio: 80 + (20 x nivel)<br />
@@ -564,9 +581,9 @@ Los modos de ataque son los siguientes:\
 <tr>
 <td>Pulso Cargado</td>
 <td>Compleja</td>
-<td>4</td>
+<td>1 carga</td>
 <td>-2</td>
-<td>10 + Nivel</td>
+<td>11 + Nivel</td>
 <td>· Corto: 30 + (10 x nivel)<br />
 <br />
 · Medio: 100 + (20 x nivel)<br />
@@ -578,9 +595,9 @@ Los modos de ataque son los siguientes:\
 <tr>
 <td>Barrido</td>
 <td>Estándar</td>
-<td>5</td>
+<td>2 cargas</td>
 <td>-3</td>
-<td>Área: 9 + Nivel</td>
+<td>Área: 10 + Nivel</td>
 <td>· Área 6x6<br />
 <br />
 · Corto: 20 + (10 x nivel)<br />
@@ -594,19 +611,17 @@ Los modos de ataque son los siguientes:\
 <tr>
 <td>Aguijón</td>
 <td>Simple</td>
-<td>1</td>
+<td>1 carga x nivel en turnos</td>
 <td>0</td>
 <td>4 + Fuerza + Nivel</td>
 <td>· Melee</td>
-<td>· Duración: Nivel<br />
-· Shock: (4 + Nivel)<br />
+<td>· Shock: (4 + Nivel)<br />
 · Crítico: Hemorragia<br />
 · Sutil</td>
 </tr>
 </tbody>
 </table>
 
-\
 ***\***
 **Nivel 1\
 \**
@@ -632,7 +647,9 @@ Nivel 4\**
 **\**
 *Objeto Muy Extraño: 108000 créditos\
 \*
-**Mejoras de Movimiento\
+**Sistemas Motrices\
+\**
+Los Sistemas Motrices agrupan el conjunto de servomecanismos, actuadores biomecánicos y vectores de empuje integrados directamente en la estructura de los trajes y armaduras de combate. A diferencia de las mejoras puramente pasivas o defensivas, estos módulos están diseñados para el desplazamiento y la capacidad de ejercer fuerza del operador. Ya sea mejorando la potencia mediante exoesqueletos articulados o superando las limitaciones del terreno mediante propulsión aérea controlada, los sistemas motrices transforman la armadura en una extensión activa y potenciada del cuerpo del usuario. **\
 \
 Exoesqueleto (Nivel 1-4)\
 \**
@@ -650,60 +667,67 @@ En este nivel es tan ligero que puede utilizarse sin armadura, ocultándose bajo
 \*
 **Nivel 2\**
 *\*
-Mientras el exoesqueleto esté en funcionamiento el personaje obtiene un bonificador a su Fuerza de +2 en las tiradas mencionadas.\
+Mientras el exoesqueleto esté en funcionamiento el personaje obtiene un bonificador a su Fuerza de +2 en las tiradas mencionadas, bonificador que se duplica a la hora de calcular la carga transportables y realizar proezas de fuerza.\
 \
 *Objeto Común 24000 créditos* \
 \
 **Nivel 3 \
 \**
-Mientras el exoesqueleto esté en funcionamiento el personaje obtiene un bonificador a su Fuerza de +3 en las tiradas mencionadas.\
+Mientras el exoesqueleto esté en funcionamiento el personaje obtiene un bonificador a su Fuerza de +3 en las tiradas mencionadas, bonificador que se duplica a la hora de calcular la carga transportables y realizar proezas de fuerza.\
 \
 *Objeto Poco Habitual: 48000 créditos* \
 \
 **Nivel 4** \
 \
-Mientras el exoesqueleto esté en funcionamiento el personaje obtiene un bonificador a su Fuerza de +4 en las tiradas mencionadas.\
+Mientras el exoesqueleto esté en funcionamiento el personaje obtiene un bonificador a su Fuerza de +4 en las tiradas mencionadas, bonificador que se duplica a la hora de calcular la carga transportables y realizar proezas de fuerza.\
 \
 *Objeto Extraño: 72000 créditos* **\
 \
-Movilidad Aérea (Nivel 1-4)\**
+Propulsión Aérea (Nivel 1-4)\**
 \
 Una serie de propulsores vectoriales de alta potencia colocados estratégicamente en la armadura o traje de combate que permiten al operador impulsarse y desplazarse en vuelo controlado.
 
-- **Mecánica de Vuelo:** El personaje puede moverse en vuelo empleando una **acción simple**, debiendo realizar una tirada de **Reflejos + Tecnociencia** en cada maniobra. Si la falla puede desplazarse solo la mitad del movimiento; si obtiene un **fallo crítico**, se desplazará de forma descontrolada en una dirección aleatoria.
-- **Combate:** Una vez en vuelo, el operador sufre un **penalizador de -1** a la hora de realizar ataques. Las acciones de esquiva en el aire utilizan la habilidad de **Tecnociencia** en lugar de Atletismo, aplicando el correspondiente modificador de dificultad por maniobra.
+- **Mecánica de Vuelo:** El personaje puede moverse en vuelo empleando una **acción simple**, debiendo realizar una tirada de **reflejos + exoarmadura (especialidad de pilotaje)** en cada maniobra compleja, las maniobras simples no precisan de prueba de habilidad.
+
+  - **Maniobras simples:** Comprenden los desplazamientos estables en línea recta, ascensos o descensos verticales limpios sin alteraciones vectoriales drásticas.
+  - **Maniobras complejas:** Son aquellas que implican cualquier trayectoria que rompa la inercia lineal, tales como virajes cerrados, curvas pronunciadas, cambios de rasante o la esquiva activa de obstáculos.
+  - **Factores ambientales:** Las condiciones climáticas adversas o los entornos confinados pueden convertir maniobras simples y lineales en complejas, requiriendo obligatoriamente una tirada de control.
+  - **Resultado:** Si la prueba de maniobra tiene éxito se raeliza sin inconveniente, si la maniobra fracasa, el personaje pierde eficiencia **puede desplazarse solo la mitad del movimiento** previsto; si obtiene un **fracaso crítico**, **se desplazará de forma descontrolada** en una dirección aleatoria, arriesgándose a colisionar con el entorno.
+
+- **Combate:** Una vez en vuelo, el operador sufre un **penalizador de -1** a la hora de realizar **ataques.** Las acciones de **esquiva,** como cualquier movimien en el aire usando la propulsión, utiliza la habilidad de **exoarmadura** en lugar de atletismo, aplicando el correspondiente modificador de **dificultad** por **maniobra.** Al igual que la esquiva en tierra, un éxito crítico en esquiva durante la propulsión aérea te permite realizar una reacción para desplazarte una casilla.
+
 - **Sistema de Alimentación:** Los propulsores se alimentan de una célula interna con **10 cargas**. Para usar la movilidad aérea es preciso emplear como mínimo 1 carga. La duración del vuelo viene determinada por el nivel del sistema, pudiendo distribuirse los turnos de forma fragmentada (no necesariamente continuada). Una vez agotada, recargarla con un conector a fuente de alimentación suele llevar una hora (1 carga por cada 6 minutos), en caso de cambiar la batería agotada por una nueva, esta cuesta **150 créditos** y requiere una acción compleja con al menos una mano libre.
 
 \
 **Nivel 1\**
 
-- **Características:** Acción simple (gasta **1 carga por acción**), Dificultad de Maniobrabilidad **-3**, velocidad **50 metros**.
+- **Características:** **Acción** **simple** (gasta **1 carga por acción**), dificultad de **Maniobrabilidad** **-3**, velocidad **50 metros**.
 
 <!-- -->
 
-- **Máxima Potencia:** Como acción compleja puede realizar un vuelo a máxima potencia gastando **2 cargas** para duplicar su desplazamiento. Si obtiene un éxito crítico en la tirada de maniobra, se desplazará **25 metros adicionales**.
+- **Máxima Potencia:** Como **acción** **compleja** puede realizar un vuelo a **máxima** **potencia** gastando **2 cargas** para **duplicar** su desplazamiento. Si obtiene un **éxito** **crítico** en la tirada de **maniobra,** se desplazará **25 metros adicionales**.
 
 \
 *Objeto Poco Habitual 6000 créditos* \
 \
 **Nivel 2\**
 
-- **Características:** Acción simple (gasta **1 carga por cada dos acciones** de vuelo), Dificultad de Maniobrabilidad **-3**, velocidad **70 metros**.
+- **Características:** **Acción** **simple** (gasta **1 carga por cada dos acciones** de vuelo), dificultad de **Maniobrabilidad** **-3**, velocidad **70 metros**.
 
 <!-- -->
 
-- **Máxima Potencia:** En la maniobra de máxima potencia, un éxito crítico permite desplazarse **35 metros adicionales**.
+- **Máxima Potencia:** En la maniobra de máxima potencia, un **éxito** **crítico** permite desplazarse **35 metros adicionales**.
 
 \
 *Objeto Poco Habitual: 36000 créditos*\
 \
 **Nivel 3\**
 
-- **Características:** Acción simple (gasta **1 carga por cada tres acciones** de vuelo), Dificultad de Maniobrabilidad **-3**, velocidad **100 metros**.
+- **Características:** **Acción** **simple** (gasta **1 carga por cada tres acciones** de vuelo), dificultad de **Maniobrabilidad** **-3**, velocidad **100 metros**.
 
 <!-- -->
 
-- **Máxima Potencia:** Un éxito crítico en máxima potencia otorga **50 metros adicionales**.
+- **Máxima Potencia:** Un **éxito** **crítico** en máxima potencia otorga **50 metros adicionales**.
 
 <!-- -->
 
@@ -719,11 +743,11 @@ Una serie de propulsores vectoriales de alta potencia colocados estratégicament
 \
 Nivel 4\**
 
-- **Características:** Acción simple (gasta **1 carga por cada cuatro acciones** de vuelo), Dificultad de Maniobrabilidad base **-4** *(modificada según la elección tomada en el Nivel 3)*, velocidad **140 metros** *(o 160 si eligió la progresión de Velocidad)*.
+- **Características:** **Acción** **simple** (gasta **1 carga por cada cuatro acciones** de vuelo), Dificultad de **Maniobrabilidad** base **-4** *(modificada según la elección tomada en el Nivel 3)*, velocidad **140 metros** *(o 160 si eligió la progresión de Velocidad)*.
 
 <!-- -->
 
-- **Máxima Potencia:** Un éxito crítico en máxima potencia otorga **70 metros adicionales** *(u 80 si eligió la progresión de Velocidad)*.
+- **Máxima Potencia:** Un **éxito** **crítico** en máxima potencia otorga **70 metros adicionales** *(u 80 si eligió la progresión de Velocidad)*.
 
 *Objeto Muy Extraño: 108000 créditos***\
 \**
@@ -2457,7 +2481,9 @@ Si un personaje que emplea una rodela es atacado y el ataque falla por tantos é
 La cobertura de un escudo, no se aplica si el usuario es atacado por la espalda por lo que el usuario debe decidir donde queda su espalda al finalizar el turno, pero si consigue una reacción que le permite moverse puede modificar esta posición.\
 Si un personaje que emplea un escudo atacado y el ataque falla por tantos éxitos exactos como el nivel de cobertura que le otorga, es el escudo el que recibe el ataque con sus distintas consencuencias.\
 **\
-Espadas y Dagas**
+Espadas y Dagas\**
+
+· Modificaciones Disponibles: Todas.**\**
 
 <table>
 <tbody>
@@ -2664,17 +2690,20 @@ Exanguinante ·Acción Compleja ignora 1 nivel de armadura.</p></td>
 **\
 \
 Armas Modificadas\
+\**
+Las modificaciones de armas melee tienen especificidad pero son hibridables, pudiendo combinarse entre sí en un solo arma. Existen excepciones como las armas de plasma que son exclusivas, y requerimentos como las armas de nanofilamento que solo pueden integrarse en armas con filo.\
+Si debido a las modificaciones un arma **aumenta un 50% o más su peso recibe un penalizador de -1 por dificultad en su empleo.\
 \
 Armas Electrificantes\
 \**
-Un sistema de supercondensadores de alta densidad alojados en la empuñadura, conectados a una red de microfilamentos superconductores que recorren la superficie de impacto del arma. Al entrar en contacto físico con el blanco, los sensores de presión activan una descarga instantánea de arcos voltaicos de alto voltaje. Estas armas reciben daño adicional de tipo eléctrico y causan efecto de shock\
+Un sistema de supercondensadores de alta densidad alojados en la empuñadura, conectados a una red de microfilamentos superconductores que recorren la superficie de impacto del arma. Al entrar en contacto físico con el blanco, los sensores de presión activan una descarga instantánea de arcos voltaicos de alto voltaje. Estas armas reciben daño adicional de tipo eléctrico y causan efecto de shock.\
 
 |  |  |  |  |  |  |
 |----|----|----|----|----|----|
 | **Daño Modelo Básico** | **Daño Adicional** | **Efecto** | **Coste** | **Rareza** | **Peso Adicional** |
-| 2 | +1 Eléctrico | Shock (6) | Básico x 5 | Común | 25,00% |
-| 3 a 6 | +2 Eléctrico | Shock (7) | Básico x 10 | Poco Habitual | 25,00% |
-| 7 o + | +3 Eléctrico | Shock (8) | Básico x 15 | Extraño | 25,00% |
+| 3 | +1 Eléctrico | Shock (6) | Básico x 5 | Común | 25,00% |
+| 4 a 5 | +2 Eléctrico | Shock (7) | Básico x 10 | Poco Habitual | 25,00% |
+| 6 o + | +3 Eléctrico | Shock (8) | Básico x 15 | Extraño | 25,00% |
 
 **Armas Térmicas\
 \**
@@ -2683,14 +2712,15 @@ El área de impacto cuenta con una red de micro-resistencias de aleación de tun
 |  |  |  |  |  |  |
 |----|----|----|----|----|----|
 | **Daño Modelo Básico** | **Daño Adicional** | **Efecto** | **Coste** | **Rareza** | **Peso Adicional** |
-| 2 | +1 Fuego | Llamarada (6) | Básico x 100 | Extraño | 35,00% |
-| 3 a 6 | +2 Fuego | Llamarada (7) | Básico x 125 | Extraño | 35,00% |
-| 7 o + | +3 Fuego | Llamarada (8) | Básico x 150 | Muy Extraño | 35,00% |
+| 3 | +1 Fuego | Llamarada (6) | Básico x 100 | Extraño | 35,00% |
+| 4 a 5 | +2 Fuego | Llamarada (7) | Básico x 125 | Extraño | 35,00% |
+| 6 o + | +3 Fuego | Llamarada (8) | Básico x 150 | Muy Extraño | 35,00% |
 
 **\
 Armas de Plasma\
 \**
-Un sistema de emisión y contención magnética integrado en la empuñadura que envuelve la superficie de impacto del arma con un haz de gas ionizado supercaliente a miles de grados. Los campos de fuerza estables mantienen la materia en estado de plasma concentrado sin dañar la estructura interna del arma. Estas armas **convierten su daño básico en daño por plasma**, lo que realmente impacta, corta o perfora es el haz de gas ionizado a miles de grados, además causan efecto de shock y llamarada. Su aumento de peso es significativo porque integran bobinas y emisores de contención magnética, celdas de energía de alta densidad, cámaras de ionización y blindaje de aislamiento.
+Un sistema de emisión y contención magnética integrado en la empuñadura que envuelve la superficie de impacto del arma con un haz de gas ionizado supercaliente a miles de grados. Los campos de fuerza estables mantienen la materia en estado de plasma concentrado sin dañar la estructura interna del arma. Estas armas **convierten su daño básico en daño por plasma**, lo que realmente impacta, corta o perfora es el haz de gas ionizado a miles de grados, además causan efecto de shock y llamarada. Su aumento de peso es significativo porque integran bobinas y emisores de contención magnética, celdas de energía de alta densidad, cámaras de ionización y blindaje de aislamiento.\
+Las armas de plasma deben considerarse una **modificación exclusiva**. No se pueden hibridar con otras energías.\
 
 <table>
 <tbody>
@@ -2703,7 +2733,7 @@ Un sistema de emisión y contención magnética integrado en la empuñadura que 
 <td><strong>Peso Adicional</strong></td>
 </tr>
 <tr>
-<td>2</td>
+<td>3</td>
 <td>+1 Plasma</td>
 <td>· Shock y Llamarada (5)<br />
 · Crítico: Fusión (9)</td>
@@ -2712,7 +2742,7 @@ Un sistema de emisión y contención magnética integrado en la empuñadura que 
 <td>40,00%</td>
 </tr>
 <tr>
-<td>3 a 6</td>
+<td>4 a 5</td>
 <td>+2 Plasma</td>
 <td>· Shock y Llamarada (6)<br />
 · Crítico: Fusión (11)</td>
@@ -2721,7 +2751,7 @@ Un sistema de emisión y contención magnética integrado en la empuñadura que 
 <td>40,00%</td>
 </tr>
 <tr>
-<td>7 o +</td>
+<td>6 o +</td>
 <td>+3 Plasma</td>
 <td>· Shock y Llamarada (7)<br />
 · Crítico: Fusión (13)</td>
@@ -2750,7 +2780,7 @@ El daño completo de las armas de nanofilamento es **grave**, causa efecto de he
 <td><strong>Peso Adicional</strong></td>
 </tr>
 <tr>
-<td>2</td>
+<td>3</td>
 <td>+1 Grave</td>
 <td>· Hemorragia (1d6 turnos)<br />
 · Crítico: Hemorragia Exanguinante<br />
@@ -2760,7 +2790,7 @@ El daño completo de las armas de nanofilamento es **grave**, causa efecto de he
 <td>0,00%</td>
 </tr>
 <tr>
-<td>3 a 6</td>
+<td>4 a 5</td>
 <td>+1 Grave</td>
 <td>· Hemorragia (1d8 turnos)<br />
 · Crítico: Hemorragia Exanguinante<br />
@@ -2770,7 +2800,7 @@ El daño completo de las armas de nanofilamento es **grave**, causa efecto de he
 <td>0,00%</td>
 </tr>
 <tr>
-<td>7 o +</td>
+<td>6 o +</td>
 <td>+1 Grave</td>
 <td>· Hemorragia (1d10 turnos)<br />
 · Crítico: Hemorragia Exanguinante<br />
@@ -2782,10 +2812,8 @@ El daño completo de las armas de nanofilamento es **grave**, causa efecto de he
 </tbody>
 </table>
 
-**\
-\
-\**
-***Herramientas y Accesorios** ******\***
+**\**
+***Herramientas y Accesorios** **\***
 **Valija Táctica de Fabricación (VTF) (Nivel 1-4)\
 \
 Nivel 1\**
@@ -2924,7 +2952,7 @@ Versión avanzada de grado médico-militar con mayor potencia de penetración y 
 
 *Objeto Poco Habitual: 5000 créditos*\
 **\**
-***Medicina y Farmacia \***
+***Medicina, Farmacia y Nutrición \***
 **Valija Táctica Médica (VTM) (Nivel 1-4)**
 
 **Nivel 1**
@@ -3042,6 +3070,17 @@ Una vez finalizado el efecto, el sistema nervioso experimenta un violento retroc
 
 *Objeto Extraño: 1000 créditos.*
 
+\
+**Nutrición**\
+\
+**Ración de Viaje:** Bloque alimentario deshidratado de larga conservación que aporta los nutrientes y las calorías necesarias para aguantar la jornada. La ración es la cantidad estándar para cada comida.\
+*Objeto Común: 4 créditos\
+\*
+**Gel Nutricional:** Pasta hipercalórica de absorción inmediata empaquetada en un tubo exprés para chutar energía en mitad de la acción. Equivale a una ración pero puede ser consumida como una acción compleja.\
+*Objeto Común: 15 créditos*\
+\
+**Super Alimentos**: Compuesto nutricional sintético de vanguardia enriquecido con electrolitos y moduladores metabólicos para acelerar la recuperación física. Aumenta en 1 la fatiga recuperada al ingerior estos super alimentos.\
+*Objeto Poco Habitual: 50 créditos*\
 \
 **Venenos\
 \

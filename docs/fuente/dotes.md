@@ -63,8 +63,8 @@ Requisito: Manipulación 3, Expresión 1**\**
 Durante una escena social o antes de un combate (pudiendo usarse como tirada de iniciativa), el personaje utiliza una distracción para pillar desprevenido a su rival, debe realizar una prueba de **manipulación + expresión** enfrentada a una de **perspicacia + empatía** del objetivo, en caso de éxito el objetivo está **desprevenido contra el primer ataque.\
 \
 Imitación (Coste 2)\**
-Requisito: Manipulación 1, Interpretación 1, Carácter 1\
-El personaje puede memorizar los gestos, el habla y las actitudes de otra persona para imitarlas con precisión. En caso de imitación gana un bonificador de +2 a su tirada. Si su puntuación de **interpretación** es de 3 o superior el bonificador pasa a ser de +3.\
+Requisito: Manipulación 1, Mimetismo 1, Carácter 1\
+El personaje puede memorizar los gestos, el habla y las actitudes de otra persona para imitarlas con precisión. En caso de imitación gana un bonificador de +2 a su tirada. Si su puntuación de **mimetismo** es de 3 o superior el bonificador pasa a ser de +3.\
 \
 **Negociación Analítica (Coste 2)**\
 Requisito: Perspicacia 2, Negociación 1\
@@ -353,7 +353,7 @@ El personaje realiza un ataque melee con un penalizador de -2 por dificultad que
 Cuando un personaje con esta dote flanquea a un enemigo puede coordinar el ataque con su aliado de forma eficiente, con una acción simple o reacción, realiza un prueba de **reflejos + táctica** contra **perspicacia + exploración** de su rival, si tiene éxito consigue un bonificador de +3 por **flanqueo** en su siguiente ataque contra ese objetivo, si golpea con éxito al rival su compañero puede realizar un ataque de oportunidad contra el objetivo.\
 \
 **Dominio Elevado (Coste 2)**\
-Requisito**:** Táctica 1, Combate Melee 1\
+Requisito**:** Combate Melee 1, Táctica 1\
 Cuando el personaje realiza un ataque cuerpo a cuerpo contra un objetivo situado en una posición físicamente inferior con diferencia de altura apreciable, como escalones, desnivel, rocas o vehículos sabe sacar una ventaja notable.\
 Obtiene un bonificador de **+1 a la tirada de ataque y** el objetivo inferior sufre un **penalizador de -2 a su tirada de salvación** para mantener el equilibrio y evitar caer derribado por la pendiente o el desnivel por maniobras del atacante.
 
@@ -452,7 +452,21 @@ Exploración\
 \
 Vigilancia Táctica (Coste 2)**\
 Requisito: Táctica 1, Perspicacia 1\
-El personaje gana un bonificador de +2 en tiradas de iniciativa en combate. Además, puede utilizar **perspicacia + táctica** en lugar de **empatía** para evitar caer una distracción resuleta con **manipulación**.
+El personaje gana un bonificador de +2 en tiradas de iniciativa en combate. Además, puede utilizar **perspicacia + táctica** en lugar de **empatía** para evitar caer una distracción resuleta con **manipulación**.\
+\
+**Ataque** **Coordinado** **(Coste** **3)**\
+Requisito: Táctica 2, Perspicacia 1\
+El personaje realiza un análisis como acción compleja de un objetivo, la prueba se resuelve con una tirada de **perspicacia + táctica** dificultad 7, en caso de **éxito,** durante su siguiente turno tanto el personaje como sus aliados ganan un bonificador de **+1 en tiradas de ataque** contra el objetivo, en caso de **éxito** **crítico**, el bonificador se mantiene durante tantos turnos como la puntuación de **táctica** del personaje.\
+Para que el ataque coordinado pueda ser viable, los personajes aliados deben poder mantener una vía de comunicación fluida entre ellos.\
+\
+**Defensa** **Coordinada** **(Coste** **3)**\
+Requisito: Táctica 2, Perspicacia 1\
+El personaje realiza un análisis como acción compleja de un objetivo, la prueba se resuelve con una tirada de **perspicacia + táctica** dificultad 7, en caso de **éxito,** durante su siguiente turno tanto el personaje como sus aliados ganan un bonificador de **+1 en tiradas de defensa** contra el objetivo, en caso de **éxito** **crítico**, el bonificador se mantiene durante tantos turnos como la puntuación de **táctica** del personaje.\
+Para que la defensa coordinada pueda ser viable, los personajes aliados deben poder mantener una vía de comunicación fluida entre ellos.\
+\
+**Estrategia de Combate (Coste 4)\**
+Requisito: Táctica 4, Perspicacia 2, Ataque Coordinado, Defensa Coordinada\
+El personaje resuelve en una única tirada y una sola acción compleja tanto la defensa coordinada como el ataque.
 
 **\
 Encontrar el Ángulo (Coste 2)\**
@@ -473,7 +487,13 @@ El personaje ha asimilado profundamente las dinámicas, irregularidades y rutas 
 Al encontrarse en combate dentro de su bioma predilecto, el personaje gana ventaja en tiradas de iniciativa y de subsistencia, tirando dos dados y escogiendo el mejor resultado. Además, al rastrear dentro de su bioma predilecto iguala las condiciones adversas a condiciones normales.\
 \
 **Olfato de Investigador (Coste 2)**\
-Requisito: Investigación 2, Perspicacia 1
+Requisito: Investigación 2, Perspicacia 1\
+Una vez por sesión de juego, cuando el personaje analice una pista o escena y obtenga un resultado de **éxito**, puede aplicar su perspicacia deductiva para elevarlo de manera automática a un **éxito crítico.\
+\
+Interrogador Perspicaz (Coste 1)\**
+Requisito: ****Investigación 1, Perspicacia 1\
+El personaje puede emplear **perspicacia + investigación** como acción social durante interrogatorios, poniendo contra las cuerdas al objetivo con evidencias, contradicciones lógicas y deducciones.\
+Si el personaje tiene la dote de **Olfato de Investigador**, puede aplicar su uso en estos interrogatorios.
 
 **Descartar Teoría (Coste 3)**\
 Requisito: Investigación 3, Perspicacia 1\
@@ -482,21 +502,64 @@ Si el personaje fracasa en una tirada de **investigación** o se queda estancado
 **\
 Interpretación\
 \
+Pilotaje\**
+
+**Piloto de Exoarmadura (Coste 2)\**
+Requisito: Exoarmadura 1, Reflejos 1\
+El personaje reduce en 2 el penalizador por dificultad para maniobras de su propulsión aéra de la armadura o el traje cuando realiza acciones defensivas de esquiva.\
+\
+**As de Exoarmadura (Coste 4)\**
+Requisito: Piloto de Exoarmadura, Exoarmadura 4, Reflejos 2\
+El personaje anula el penalizador de -1 en los ataques realizados mientras se encuentra utilizando la propulsión aérea de su exoarmadura. Además, reduce en 3 el penalizador por dificultad para maniobras de su propulsión aéra de la armadura o el traje cuando realiza acciones defensivas de esquiva.\
+\
+**Salto Servoasistido (Coste 2)\
+Requisitos:** Exoarmadura 1, Salto 1\
+El personaje sincroniza la potencia explosiva del exoesqueleto de su armadura con la técnica de salto. A la hora de calcular la distancia o la altura máxima en las pruebas de **salto horizontal y salto vertical**, el bonificador de **Fuerza** aportado por el **exoesqueleto** se **duplica**. Además, el personaje reduce en 2 metros la altura de caída efectiva al aterrizar gracias a la amortiguación de las servopiernas cuando utilice el exoesqueleto.
+
+**\
 Sigilo\
 \
-Movimiento Sigiloso (Coste 3)\**
-Requisito: Esconderse 2\
+Movimiento Sigiloso (Coste 2)\**
+Requisito: Ocultación 1\
 El personaje reduce en 2 los penalizadores por moverse oculto.\
 \
-**Movimiento Sigiloso Mejorado (Coste 5)\**
-Requisito: Movimiento Sigiloso, Esconderse 3\
+**Movimiento Sigiloso Mejorado (Coste 4)\**
+Requisito: Movimiento Sigiloso, Ocultación 3\
 El personaje reduce en 4 los penalizadores por moverse oculto.\
 \
 **Movimiento Sigiloso Constante (Coste 6)**\
-Requisito: Movimiento Sigiloso Mejorado, Esconderse 5\
+Requisito: Movimiento Sigiloso Mejorado, Ocultación 5\
 El personaje se mueve en sigilo sin penalizador\
+\
+**Paso de Fantasma (Coste 2)**\
+Requisito: ****Ocultación 2, Agilidad 1\
+El personaje comprende cómo pisar y minimizar vibraciones o sonidos en superficies traicioneras. Al moverse en sigilo, reduce en 3 los penalizadores o la dificultad por terreno difícil o ruidoso (como cristales rotos, metal crujiente o charcos), y los enemigos que utilicen medios sísmicos, de vibración o auditivos pasivos para detectar vibraciones sufren un penalizador de -3 en sus tiradas de alerta.\
+\
+**Fundido Evasivo (Coste 4)**\
+Requisito: Ocultación 3, Reflejos 2\
+Cuando el personaje se encuentra en una zona de penumbra, cobertura parcial o camuflaje natural/urbano y recibe un ataque a distancia, puede emplear una reacción como acción defensiva para fundirse momentáneamente con el entorno. La esquiva recibe un bonificador de +1 a su tirada e incrementa en 1 nivel la cobertura efectiva contra ese ataque. Solo puede usarse una vez por turno.\
+\
+**Perfil Bajo** **(Coste 1)**\
+Requisito: Mimetismo 1, Sociedad 1\
+Aprovechando las dinámicas de las masas y la indiferencia de las grandes ciudades o instalaciones, el personaje sabe exactamente cómo caminar, vestir y actuar para no dejar una impresión memorable. Observadores que hayan presenciado al personaje con o sin disfraz tendrán dificultad para recordar su apariencia, deberán realizar una tirada de **perspicacia + exploración** dificultad **6 + mimetismo** del personaje.\
+
+**Sustracción Rápida (Coste 1)**\
+Requisito: Juego de Manos 1, Reflejos 1\
+El personaje puede realizar una prueba de juego de manos para hurtar o depositar un objeto en la ropa o en un recipiente del objetivo mientras está en movimiento como parte de la misma acción de movimiento.\
+\
+**Finta de Manos (Coste 2)\**
+Requisitos: Reflejos 1, Juego de Manos 1, Combate Melee.\
+Como acción simple o reacción, el personaje realiza una tirada de **reflejos** **+ juego** **de manos** empleando los sutiles micromovimientos de un arma blanca o ligera **(arma** **sutil)** para engañar la percepción visual de un enemigo con amagos de hoja o distracciones manuales. El enemigo se defenderá haciendo una tirada enfrentada de **perspicacia** + **exploración**. Si la finta tiene **éxito,** puedes realizar un ataque con el arma sutil en tu siguiente acción contra el enemigo, el cual se considerará **sorprendido** ante dicho ataque. Si obtienes un **éxito** **crítico,** el engaño es perfecto y el enemigo pasa a estar **desprevenido** frente a tu acometida.\
+A diferencia de la finta convencional, esta finta puede repetirse sin penalizador contra el mismo objetivo de forma indefinida.
+
 **\
 Tecnociencia\
+\
+Diagnóstico de Sistemas (Coste 2)\**
+Requisito: Informática 2 o Mecánica 2, Inteligencia 1\
+El personaje obtiene ventaja en pruebas de diagnóstico o análisis de fallos en sistemas informáticos, electrónicos o mecánicos mediante el gasto de un punto de fatiga. Para que se aplique la dote con el elemento analizado debe cumplir con los requisitos de la especialidad.
+
+**\
 \
 Psiónica**\
 \

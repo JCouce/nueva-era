@@ -120,6 +120,8 @@ Su anatomía inferior destaca por unas piernas marcadamente más cortas y robust
 \
 · Acceso al Kerzul:** Un personaje arköru puede acceder a un único objeto de kerzul durante su creación sin tener en cuenta su rareza.\
 \
+**· Modelos a Medida:** Las armaduras y trajes para arkör pesan un 20% más y son un 10% más caras.\
+\
 **Manduk\
 \
 · Trasfondo:** El mundo natal de los manduks fue cuna de un experimento masivo de ingenierías de biomodelado aberrantes y un conflicto militar total, conocido históricamente como las **Guerras Morfogenéticas.** Durante generaciones, las naciones del planeta rediseñaron sistemáticamente sus propios cuerpos en laboratorios para crear bio-armas y castas especializadas, la civilización quedó fracturada en trece familias nobiliarias dinásticas que habían surgido de tales experimentos y un vasto estrato de poblaciones subordinadas. Se distinguieron cuatro clases sociales: la nobleza, destinada a gobernar, los sabios, el intelecto de su sociedad cuya función principal es el progreso tecnicocientífico, la casta guerrera, el músculo de las dinastías, y los siervos, el cimiento demográfico de la civilización manduk, quienes atienden todas las necesidades de las castas superiores.\
