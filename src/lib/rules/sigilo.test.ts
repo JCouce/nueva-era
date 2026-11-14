@@ -182,14 +182,14 @@ describe("Esconder arma (eq-30, eq-31)", () => {
     assert.equal(accionEsconderArma(equipar(defaultSheet(), { instanciaId: "f", catalogoId: "fusil_asalto_impetus" })), null);
   });
 
-  test("tus armas de una mano, con el +2 del Mosquito en su opción; Reflejos + Sigilo con Ocultación", () => {
+  test("tus armas de una mano, con el +2 del Mosquito en su opción; Reflejos + Sigilo con Juego de Manos", () => {
     let s = equipar(defaultSheet(), { instanciaId: "m", catalogoId: "pistola_mosquito" });
     s = equipar(s, { instanciaId: "c", catalogoId: "espada_cuchillo_combate" });
     s = equipar(s, { instanciaId: "f", catalogoId: "fusil_asalto_impetus" });
     s = equipar(s, { instanciaId: "p", catalogoId: "pelea_punetazo" });
     s = equipar(s, { instanciaId: "r", catalogoId: "escudo_rodela" });
     const t = accionEsconderArma(s)!;
-    assert.deepEqual([t.aplicado, t.habilidad, t.especialidadesAccion], ["reflejos", "sigilo", ["ocultacion"]]);
+    assert.deepEqual([t.aplicado, t.habilidad, t.especialidadesAccion], ["reflejos", "sigilo", ["juego_de_manos"]]);
     assert.deepEqual(opciones(t), [["Mosquito", 2], ["Cuchillo de Combate", 0]]);
     const e = estadoPorTirada(t, 12, "m")!;
     assert.deepEqual(e, { estadoId: ESTADO_ARMA_ESCONDIDA_ID, gradoId: "activo", rondasRestantes: null, valor: 12, nota: "Mosquito" });

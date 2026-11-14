@@ -803,9 +803,9 @@ imponen penalizadores por umbral:
     mientras la célula tenga carga. En la esquiva, «Tengo cobertura» (+2) sale **ya marcada**
     (`Estado.marcaCasillas`). Los números van como dato (`NivelModulo.ocultacion`). La Malla
     Plasmática lo sigue anulando como hoy (aviso; la app no sabe si la Malla está activa, S96).
-  - **Esconder arma (eq-30, eq-31)**: fila en Sigilo › Ocultación (antes Esconderse), **Reflejos +
-    Sigilo (Ocultación)** (`TODO(revisar)`: la fuente de 2026-11-14 pone «ocultar objetos pequeños
-    en la ropa» en Juego de Manos), con un selector de tus armas de **una mano** equipadas (sin escudos ni golpes
+  - **Esconder arma (eq-30, eq-31)**: fila en Sigilo › Juego de Manos, **Reflejos + Sigilo (Juego
+    de Manos)** (usuario, 2026-11-14: la fuente de 2026-11-14 pone «ocultar objetos pequeños en la
+    ropa» en Juego de Manos; antes, Ocultación), con un selector de tus armas de **una mano** equipadas (sin escudos ni golpes
     a mano vacía); el Mosquito suma +2 en su opción (`bonoEsconder`). Con Compartimento Oculto,
     casilla «En el Compartimento Oculto» +3 (nivel 2: +4) a quien esconde y la opción «Otro
     objeto». El total queda como «Arma escondida: dificultad N» con el arma en la nota. Sin nada

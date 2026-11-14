@@ -10,7 +10,7 @@
 //     se suma al Sigilo al enseñarlo, nunca al número guardado.
 //   - Lo que te resta atacar estando en Sigilo (`Accion.sigiloAlAtacar`): el ruido del disparo,
 //     que fija un amortiguador (Silenciador), y lo que delata al arma (luminiscencia).
-//   - La fila «Esconder arma» (Reflejos + Sigilo con Ocultación).
+//   - La fila «Esconder arma» (Reflejos + Sigilo con Juego de Manos).
 // Lo aplica el servidor con la ficha guardada (aplicarConsecuenciaPropiaAction), con registro y
 // deshacer, como lo que una acción te hace a ti (consecuenciasPropias.ts).
 import type { Sheet } from "./sheet";
@@ -225,13 +225,12 @@ export function atacarTocaSigilo(estados: readonly EstadoActivo[], t: Pick<Accio
 
 // --- Esconder arma ----------------------------------------------------------------------------
 
-// «Esconder arma» (eq-30, eq-31): Reflejos + Sigilo con Ocultación, con un selector de tus armas
+// «Esconder arma» (eq-30, eq-31): Reflejos + Sigilo con Juego de Manos (la fuente del 2026-11-14 pone
+// «ocultar objetos pequeños en la ropa» en Juego de Manos; usuario, 2026-11-14), con un selector de tus armas
 // de una mano (cada una con su bono para esconderla: Mosquito +2) y, con Compartimento Oculto,
 // su casilla (+3; nivel 2, +4) y la opción de otro objeto. El total queda como «Arma escondida»
 // con la dificultad y el arma en la nota. null sin nada que esconder.
 // TODO(revisar): esconder otra arma sustituye a la anterior (un solo estado de cada).
-// TODO(revisar): la v24 pasa Esconderse a Ocultación 1:1, pero la fuente (2026-11-14) pone
-// «ocultar objetos pequeños en la ropa» en Juego de Manos; ¿esconder un arma encima es eso?
 export function accionEsconderArma(sheet: Sheet): Accion | null {
   const opciones: OpcionCondicion[] = [];
   let compartimento: CondicionTirada | null = null;
@@ -264,7 +263,7 @@ export function accionEsconderArma(sheet: Sheet): Accion | null {
     grupo: "Acciones",
     aplicado: "reflejos",
     habilidad: "sigilo",
-    especialidadesAccion: ["ocultacion"],
+    especialidadesAccion: ["juego_de_manos"],
     nota: "El total queda como «Arma escondida»: la dificultad para descubrirla en un cacheo o un escáner",
     condiciones: [
       { id: ID_ARMA_A_ESCONDER, tipo: "opcion", etiqueta: "Qué escondes", opciones, porDefecto: opciones[0].id },
