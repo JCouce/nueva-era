@@ -16,8 +16,8 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **111 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 12 · Cultura 0 · Exploración 9 · Interpretación 0 · Sigilo 3 ·
+> Recuento: **112 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Sigilo 3 ·
 > Tecnociencia 0 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
@@ -27,7 +27,7 @@
 > que **todavía no están aquí**: el resto del documento sigue siendo la foto del 2026-10-14.
 >
 > **Añadidas de la foto de Drive del 2026-11-14** (`docs/plan-sync-2026-11-14.md`, T2.M1), con
-> el mismo criterio: *Ataque Coordinado*, *Defensa Coordinada* y *Estrategia de Combate*. Las que dependen de habilidades nuevas (Ocultación,
+> el mismo criterio: *Ataque Coordinado*, *Defensa Coordinada*, *Estrategia de Combate* e *Interrogador Perspicaz*. Las que dependen de habilidades nuevas (Ocultación,
 > Mimetismo, Juego de Manos, Exoarmadura) esperan a E6.
 
 ## Actitud
@@ -1195,6 +1195,19 @@ Al encontrarse en combate dentro de su bioma predilecto, el personaje gana venta
 
 **Efecto:**
 *(Sin efecto en la fuente: la dote termina en la línea de requisito.)*
+
+### Interrogador Perspicaz
+
+**Coste:** 1
+
+**Requisitos:**
+- Investigación 1 · especialidad (Exploración)
+- Perspicacia 1 · atributo aplicado
+
+**Efecto:**
+El personaje puede emplear **perspicacia + investigación** como acción social durante interrogatorios, poniendo contra las cuerdas al objetivo con evidencias, contradicciones lógicas y deducciones.
+
+Si el personaje tiene la dote de **Olfato de Investigador**, puede aplicar su uso en estos interrogatorios.
 
 ### Descartar Teoría
 

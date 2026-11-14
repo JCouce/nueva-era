@@ -7111,6 +7111,78 @@ export const DOTES: readonly DoteCatalogo[] = [
     "motor": []
   },
   {
+    "id": "dote_interrogador_perspicaz",
+    "label": "Interrogador Perspicaz",
+    "grupo": "exploracion",
+    "coste": 1,
+    "requisitos": [
+      {
+        "tipo": "especialidad",
+        "habilidad": "exploracion",
+        "id": "investigacion",
+        "min": 1
+      },
+      {
+        "tipo": "aplicado",
+        "id": "perspicacia",
+        "min": 1
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "El personaje puede emplear **perspicacia + investigación** como acción social durante interrogatorios, poniendo contra las cuerdas al objetivo con evidencias, contradicciones lógicas y deducciones.\n\nSi el personaje tiene la dote de **Olfato de Investigador**, puede aplicar su uso en estos interrogatorios.",
+    "efectos": [
+      {
+        "tipo": "accion",
+        "accion": {
+          "id": "dotes_interrogador_perspicaz",
+          "label": "Interrogar",
+          "economia": {
+            "tiempo": "como acción social, durante un interrogatorio"
+          },
+          "limite": null,
+          "resolucion": {
+            "tipo": "tirada",
+            "aplicado": "perspicacia",
+            "habilidad": "exploracion",
+            "especialidad": "investigacion",
+            "dificultad": {
+              "manual": "la de la acción social con ese interrogado (máster)"
+            }
+          },
+          "objetivoTira": [],
+          "resultados": {},
+          "notas": [
+            {
+              "texto": "Pones contra las cuerdas al objetivo con evidencias, contradicciones lógicas y deducciones.",
+              "condicion": null
+            },
+            {
+              "texto": "Si tienes Olfato de Investigador, también vale en estos interrogatorios.",
+              "condicion": null
+            }
+          ]
+        },
+        "borrador": 0
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "accion",
+        "afecta": {
+          "modo": "accion_nueva",
+          "id": "dotes_interrogador_perspicaz"
+        },
+        "mecanismo": "accion_sin_equipo",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_descartar_teoria",
     "label": "Descartar Teoría",
     "grupo": "exploracion",
@@ -8410,8 +8482,8 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   205 efectos (195 en el borrador)
-//   construidos: 113
+//   206 efectos (196 en el borrador)
+//   construidos: 114
 //   texto: 92
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0

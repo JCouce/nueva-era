@@ -6688,6 +6688,64 @@
       "motor": []
     },
     {
+      "id": "dote_interrogador_perspicaz",
+      "label": "Interrogador Perspicaz",
+      "grupo": "exploracion",
+      "coste": 1,
+      "requisitos": [
+        {
+          "tipo": "especialidad",
+          "habilidad": "exploracion",
+          "id": "investigacion",
+          "min": 1
+        },
+        {
+          "tipo": "aplicado",
+          "id": "perspicacia",
+          "min": 1
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "accion",
+          "accion": {
+            "id": "dotes_interrogador_perspicaz",
+            "label": "Interrogar",
+            "economia": {
+              "tiempo": "como acción social, durante un interrogatorio"
+            },
+            "limite": null,
+            "resolucion": {
+              "tipo": "tirada",
+              "aplicado": "perspicacia",
+              "habilidad": "exploracion",
+              "especialidad": "investigacion",
+              "dificultad": {
+                "manual": "la de la acción social con ese interrogado (máster)"
+              }
+            },
+            "objetivoTira": [],
+            "resultados": {},
+            "notas": [
+              {
+                "texto": "Pones contra las cuerdas al objetivo con evidencias, contradicciones lógicas y deducciones.",
+                "condicion": null
+              },
+              {
+                "texto": "Si tienes Olfato de Investigador, también vale en estos interrogatorios.",
+                "condicion": null
+              }
+            ]
+          }
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_descartar_teoria",
       "label": "Descartar Teoría",
       "grupo": "exploracion",

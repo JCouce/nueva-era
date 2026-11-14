@@ -340,6 +340,21 @@ describe("sync Drive 2026-11-14 (T2.M1): dotes nuevas de Exploración", () => {
     assert.equal(sale([{ id: "dote_ataque_coordinado" }, { id: "dote_defensa_coordinada" }, { id: "dote_estrategia_de_combate" }]), true);
   });
 
+  test("Interrogador Perspicaz: «Interrogar» con Perspicacia + Exploración en Investigación", () => {
+    const f = resolver(ficha([{ id: "dote_interrogador_perspicaz" }]));
+    const t = tirada(f, "dotes_interrogador_perspicaz")!;
+    assert.equal(t.label, "Interrogar");
+    assert.equal(t.grupo, "Dotes");
+    assert.equal(t.aplicado, "perspicacia");
+    assert.equal(t.habilidad, "exploracion");
+    assert.deepEqual(t.especialidadesAccion, ["investigacion"]);
+    assert.equal(t.dificultadSugerida, undefined);
+    assert.match(t.nota ?? "", /durante un interrogatorio/);
+    const m = montar(f, t);
+    assert.equal(m.enEspecialidad, true);
+    assert.equal(m.habilidad?.valor, 6);
+  });
+
   test("Ataque Coordinado: sin Táctica 2 no sale", () => {
     const base = ficha([{ id: "dote_ataque_coordinado" }]);
     const sinTactica = { ...base, habilidades: { ...base.habilidades, exploracion: { valor: 6, especialidades: [] } } };
