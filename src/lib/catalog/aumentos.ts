@@ -183,6 +183,13 @@ export type Aumento = OperacionGenetica | Implante;
 // Neuroprótesis Simpática (A5a): lo que hace mientras está activa (niveles 1 y 2; el 2 añade la
 // mejora) y su acción de activar. No reduce su propio −1 a las salvaciones: va en el selector
 // "Contra…", no es un estado.
+// TODO(revisar): T1.17 del plan del sync Drive 2026-11-14, sin construir. La fuente nueva pone
+// el +1 (N1), el +2 a elección (N2, ahora entre los tres aplicados) y el +2 del N4 en las
+// PRUEBAS de potencia, reflejos y perspicacia, no en los atributos. Es el único activable que
+// sube atributos: al cambiarlo, la vida máxima, la carga y el movimiento dejan de moverse con
+// él y se quedan sin caso los tests de vida con activables (A5b: topesDeVida, recorte al
+// caerse, parseSheet con el mejor grado, deshacer), umbrales-caracterización, Brazo Biónico y
+// daño. Decidir qué se hace con esa maquinaria antes de construirlo.
 const ACTIVO_NEUROPROTESIS: ActivoAumento = {
   estadoId: "aum_neuroprotesis",
   atributos: { fuerza: 1, agilidad: 1, percepcion: 1 },
