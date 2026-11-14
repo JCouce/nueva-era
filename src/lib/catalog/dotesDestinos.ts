@@ -63,6 +63,9 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   defensa: tirada("defensa"),
   atletismo: tirada("atletismo"),
   escalar: tirada("escalar"),
+  // «Ocultarse» (id sigilo). Paso de Fantasma (E6): casilla +3 por terreno difícil o ruidoso.
+  // TODO(revisar): la fuente dice «reduce en 3 los penalizadores»; si el del terreno que pone el
+  // máster es menor de 3, la casilla suma de más.
   sigilo: tirada("sigilo"),
   medicina: tirada("medicina"),
   social: tirada("social"),

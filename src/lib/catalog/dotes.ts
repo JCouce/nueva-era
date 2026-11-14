@@ -7502,6 +7502,69 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_paso_de_fantasma",
+    "label": "Paso de Fantasma",
+    "grupo": "sigilo",
+    "coste": 2,
+    "requisitos": [
+      {
+        "tipo": "especialidad",
+        "habilidad": "sigilo",
+        "id": "ocultacion",
+        "min": 2
+      },
+      {
+        "tipo": "atributo",
+        "id": "agilidad",
+        "min": 1
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "El personaje comprende cómo pisar y minimizar vibraciones o sonidos en superficies traicioneras. Al moverse en sigilo, reduce en 3 los penalizadores o la dificultad por terreno difícil o ruidoso (como cristales rotos, metal crujiente o charcos), y los enemigos que utilicen medios sísmicos, de vibración o auditivos pasivos para detectar vibraciones sufren un penalizador de -3 en sus tiradas de alerta.",
+    "efectos": [
+      {
+        "tipo": "bono",
+        "alcance": "sigilo",
+        "valor": 3,
+        "condicion": "Moviéndote por terreno difícil o ruidoso (cristales rotos, metal crujiente, charcos)",
+        "borrador": 0
+      },
+      {
+        "tipo": "texto",
+        "lugar": "sigilo",
+        "texto": "Quien te busque con medios sísmicos, de vibración o auditivos pasivos sufre −3 en su tirada de alerta.",
+        "condicion": null,
+        "porque": "tercero",
+        "borrador": 1
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "numerico",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "sigilo"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "objetivo_tercero",
+          "id": "sigilo"
+        },
+        "mecanismo": "nota_fija",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_diagnostico_de_sistemas",
     "label": "Diagnóstico de Sistemas",
     "grupo": "tecnociencia",
@@ -8585,9 +8648,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   209 efectos (199 en el borrador)
-//   construidos: 117
-//   texto: 92
+//   211 efectos (201 en el borrador)
+//   construidos: 118
+//   texto: 93
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

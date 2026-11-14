@@ -16,8 +16,8 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **113 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Sigilo 3 ·
+> Recuento: **114 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 0 · Sigilo 4 ·
 > Tecnociencia 1 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
@@ -29,7 +29,10 @@
 > **Añadidas de la foto de Drive del 2026-11-14** (`docs/plan-sync-2026-11-14.md`, T2.M1), con
 > el mismo criterio: *Ataque Coordinado*, *Defensa Coordinada*, *Estrategia de Combate*, *Interrogador Perspicaz* (Exploración) y *Diagnóstico de Sistemas*
 > (Tecnociencia). Las que dependen de habilidades nuevas (Ocultación,
-> Mimetismo, Juego de Manos, Exoarmadura) esperan a E6.
+> Mimetismo, Juego de Manos, Exoarmadura) entran en E6: *Paso de Fantasma*, *Fundido Evasivo*,
+> *Perfil Bajo*, *Sustracción Rápida*, *Finta de Manos* (Sigilo), *Piloto de Exoarmadura*, *As de
+> Exoarmadura* y *Salto Servoasistido* (Pilotaje, grupo nuevo); y cambian *Imitación* y las tres
+> *Movimiento Sigiloso*.
 
 ## Actitud
 
@@ -1225,6 +1228,8 @@ Si el personaje fracasa en una tirada de **investigación** o se queda estancado
 
 *(Grupo vacío en la fuente: solo el título, sin dotes.)*
 
+## Pilotaje
+
 ## Sigilo
 
 ### Movimiento Sigiloso
@@ -1258,6 +1263,17 @@ El personaje reduce en 4 los penalizadores por moverse oculto.
 
 **Efecto:**
 El personaje se mueve en sigilo sin penalizador
+
+### Paso de Fantasma
+
+**Coste:** 2
+
+**Requisitos:**
+- Ocultación 2 · especialidad (Sigilo)
+- Agilidad 1 · atributo
+
+**Efecto:**
+El personaje comprende cómo pisar y minimizar vibraciones o sonidos en superficies traicioneras. Al moverse en sigilo, reduce en 3 los penalizadores o la dificultad por terreno difícil o ruidoso (como cristales rotos, metal crujiente o charcos), y los enemigos que utilicen medios sísmicos, de vibración o auditivos pasivos para detectar vibraciones sufren un penalizador de -3 en sus tiradas de alerta.
 
 
 ## Tecnociencia
