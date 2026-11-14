@@ -7025,6 +7025,49 @@
       "candidataUX": null
     },
     {
+      "id": "dote_fundido_evasivo",
+      "label": "Fundido Evasivo",
+      "grupo": "sigilo",
+      "coste": 4,
+      "requisitos": [
+        {
+          "tipo": "especialidad",
+          "habilidad": "sigilo",
+          "id": "ocultacion",
+          "min": 3
+        },
+        {
+          "tipo": "aplicado",
+          "id": "reflejos",
+          "min": 2
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "limite": {
+        "veces": 1,
+        "por": "turno"
+      },
+      "efectos": [
+        {
+          "tipo": "bono",
+          "alcance": "defensa",
+          "valor": 1,
+          "condicion": "Fundido evasivo: en penumbra, cobertura parcial o camuflaje, contra un ataque a distancia (una vez por turno)"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "defensa",
+          "texto": "Con Fundido Evasivo, la cobertura efectiva contra ese ataque sube 1 nivel: díselo al máster.",
+          "condicion": null,
+          "porque": "tercero"
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_diagnostico_de_sistemas",
       "label": "Diagnóstico de Sistemas",
       "grupo": "tecnociencia",

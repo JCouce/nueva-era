@@ -138,7 +138,7 @@ const SALIDA = new URL("src/lib/catalog/dotes.ts", RAIZ);
 // 2026-10-23, tanda de especialidades de Combate a Distancia) + las de la foto del 2026-11-14
 // que no dependen de habilidades nuevas (T2.M1 del plan de sync: Ataque Coordinado…) + las que
 // dependen de Ocultación, Mimetismo, Juego de Manos y Exoarmadura (E6).
-const TOTAL_ESPERADO = 114;
+const TOTAL_ESPERADO = 115;
 
 const CLAVES_V2 = new Set([
   "id",

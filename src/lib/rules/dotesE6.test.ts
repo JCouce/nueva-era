@@ -61,3 +61,19 @@ describe("Paso de Fantasma", () => {
     assert.deepEqual(casillasDe(fija(sin, "sigilo"), "dote_paso_de_fantasma"), []);
   });
 });
+
+describe("Fundido Evasivo", () => {
+  const f = resolver(ficha([{ id: "dote_fundido_evasivo" }]));
+  const t = fija(f, "defensa");
+
+  test("casilla en la esquiva: +1 contra un ataque a distancia en penumbra, cobertura o camuflaje", () => {
+    const [c] = casillasDe(t, "dote_fundido_evasivo");
+    assert.match(c.etiqueta, /penumbra, cobertura parcial o camuflaje.*una vez por turno/);
+    assert.equal(total(f, t, [c.id]) - total(f, t), 1);
+  });
+
+  test("el nivel de cobertura de más, como aviso; una vez por turno, en la dote", () => {
+    assert.match(lineaAntes(t), /cobertura efectiva contra ese ataque sube 1 nivel/);
+    assert.deepEqual(DOTES.find((d) => d.id === "dote_fundido_evasivo")!.limite, { veces: 1, por: "turno" });
+  });
+});

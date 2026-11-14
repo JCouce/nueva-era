@@ -16,8 +16,8 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **114 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 0 · Sigilo 4 ·
+> Recuento: **115 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 0 · Sigilo 5 ·
 > Tecnociencia 1 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
@@ -1274,6 +1274,17 @@ El personaje se mueve en sigilo sin penalizador
 
 **Efecto:**
 El personaje comprende cómo pisar y minimizar vibraciones o sonidos en superficies traicioneras. Al moverse en sigilo, reduce en 3 los penalizadores o la dificultad por terreno difícil o ruidoso (como cristales rotos, metal crujiente o charcos), y los enemigos que utilicen medios sísmicos, de vibración o auditivos pasivos para detectar vibraciones sufren un penalizador de -3 en sus tiradas de alerta.
+
+### Fundido Evasivo
+
+**Coste:** 4
+
+**Requisitos:**
+- Ocultación 3 · especialidad (Sigilo)
+- Reflejos 2 · atributo aplicado
+
+**Efecto:**
+Cuando el personaje se encuentra en una zona de penumbra, cobertura parcial o camuflaje natural/urbano y recibe un ataque a distancia, puede emplear una reacción como acción defensiva para fundirse momentáneamente con el entorno. La esquiva recibe un bonificador de +1 a su tirada e incrementa en 1 nivel la cobertura efectiva contra ese ataque. Solo puede usarse una vez por turno.
 
 
 ## Tecnociencia
