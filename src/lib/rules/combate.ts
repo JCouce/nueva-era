@@ -30,7 +30,7 @@ import { PREFIJO_MEJORA_MUNICION } from "../catalog/mejorasArma";
 import type { CondicionTirada, TramoDistancia, BonoPorTramo } from "./condiciones";
 import { origenDePieza, type OrigenAporte } from "./origen";
 import { nivelesHasta, acumulaPorClave, ultimoQueDefine, type PiezaEquipada } from "./equipo";
-import { bonoFormulaFuerza, etiquetaTipoDanio, formulaConSuma, nombreArmaModificada, perfilGolpe, type PerfilGolpe } from "./armasModificadas";
+import { bonoFormulaFuerza, etiquetaTipoDanio, formulaConSuma, nombreArmaModificada, penalizadorPesoModificadas, perfilGolpe, type PerfilGolpe } from "./armasModificadas";
 import type { ModificacionArmaId } from "../catalog/armasModificadas";
 import type { MotorMetadata } from "./motor";
 import type { TextoEnTirada } from "./especie";
@@ -864,6 +864,13 @@ function modoConPerfil<
 
 // `sutilPermitido`: la ficha tiene Combate Sutil (D2b-2, §9.5). Sin la dote, un arma Sutil
 // se usa como cualquier otra: Potencia al tirar y Fuerza al daño, sin interruptor.
+// −1 si las modificaciones suben el peso un 50 % o más (sync Drive 2026-11-14), en toda
+// tirada con el arma.
+function ajustePesoModificadas(modificaciones: readonly ModificacionArmaId[] | undefined): NonNullable<Accion["ajustesFijos"]> {
+  const pen = penalizadorPesoModificadas(modificaciones ?? []);
+  return pen ? [pen] : [];
+}
+
 // `modificaciones`: las del arma equipada (Armas Modificadas, S87).
 function tiradaDeArmaMelee(
   sheet: Sheet,
@@ -955,7 +962,7 @@ function tiradaDeArmaMelee(
     ...(arma.contundente && { contundente: true as const }),
     ignoraBlindaje: ignoraBlindajeDe(arma, perfil, nombre),
     condiciones: [...(modo ? [modo] : []), ...casillas.condiciones, ...(malla ? condicionesSacrificioColchon(malla.nivel) : [])],
-    ajustesFijos: ajusteModoUnico,
+    ajustesFijos: [...ajusteModoUnico, ...ajustePesoModificadas(modificaciones)],
     ...(casillas.bonos.length > 0 && { bonosTramo: casillas.bonos }),
     ...(salvacionesPropias.length > 0 && { salvacionesPropias }),
     ataque: { modos: modosDelGolpe },
@@ -1014,6 +1021,7 @@ function tiradaBloqueoDeArmaMelee(
     ajustesFijos: [
       ...(!arma.defensa && arma.modos[0].dificultad !== 0 ? [{ valor: arma.modos[0].dificultad, fuente: arma.label }] : []),
       ...(arma.bloqueoAjuste ? [{ valor: arma.bloqueoAjuste, fuente: `${arma.label} (bloqueo)` }] : []),
+      ...ajustePesoModificadas(modificaciones),
     ],
   };
 }
@@ -1049,7 +1057,10 @@ function tiradaLanzarArmaMelee(
     nota: notaConPerfil([`Alcance Potencia × ${arma.arrojadiza} m.`, arma.efectos], perfil),
     efectosObjetivo: efectosDelGolpe(arma, perfil),
     ignoraBlindaje: ignoraBlindajeDe(arma, perfil, nombre),
-    ajustesFijos: modo.dificultad !== 0 ? [{ valor: modo.dificultad, fuente: arma.label }] : [],
+    ajustesFijos: [
+      ...(modo.dificultad !== 0 ? [{ valor: modo.dificultad, fuente: arma.label }] : []),
+      ...ajustePesoModificadas(modificaciones),
+    ],
     ataque: {
       modos: [
         modoConPerfil(

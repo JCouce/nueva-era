@@ -19,7 +19,10 @@ import {
   conversionDeArma,
   convertirArma,
   nombreDePieza,
+  penalizadorPesoModificadas,
 } from "./armasModificadas";
+import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { eleccionSinTocar, montarTirada } from "./montaje";
 import { accionesDeAtaque as accionesDeAtaqueCon } from "./combate";
 import { modificadoresActivos } from "./derivados";
 import { permisosDeDotes } from "./dotesEfectos";
@@ -319,5 +322,46 @@ describe("sobre la ficha", () => {
     assert.equal(t.materiales.sencillos, 0);
     assert.equal(t.equipo.length, 1);
     assert.deepEqual(t.equipo[0].modificaciones, ["electrificante"]);
+  });
+});
+
+// Sync Drive 2026-11-14: «si debido a las modificaciones un arma aumenta un 50 % o más su peso
+// recibe un penalizador de −1 por dificultad en su empleo». Los porcentajes se suman sobre el
+// básico (usuario): Electrificante 25 % + Térmica 35 % = 60 %.
+describe("armas modificadas pesadas: −1 con +50 % de peso o más", () => {
+  const total = (s: Sheet, id: string) => {
+    const f = resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+    const t = conExtrasDeFicha(f, accionesDeAtaque(s).find((a) => a.id === id)!);
+    return montarTirada(f, t, eleccionSinTocar(t)).total;
+  };
+  const cuchillo = (mods?: ModificacionArmaId[]) =>
+    equipar(defaultSheet(), { instanciaId: "c1", catalogoId: "espada_cuchillo_combate", ...(mods && { modificaciones: mods }) });
+
+  test("una modificación del 35 % no penaliza; dos que suman 60 %, −1 al golpear y al lanzar", () => {
+    for (const id of ["ataque_melee_c1", "lanzar_melee_c1"]) {
+      const base = total(cuchillo(), id);
+      assert.equal(total(cuchillo(["termica"]), id), base, id);
+      assert.equal(total(cuchillo(["electrificante", "termica"]), id), base - 1, id);
+    }
+  });
+
+  test("el Nanofilamento (0 %) no suma; el Plasma solo (40 %) no llega", () => {
+    assert.equal(penalizadorPesoModificadas(["nanofilamento", "electrificante"]), null);
+    assert.equal(penalizadorPesoModificadas(["plasma"]), null);
+    assert.deepEqual(penalizadorPesoModificadas(["electrificante", "termica", "nanofilamento"]), {
+      valor: -1,
+      fuente: "Modificaciones pesadas (+60 % de peso)",
+    });
+  });
+
+  test("también al bloquear con el arma", () => {
+    const conBloqueo = (s: Sheet): Sheet => ({
+      ...s,
+      habilidades: { ...s.habilidades, combate_melee: { ...s.habilidades.combate_melee, valor: 1 } },
+      dotes: [...s.dotes, { id: "dote_bloqueo" }],
+    });
+    const base = total(conBloqueo(cuchillo()), "bloquear_melee_c1");
+    assert.equal(total(conBloqueo(cuchillo(["termica"])), "bloquear_melee_c1"), base);
+    assert.equal(total(conBloqueo(cuchillo(["electrificante", "termica"])), "bloquear_melee_c1"), base - 1);
   });
 });

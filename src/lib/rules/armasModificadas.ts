@@ -142,12 +142,26 @@ export function rarezaArmaModificada(arma: ArmaMelee, ids: readonly Modificacion
 }
 
 // "+25 %" sobre el peso del arma básica. Varias modificaciones suman sus porcentajes
-// sobre ese mismo básico. TODO(revisar): la fuente no dice cómo se combinan; el usuario
-// pidió solo enseñar el peso calculado (la carga no está construida).
+// sobre ese mismo básico (Electrificante 25 % + Térmica 35 % = +60 %; usuario, 2026-11-14).
+function pesoAdicionalPct(ids: readonly ModificacionArmaId[]): number {
+  return normalizarModificaciones(ids).reduce((t, id) => t + modificacionArmaPorId(id).pesoPorcentaje, 0);
+}
+
 export function pesoArmaModificada(arma: ArmaMelee, ids: readonly ModificacionArmaId[]): number | null {
   if (arma.pesoKg === null) return null;
-  const pct = normalizarModificaciones(ids).reduce((t, id) => t + modificacionArmaPorId(id).pesoPorcentaje, 0);
-  return Math.round(arma.pesoKg * (1 + pct / 100) * 100) / 100;
+  return Math.round(arma.pesoKg * (1 + pesoAdicionalPct(ids) / 100) * 100) / 100;
+}
+
+// «Si debido a las modificaciones un arma aumenta un 50 % o más su peso recibe un penalizador de
+// −1 por dificultad en su empleo» (sync Drive 2026-11-14). Con el porcentaje sumado sobre el
+// básico (pesoAdicionalPct), así vale también para un arma sin peso conocido. Va como ajuste
+// fijo en toda tirada con el arma: golpear, bloquear y lanzar («en su empleo»).
+export const UMBRAL_PESO_MODIFICADAS_PCT = 50;
+
+export function penalizadorPesoModificadas(ids: readonly ModificacionArmaId[]): { valor: number; fuente: string } | null {
+  const pct = pesoAdicionalPct(ids);
+  if (pct < UMBRAL_PESO_MODIFICADAS_PCT) return null;
+  return { valor: -1, fuente: `Modificaciones pesadas (+${pct} % de peso)` };
 }
 
 // "Espada Electrificante", "Cuchillo de Combate de Nanofilamento Térmico y Electrificante".
