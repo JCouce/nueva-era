@@ -304,6 +304,19 @@ describe("sync Drive 2026-11-14 (T2.M1): dotes nuevas de Exploración", () => {
     assert.equal(t.poder!.resultados.fracaso, undefined);
   });
 
+  test("Defensa Coordinada: la misma tirada; el +1 es a la defensa, aviso del resultado", () => {
+    const f = resolver(ficha([{ id: "dote_defensa_coordinada" }]));
+    const t = tirada(f, "dotes_defensa_coordinada")!;
+    assert.equal(t.aplicado, "perspicacia");
+    assert.equal(t.habilidad, "exploracion");
+    assert.deepEqual(t.especialidadesAccion, ["tactica"]);
+    assert.equal(t.dificultadSugerida, 7);
+    assert.match(t.nota ?? "", /^Compleja · /);
+    assert.equal(montar(f, t).enEspecialidad, true);
+    assert.match(t.poder!.resultados.exito!, /\+1 en las tiradas de defensa contra el objetivo/);
+    assert.match(t.poder!.resultados.critico!, /Además, el bonificador se mantiene tantos turnos como tu puntuación de Táctica/);
+  });
+
   test("Ataque Coordinado: sin Táctica 2 no sale", () => {
     const base = ficha([{ id: "dote_ataque_coordinado" }]);
     const sinTactica = { ...base, habilidades: { ...base.habilidades, exploracion: { valor: 6, especialidades: [] } } };
