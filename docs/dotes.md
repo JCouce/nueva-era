@@ -16,8 +16,8 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **116 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 0 · Sigilo 6 ·
+> Recuento: **117 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 0 · Sigilo 7 ·
 > Tecnociencia 1 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
@@ -1296,6 +1296,17 @@ Cuando el personaje se encuentra en una zona de penumbra, cobertura parcial o ca
 
 **Efecto:**
 Aprovechando las dinámicas de las masas y la indiferencia de las grandes ciudades o instalaciones, el personaje sabe exactamente cómo caminar, vestir y actuar para no dejar una impresión memorable. Observadores que hayan presenciado al personaje con o sin disfraz tendrán dificultad para recordar su apariencia, deberán realizar una tirada de **perspicacia + exploración** dificultad **6 + mimetismo** del personaje.
+
+### Sustracción Rápida
+
+**Coste:** 1
+
+**Requisitos:**
+- Juego de Manos 1 · especialidad (Sigilo)
+- Reflejos 1 · atributo aplicado
+
+**Efecto:**
+El personaje puede realizar una prueba de juego de manos para hurtar o depositar un objeto en la ropa o en un recipiente del objetivo mientras está en movimiento como parte de la misma acción de movimiento.
 
 
 ## Tecnociencia

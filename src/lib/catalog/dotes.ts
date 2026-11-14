@@ -7679,6 +7679,53 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_sustraccion_rapida",
+    "label": "Sustracción Rápida",
+    "grupo": "sigilo",
+    "coste": 1,
+    "requisitos": [
+      {
+        "tipo": "especialidad",
+        "habilidad": "sigilo",
+        "id": "juego_de_manos",
+        "min": 1
+      },
+      {
+        "tipo": "aplicado",
+        "id": "reflejos",
+        "min": 1
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "El personaje puede realizar una prueba de juego de manos para hurtar o depositar un objeto en la ropa o en un recipiente del objetivo mientras está en movimiento como parte de la misma acción de movimiento.",
+    "efectos": [
+      {
+        "tipo": "texto",
+        "lugar": "hurto",
+        "texto": "Puedes hurtar o dejar un objeto en la ropa o en un recipiente del objetivo mientras te mueves, como parte de la misma acción de movimiento.",
+        "condicion": null,
+        "porque": "turno",
+        "borrador": 0
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "hurto"
+        },
+        "mecanismo": "nota_fija",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_diagnostico_de_sistemas",
     "label": "Diagnóstico de Sistemas",
     "grupo": "tecnociencia",
@@ -8762,9 +8809,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   214 efectos (204 en el borrador)
+//   215 efectos (205 en el borrador)
 //   construidos: 119
-//   texto: 95
+//   texto: 96
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

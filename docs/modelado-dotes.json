@@ -7102,6 +7102,39 @@
       "candidataUX": null
     },
     {
+      "id": "dote_sustraccion_rapida",
+      "label": "Sustracción Rápida",
+      "grupo": "sigilo",
+      "coste": 1,
+      "requisitos": [
+        {
+          "tipo": "especialidad",
+          "habilidad": "sigilo",
+          "id": "juego_de_manos",
+          "min": 1
+        },
+        {
+          "tipo": "aplicado",
+          "id": "reflejos",
+          "min": 1
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "texto",
+          "lugar": "hurto",
+          "texto": "Puedes hurtar o dejar un objeto en la ropa o en un recipiente del objetivo mientras te mueves, como parte de la misma acción de movimiento.",
+          "condicion": null,
+          "porque": "turno"
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_diagnostico_de_sistemas",
       "label": "Diagnóstico de Sistemas",
       "grupo": "tecnociencia",

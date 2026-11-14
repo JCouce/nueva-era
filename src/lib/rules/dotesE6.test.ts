@@ -88,3 +88,10 @@ describe("Perfil Bajo", () => {
     assert.doesNotMatch(lineaAntes(fija(resolver(ficha([])), "mimetismo")), /dificultad 6 \+ tu Mimetismo/);
   });
 });
+
+describe("Sustracción Rápida", () => {
+  test("aviso en Juego de manos: hurtar o dejar algo moviéndote, en la misma acción de movimiento", () => {
+    const t = fija(resolver(ficha([{ id: "dote_sustraccion_rapida" }])), "hurto");
+    assert.match(lineaAntes(t), /mientras te mueves, como parte de la misma acción de movimiento/);
+  });
+});
