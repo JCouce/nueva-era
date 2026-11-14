@@ -11,11 +11,11 @@
 //                  ventajas: son reglas de los poderes de la disciplina, no de la dote
 //                  (supuesto del modelado aceptado en §9.3: "Sobrecarga Métrica sin descuentos
 //                  de Traslación"). Las casillas externas (Xovromium, Munición Supresora) sí.
-//   bloqueo        el requisito de la disciplina sin cumplir (bloqueoPorRequisito), como los
-//                  poderes: se ve y no se usa.
+//   habilitacion   bloqueada con el requisito de la disciplina sin cumplir
+//                  (habilitacionPorRequisito), como los poderes: se ve y no se usa.
 //
 // Requisito roto de la dote (S34) y "vale la mejor": dotesActivas; aquí solo llegan las activas.
-import { bloqueoPorRequisito, resolverPoder, valoresHabilidad, type PoderDisponible } from "./poderes";
+import { habilitacionPorRequisito, resolverPoder, valoresHabilidad, type PoderDisponible } from "./poderes";
 import type { Disciplina, NivelesPsionica } from "./psionica";
 import type { DoteActiva } from "./dotesEfectos";
 import type { Sheet } from "./sheet";
@@ -48,7 +48,7 @@ export function poderesDeDotes(activas: readonly DoteActiva[], sheet: Sheet, niv
       const disciplina = sinReglasDeDisciplina(original);
       const porDefecto = resolverPoder(accion, { nivelPoseido, disciplina, habilidades: valoresHabilidad(sheet), niveles });
       if (!porDefecto) return;
-      poderes.push({ disciplina, accion, nivelPoseido, porDefecto, bloqueo: bloqueoPorRequisito(original, niveles) });
+      poderes.push({ disciplina, accion, nivelPoseido, porDefecto, habilitacion: habilitacionPorRequisito(original, niveles) });
     });
   }
   return poderes;

@@ -61,7 +61,7 @@ Estas reglas salieron de decisiones tomadas con el usuario. Respétalas o discú
 las ignores por descuido.
 
 **No te inventes reglas.** Si el sistema no define algo, hay dos salidas legítimas: declararlo
-en la interfaz (ver `PendienteTab` y las tiradas con `bloqueada`, que muestran el motivo al
+en la interfaz (ver `PendienteTab` y las hojas con `habilitacion` bloqueada, que muestran el motivo al
 jugador) o implementarlo como **supuesto numerado** en `docs/sistema.md` con su pregunta
 asociada. Lo que no vale es rellenar el hueco en silencio.
 

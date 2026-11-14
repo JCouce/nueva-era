@@ -59,6 +59,7 @@
 //   ajusteVida.ts      pestaña Vida del máster: daño/curación, vista previa y umbral que cruza
 //   origen.ts          OrigenAporte: de qué ítem viene cada aporte a una tirada (fase 2 de docs/aportes/plan.md)
 //   shock.ts           Shock sobre las piezas: cómo le afecta a cada una, cuáles apaga y cuáles penaliza (T7a, S73)
+//   habilitacion.ts    Habilitacion: si una hoja de Acciones está activa, bloqueada u oculta (fase 6 de docs/aportes/plan.md)
 //   aportes.ts         aportesDeTirada: los aportes de los ítems de la ficha a una tirada, con su origen
 //   teAfecta.ts        "te afecta" de una hoja de tirada: los nombres de esos ítems
 //   tipoAccion.ts      tipo de acción de desenfundar, recargar e inyectarse, con las rebajas de piezas y dotes (T5c)
@@ -116,6 +117,7 @@ export * from "./textosRegistro";
 export * from "./turnos";
 export * from "./ajusteVida";
 export * from "./origen";
+export * from "./habilitacion";
 export * from "./aportes";
 export * from "./teAfecta";
 export * from "./resistirDanio";

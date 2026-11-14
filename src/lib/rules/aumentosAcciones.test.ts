@@ -1,5 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
+import { motivoDeBloqueo } from "./habilitacion";
 import { defaultSheet, type Sheet } from "./sheet";
 import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
 import { accionesDeAumentos, operacionDeEfecto, usoDeAccionAumento, type EfectoAccionAumento } from "./aumentosAcciones";
@@ -90,8 +91,8 @@ describe("acciones de aumento: cuáles salen y cuánto cuestan", () => {
   test("sin fatiga suficiente, la acción sale bloqueada y el servidor la rechaza", () => {
     const s = conRecursos(conTodas([MATRIZ_OSEA, BIOGENESIS, ANGIOGENESIS]), 1);
     const a = porId(s);
-    assert.equal(a.get("aumentos_cortar_hemorragia")!.bloqueada, undefined);
-    assert.match(a.get("aumentos_cortar_exanguinante")!.bloqueada!, /cuesta 2 y te quedan 1/);
+    assert.equal(a.get("aumentos_cortar_hemorragia")!.habilitacion, undefined);
+    assert.match(motivoDeBloqueo(a.get("aumentos_cortar_exanguinante")!.habilitacion)!, /cuesta 2 y te quedan 1/);
     const uso = usoDeAccionAumento(s, [], "aumentos_cortar_exanguinante");
     assert.equal(uso.ok, false);
   });
@@ -103,7 +104,7 @@ describe("td-25: con combate en curso cuenta la fatiga del combate", () => {
   test("ficha con fatiga de sobra, foto con 1: bloqueada, y el servidor la rechaza", () => {
     const s = conRecursos(base, 8);
     const a = new Map(accionesDeAumentos(s, [], 1).directas.map((x) => [x.id, x]));
-    assert.match(a.get("aumentos_cortar_exanguinante")!.bloqueada!, /cuesta 2 y te quedan 1/);
+    assert.match(motivoDeBloqueo(a.get("aumentos_cortar_exanguinante")!.habilitacion)!, /cuesta 2 y te quedan 1/);
     assert.equal(usoDeAccionAumento(s, [], "aumentos_cortar_exanguinante", {}, 1).ok, false);
   });
 
@@ -122,7 +123,7 @@ describe("td-25: con combate en curso cuenta la fatiga del combate", () => {
     });
     assert.deepEqual(ficha.fatigaEnJuego, { actual: 1, efectiva: 1 });
     const a = new Map(ficha.accionesAumentos.directas.map((x) => [x.id, x]));
-    assert.match(a.get("aumentos_cortar_exanguinante")!.bloqueada!, /te quedan 1/);
+    assert.match(motivoDeBloqueo(a.get("aumentos_cortar_exanguinante")!.habilitacion)!, /te quedan 1/);
   });
 
   test("la temporal de Proeza se resta de la fatiga del combate en la efectiva", () => {
@@ -309,7 +310,7 @@ describe("A4b: Barrido electromagnético", () => {
 
   test("ampliar a 60 m: sin fatiga sale bloqueada y el servidor la rechaza; ampliar a 30 m se usa igual", () => {
     const s = conRecursos(conEleccion(defaultSheet(), INTROGRESION, "percepcion_electromagnetica"), 0);
-    assert.match(porId(s).get("aumentos_barrido_60")!.bloqueada!, /cuesta 1 y te quedan 0/);
+    assert.match(motivoDeBloqueo(porId(s).get("aumentos_barrido_60")!.habilitacion)!, /cuesta 1 y te quedan 0/);
     assert.equal(usoDeAccionAumento(s, [], "aumentos_barrido_60").ok, false);
     const uso = usoDeAccionAumento(conRecursos(s, 3), [], "aumentos_barrido_60");
     assert.ok(uso.ok);
@@ -331,7 +332,7 @@ describe("A4b: Tempestad Nanobótica", () => {
     assert.equal(t.habilidad, "tecnociencia");
     assert.equal(t.dificultadSugerida, 0);
     assert.equal(t.costeFatiga, 2);
-    assert.equal(t.bloqueada, undefined);
+    assert.equal(t.habilitacion, undefined);
     assert.deepEqual(t.ataque!.modos.map((m) => [m.danio, m.categoriaDanio]), [[1, "Grave"]]);
     assert.match(t.efectos![0].texto, /blindaje del objetivo/);
     const m = montarTirada(resolver(s), t, SIN_ELECCION);
@@ -345,7 +346,7 @@ describe("A4b: Tempestad Nanobótica", () => {
 
   test("sin 2 de fatiga sale bloqueada", () => {
     const t = tiradaDe(conRecursos(con(defaultSheet(), ENJAMBRE, 4), 1), "aumentos_tempestad_nanobotica")!;
-    assert.match(t.bloqueada!, /cuesta 2 y te quedan 1/);
+    assert.match(motivoDeBloqueo(t.habilitacion)!, /cuesta 2 y te quedan 1/);
   });
 });
 

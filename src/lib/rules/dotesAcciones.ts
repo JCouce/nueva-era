@@ -43,6 +43,7 @@ import type { ConsecuenciaPropia } from "./consecuenciasPropias";
 import type { CondicionTirada } from "./condiciones";
 import type { Sheet } from "./sheet";
 import { claveContador, conContador, contadorEscena } from "./usosEscena";
+import { bloqueadaPor, type Habilitacion } from "./habilitacion";
 import type { GrupoAccion } from "./modificadores";
 import type { Grado } from "./psionica";
 import type { DetallePoder } from "./poderes";
@@ -90,7 +91,7 @@ const limitesDe = (l: Limite): LimiteUno[] => (!l ? [] : Array.isArray(l) ? l : 
 function limiteContado(
   accion: AccionDote,
   { usosEscena, mesa }: ContextoLimites,
-): { uso: UsoLimitado; bloqueada?: string; selector?: CondicionTirada } | null {
+): { uso: UsoLimitado; habilitacion?: Habilitacion; selector?: CondicionTirada } | null {
   if (!mesa) return null;
   const uso: UsoLimitado = { accionId: accion.id, claves: [] };
   const motivos: string[] = [];
@@ -118,7 +119,11 @@ function limiteContado(
     }
   }
   if (uso.claves.length === 0 && !uso.porAliado) return null;
-  return { uso, ...(motivos.length > 0 && { bloqueada: motivos.join(" ") }), ...(selector && { selector }) };
+  return {
+    uso,
+    ...(motivos.length > 0 && { habilitacion: bloqueadaPor(motivos.join(" "), "duro") }),
+    ...(selector && { selector }),
+  };
 }
 
 // Gasta un uso de la acción (al tirar): sube sus contadores y, por aliado, el del elegido. Lo
@@ -302,7 +307,7 @@ function construir(
       ...(objetivos.length > 0 && { efectosObjetivoDeFicha: objetivos }),
       ...(consecuencias && { consecuenciasPropias: consecuencias }),
       ...(limite && { usoLimitado: limite.uso }),
-      ...(limite?.bloqueada && { bloqueada: limite.bloqueada }),
+      ...(limite?.habilitacion && { habilitacion: limite.habilitacion }),
     },
   };
 }

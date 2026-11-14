@@ -1,5 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
+import { motivoDeBloqueo } from "./habilitacion";
 import { defaultSheet, type Sheet } from "./sheet";
 import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta, type VitalidadActual } from "./fichaResuelta";
 import { ACCIONES, type Accion } from "./acciones";
@@ -86,7 +87,7 @@ describe("activables: activar, reactivar y desactivar", () => {
   test("sin fatiga suficiente, bloqueada con el motivo", () => {
     const s = conNeuro(1);
     const a = directa({ ...s, fatigaActual: 1 }, [], ACTIVAR_NEURO)!;
-    assert.match(a.bloqueada!, /cuesta 2 y te quedan 1/);
+    assert.match(motivoDeBloqueo(a.habilitacion)!, /cuesta 2 y te quedan 1/);
     const uso = usoDeAccionAumento({ ...s, fatigaActual: 1 }, [], ACTIVAR_NEURO);
     assert.equal(uso.ok, false);
   });
@@ -319,10 +320,10 @@ describe("A5b: acción simple adicional (Neuroprótesis 3)", () => {
 
   test("sin fatiga: bloqueada a 1; a 2, la casilla de 3 sale apagada y el servidor la rechaza", () => {
     const s = conNeuro(3);
-    assert.match(directa({ ...s, fatigaActual: 1 }, [], ADICIONAL)!.bloqueada!, /cuesta 2 y te quedan 1/);
+    assert.match(motivoDeBloqueo(directa({ ...s, fatigaActual: 1 }, [], ADICIONAL)!.habilitacion)!, /cuesta 2 y te quedan 1/);
     assert.equal(usoDeAccionAumento({ ...s, fatigaActual: 1 }, [], ADICIONAL).ok, false);
     const dos = { ...s, fatigaActual: 2 };
-    assert.equal(directa(dos, [], ADICIONAL)!.bloqueada, undefined);
+    assert.equal(directa(dos, [], ADICIONAL)!.habilitacion, undefined);
     assert.match(casilla(dos)!.bloqueada!, /cuesta 3 y te quedan 2/);
     const r = usoDeAccionAumento(dos, [], ADICIONAL, { repetida: true });
     assert.ok(!r.ok);

@@ -35,6 +35,7 @@ import type { ModificacionArmaId } from "../catalog/armasModificadas";
 import type { MotorMetadata } from "./motor";
 import { textoCortoDeEfecto, type EfectoArma, type EfectoEnTirada } from "./efectosArma";
 import { escudoRoto, gastoDelModo, MOTIVO_ESCUDO_ROTO, recursoDe } from "./recursos";
+import { bloqueadaPor, conHabilitacion, esVisible, habilitacionDeFamilia } from "./habilitacion";
 import { CONDICION_ATACANTES_ADICIONALES, condicionApuntado, type Accion, type AccionDirecta } from "./acciones";
 import { RUIDO_DISPARO, modosDeOcultacion, textoSigiloAlAtacar, type SigiloAlAtacar } from "./sigilo";
 import { ESTADO_CAMUFLAJE_ID } from "../catalog/estados";
@@ -42,7 +43,6 @@ import { atributoEfectivo, aplicado } from "./derivados";
 import { criticoDesarmado, golpeDesarmadoConArmadura } from "./golpeDesarmado";
 import { ID_RETROCESO_ENTROPICO, retrocesoEntropico } from "./retrocesoEntropico";
 import { ESPECIALIDAD_ARMA, ESPECIALIDAD_ATAQUE_ESPECIAL, ESPECIALIDAD_LANZAR } from "../catalog/especialidadesArma";
-import { FAMILIAS_SOLO_CON_DOTE } from "../catalog/dotesDestinos";
 import type { PermisosDeDotes } from "./dotesEfectos";
 import {
   brazoBionico,
@@ -1383,6 +1383,9 @@ function tiradaBloqueoBrazo(brazo: BrazoBionico, armaduraSinPenalizador: string 
 // duplicándolas en la pestaña. accionesDeHerramientas() se adaptó al mismo
 // patrón de generador por pieza (ver herramientas.ts), pero vive en su
 // propio registro/función, no en este.
+// Escudo roto (S86): sus filas salen apagadas con el motivo hasta que se repare.
+const ESCUDO_ROTO = bloqueadaPor(MOTIVO_ESCUDO_ROTO, "duro");
+
 type GeneradorDeAtaque = (
   sheet: Sheet,
   pieza: PiezaEquipada,
@@ -1419,7 +1422,7 @@ const REGISTRO_DE_ATAQUE: Partial<Record<Equipo["familia"], GeneradorDeAtaque>> 
       ),
     ];
     // Escudo roto (S86): sus filas salen, apagadas con el motivo, hasta que se repare.
-    return arma.defensa && escudoRoto(sheet, pieza.instanciaId) ? filas.map((t) => ({ ...t, bloqueada: MOTIVO_ESCUDO_ROTO })) : filas;
+    return arma.defensa && escudoRoto(sheet, pieza.instanciaId) ? filas.map((t) => ({ ...t, habilitacion: ESCUDO_ROTO })) : filas;
   },
   armaPesada: (sheet, pieza, cat) => {
     const tirada = tiradaDeArmamentoPesado(sheet, cat as ArmaPesada, pieza.instanciaId);
@@ -1504,7 +1507,8 @@ function accionesDeGranadas(sheet: Sheet): Accion[] {
 // `mods`: los de la FichaResuelta (especie, equipo, estados de combate), para el daño
 // que sale de Fuerza o de Potencia. `permisos`: los de las dotes (FichaResuelta.extrasDotes,
 // D2b-2): una familia de FAMILIAS_SOLO_CON_DOTE (Bloquear con X, también Bayoneta y Aguijón)
-// solo sale si una dote activa la habilita (§9.2, arbitraje duro), y el estilo Sutil solo
+// solo sale si una dote activa la habilita (§9.2: oculta sin ella, habilitacionDeFamilia; las
+// ocultas no se devuelven, ni a la pantalla ni al servidor), y el estilo Sutil solo
 // con Combate Sutil. Obligatorio a propósito: sin él no hay forma de saber qué se ve.
 export function accionesDeAtaque(sheet: Sheet, mods: ModificadorConFuente[], permisos: PermisosDeDotes): Accion[] {
   const tiradas: Accion[] = [];
@@ -1524,7 +1528,8 @@ export function accionesDeAtaque(sheet: Sheet, mods: ModificadorConFuente[], per
   if (bloqueoBrazo) tiradas.push(bloqueoBrazo);
   tiradas.push(...accionesDeGranadas(sheet));
   return tiradas
-    .filter((t) => !t.familiaArma || !FAMILIAS_SOLO_CON_DOTE.includes(t.familiaArma) || permisos.familias.includes(t.familiaArma))
+    .map((t) => conHabilitacion(t, habilitacionDeFamilia(t.familiaArma, permisos)))
+    .filter(esVisible)
     .map(conApuntado);
 }
 
@@ -1618,7 +1623,7 @@ function accionActivarCamuflaje(sheet: Sheet, pieza: PiezaEquipada, cat: Subsist
       },
     }),
     gastoRecurso: { instanciaId: pieza.instanciaId, cantidad: 1 },
-    ...(recurso?.actual === 0 && { bloqueada: MOTIVO_SIN_CARGAS }),
+    ...(recurso?.actual === 0 && { habilitacion: bloqueadaPor(MOTIVO_SIN_CARGAS, "duro") }),
   };
 }
 
@@ -1654,7 +1659,7 @@ export function accionesDirectasDeAtaque(sheet: Sheet): AccionDirecta[] {
           `supera tu defensa pero falla por la cobertura, en Resistir daño elige "Al escudo". ` +
           NOTA_ESCUDO_SUBSISTEMAS,
         confirmarLabel: "Levantar",
-        ...(escudoRoto(sheet, pieza.instanciaId) && { bloqueada: MOTIVO_ESCUDO_ROTO }),
+        ...(escudoRoto(sheet, pieza.instanciaId) && { habilitacion: ESCUDO_ROTO }),
         origen: origenDePieza("equipo", cat, pieza.instanciaId),
       });
     } else if (cat?.familia === "subsistema" && pieza.catalogoId === "malla_plasmatica") {

@@ -1,5 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
+import { motivoDeBloqueo } from "./habilitacion";
 import { prepararPoder, usarPoder, efectosDelResultado, estadosPropiosDeUso, type SeleccionPoder } from "./usoPoder";
 import { accionesDePsionica } from "./poderes";
 import { defaultSheet, type Sheet } from "./sheet";
@@ -38,7 +39,7 @@ describe("prepararPoder", () => {
     assert.equal(p.coste?.total, 2);
     assert.ok(p.tirada);
     assert.deepEqual(p.casillas.map((c) => c.toggle), ["Bajo Xovromium"]);
-    assert.equal(p.bloqueo, null);
+    assert.equal(p.habilitacionAlUsar.estado, "activa");
     assert.equal(p.cargas, null);
   });
 
@@ -50,13 +51,13 @@ describe("prepararPoder", () => {
 
   test("sin fatiga suficiente, bloqueo", () => {
     const p = preparar(ficha({ psionica: SINGULARIDAD_2, fatigaActual: 1 }), "psi_singularidad_impulso");
-    assert.match(p.bloqueo ?? "", /Te faltan 1 de fatiga/);
+    assert.match(motivoDeBloqueo(p.habilitacionAlUsar) ?? "", /Te faltan 1 de fatiga/);
   });
 
   test("td-25: en combate bloquea con la fatiga efectiva del combate, no la de la ficha", () => {
     const poder = accionesDePsionica(f, niv(f)).find((x) => x.accion.id === "psi_singularidad_impulso")!;
     const p = prepararPoder({ ficha: f, modificadores: [], niveles: niv(f), poder, seleccion: sel(), fatigaEfectiva: 1 })!;
-    assert.match(p.bloqueo ?? "", /Te faltan 1 de fatiga/);
+    assert.match(motivoDeBloqueo(p.habilitacionAlUsar) ?? "", /Te faltan 1 de fatiga/);
     assert.equal(p.fatigaActual, 1);
   });
 
@@ -68,13 +69,13 @@ describe("prepararPoder", () => {
   test("los modificadores de fuera de la ficha (estados) cuentan en los aplicados", () => {
     // Proeza nivel 1: carga máxima 25 × Perspicacia. Con Perspicacia 0, no se puede.
     const t = ficha({ psionica: { traslacion: 1 } });
-    assert.match(preparar(t, "psi_traslacion_proeza", { pesoKg: 60 }).bloqueo ?? "", /carga máxima es 0/);
+    assert.match(motivoDeBloqueo(preparar(t, "psi_traslacion_proeza", { pesoKg: 60 }).habilitacionAlUsar) ?? "", /carga máxima es 0/);
     const estado: ModificadorConFuente[] = [
       { tipo: "atributo", id: "inteligencia", valor: 2, origen: "estado", fuente: "Prueba" },
       { tipo: "atributo", id: "percepcion", valor: 2, origen: "estado", fuente: "Prueba" },
     ];
     const p = preparar(t, "psi_traslacion_proeza", { pesoKg: 60 }, estado);
-    assert.equal(p.bloqueo, null);
+    assert.equal(p.habilitacionAlUsar.estado, "activa");
     assert.equal(p.extraProrroga, 2); // 60 kg sobre 50 = 120 % → +2
   });
 });
@@ -191,20 +192,22 @@ describe("ps-06: Alerta pasiva exhausto", () => {
 
   test("exhausto: inhabilitada, con el motivo, y no se puede usar", () => {
     const p = preparar(conFatiga(1), "psi_resonancia_alerta_pasiva");
-    assert.equal(p.inhabilitado, "Exhausto: no funciona");
-    assert.equal(p.bloqueo, "Exhausto: no funciona");
+    assert.equal(motivoDeBloqueo(p.habilitacion), "Exhausto: no funciona");
+    assert.equal(motivoDeBloqueo(p.habilitacionAlUsar), "Exhausto: no funciona");
+    assert.equal(p.noFuncionaAhora, true);
   });
 
   test("con fatiga, funciona; la activa no tiene la regla", () => {
-    assert.equal(preparar(conFatiga(8), "psi_resonancia_alerta_pasiva").inhabilitado, null);
-    assert.equal(preparar(conFatiga(1), "psi_resonancia_alerta_activa").inhabilitado, null);
+    assert.equal(preparar(conFatiga(8), "psi_resonancia_alerta_pasiva").habilitacion.estado, "activa");
+    assert.equal(preparar(conFatiga(8), "psi_resonancia_alerta_pasiva").noFuncionaAhora, false);
+    assert.equal(preparar(conFatiga(1), "psi_resonancia_alerta_activa").habilitacion.estado, "activa");
   });
 
   test("en combate cuenta la fatiga efectiva del combate (td-25)", () => {
     const f = conFatiga(8);
     const poder = accionesDePsionica(f, niv(f)).find((x) => x.accion.id === "psi_resonancia_alerta_pasiva")!;
     const p = prepararPoder({ ficha: f, modificadores: [], niveles: niv(f), poder, seleccion: sel(), fatigaEfectiva: 0 })!;
-    assert.equal(p.inhabilitado, "Exhausto: no funciona");
+    assert.equal(motivoDeBloqueo(p.habilitacion), "Exhausto: no funciona");
   });
 });
 
@@ -231,6 +234,6 @@ describe("prepararPoder con requisito roto (S25)", () => {
     const f = ficha({ psionica: { induccion: 1 } });
     const poder = accionesDePsionica(f, niv(f)).find((p) => p.disciplina.id === "induccion")!;
     const p = prepararPoder({ ficha: f, modificadores: [], niveles: niv(f), poder, seleccion: sel() })!;
-    assert.equal(p.bloqueo, "Requiere Resonancia 1");
+    assert.equal(motivoDeBloqueo(p.habilitacionAlUsar), "Requiere Resonancia 1");
   });
 });

@@ -28,7 +28,8 @@ import {
   recursoDe,
   conExtrasDeFicha,
   conExtrasDirectaDeFicha,
-  tiradaFijaVisible,
+  esVisible,
+  motivoDeBloqueo,
   textoNivelEnAcciones,
   etiquetaEconomia,
   textoValor,
@@ -299,7 +300,8 @@ function FilaTirada({
   const nombreAplicado = APLICADOS.find((a) => a.id === montada.aplicado.id)!;
   const nombreHabilidad = efectiva.habilidad ? HABILIDADES.find((h) => h.id === efectiva.habilidad)!.label : null;
 
-  if (tirada.bloqueada) {
+  const bloqueo = motivoDeBloqueo(tirada.habilitacion);
+  if (bloqueo) {
     return (
       <HudCard className="border-dashed p-3 opacity-60">
         <div className="flex items-center justify-between gap-2">
@@ -312,7 +314,7 @@ function FilaTirada({
           {estrella && <BotonEstrella estrella={estrella} />}
         </div>
         <p className="mt-1 font-mono text-[10px] leading-relaxed text-muted">
-          {tirada.bloqueada}
+          {bloqueo}
         </p>
       </HudCard>
     );
@@ -522,7 +524,8 @@ function FilaResistirDanio({ onAbrir, estrella }: { onAbrir: () => void; estrell
 // habilidad (no hay ninguno). Hoy solo la genera accionesDirectasDeHerramientas()
 // (Radar nv4 "Marcar objetivo"); cuando llegue una segunda familia con acción
 // sin dado propia, esta fila se reutiliza tal cual.
-// `bloqueada` (acciones de aumento sin fatiga suficiente, A4a): botón apagado con el motivo.
+// Bloqueada (`habilitacion`: escudo roto, sin cargas, aumento sin fatiga suficiente…): botón
+// apagado con el motivo.
 function FilaUsar({
   accion,
   onAbrir,
@@ -532,6 +535,7 @@ function FilaUsar({
   onAbrir: (a: AccionDirecta) => void;
   estrella?: Estrella;
 }) {
+  const bloqueo = motivoDeBloqueo(accion.habilitacion);
   return (
     <HudCard className="p-3">
       <div className="flex items-center justify-between gap-3">
@@ -542,11 +546,11 @@ function FilaUsar({
           {accion.costeFatiga ? (
             <span className="mt-1 block font-mono text-[10px] uppercase text-muted">{accion.costeFatiga} fatiga</span>
           ) : null}
-          {accion.bloqueada && <p className="mt-1 font-mono text-[11px] text-danger">{accion.bloqueada}</p>}
+          {bloqueo && <p className="mt-1 font-mono text-[11px] text-danger">{bloqueo}</p>}
         </div>
         <button
           type="button"
-          disabled={Boolean(accion.bloqueada)}
+          disabled={Boolean(bloqueo)}
           onClick={() => onAbrir(accion)}
           className="clip-chamfer-sm shrink-0 border border-accent bg-accent px-3 py-2 font-display text-xs font-semibold uppercase tracking-wide text-black active:scale-95 disabled:border-border disabled:bg-elevated disabled:text-muted disabled:active:scale-100"
         >
@@ -619,8 +623,8 @@ function FilaPoder({
   const nombreAplicado = montada ? APLICADOS.find((a) => a.id === montada.aplicado.id)! : null;
   const nombreHabilidad = tirada?.habilidad ? HABILIDADES.find((h) => h.id === tirada.habilidad)!.label : null;
   const danio = p.resolucion.tipo === "ataque" ? p.resolucion.danio : null;
-  // Requisito roto o, ps-06, un poder que ahora no funciona (atenuado, sin poder usarse).
-  const bloqueo = poder.bloqueo ?? preparado.inhabilitado;
+  // Requisito roto, sin acceso o, ps-06, un poder que ahora no funciona (este, además, atenuado).
+  const bloqueo = motivoDeBloqueo(preparado.habilitacion);
   // Coste ya pasado por los descuentos por nivel (sin casillas marcadas).
   const fatiga = preparado.coste ? preparado.coste.total : textoValor(p.fatiga);
   const datos = [
@@ -631,7 +635,7 @@ function FilaPoder({
   ].filter(Boolean);
   return (
     <HudCard className="p-3">
-      <div className={`flex items-center justify-between gap-3 ${preparado.inhabilitado ? "opacity-60" : ""}`}>
+      <div className={`flex items-center justify-between gap-3 ${preparado.noFuncionaAhora ? "opacity-60" : ""}`}>
         <div className="min-w-0 flex-1">
           <span className="block font-display text-base font-semibold uppercase leading-tight">{poder.accion.label}</span>
           {montada && nombreAplicado && (
@@ -1119,7 +1123,7 @@ export function AccionesTab({
 
   // `id` llega del click, como en tirarSalvacionSobrecarga.
   const usarPoderDirecto = (id: number) => {
-    if (!poderAbierto || !preparado || preparado.bloqueo) return;
+    if (!poderAbierto || !preparado || motivoDeBloqueo(preparado.habilitacionAlUsar)) return;
     const pagado = pagarPoder();
     registroSinDado(id, etiquetaPoder(poderAbierto.poder.accion, preparado.resuelto));
     setPoderAbierto({ ...poderAbierto, usado: pagado });
@@ -1553,9 +1557,9 @@ export function AccionesTab({
 
   // Una tirada fija que cambia por algo propio (esquiva levitando, psiónica en la tirada) sigue
   // siendo la misma fila. Rastreo, Subsistencia, Trato con animales e Investigación, solo con su
-  // especialidad o algo que les enganche (tiradaFijaVisible, del motor).
-  const fijas = ACCIONES.filter((t) => tiradaFijaVisible(ficha, t))
-    .map(conExtras)
+  // especialidad o algo que les enganche: si no, conExtrasDeFicha las deja ocultas.
+  const fijas = ACCIONES.map(conExtras)
+    .filter(esVisible)
     .map((t) => conPsionicaEnTiradaFija(niveles, conEsquivaEnVuelo(sheet, conEsquivaLevitando(niveles, t))));
 
   // Lo que tira con dado, por dónde va: Básicas (defensa, iniciativa, salvaciones y lo que no
@@ -1970,7 +1974,7 @@ export function AccionesTab({
           <UsarPoderModal
             titulo={etiquetaPoder(poderAbierto.poder.accion, preparado.resuelto)}
             cabecera={cabeceraPoder}
-            bloqueo={preparado.bloqueo}
+            bloqueo={motivoDeBloqueo(preparado.habilitacionAlUsar)}
             usado={poderAbierto.usado !== null}
             costeUsado={poderAbierto.usado}
             objetivoTira={preparado.resuelto.objetivoTira.map((t) => ({
@@ -2002,10 +2006,10 @@ export function AccionesTab({
             cabecera={modal.tirada.grupo === "Psiónica" ? cabeceraPoder : undefined}
             bloqueo={
               modal.tirada.grupo === "Psiónica"
-                ? (preparado?.bloqueo ?? null)
+                ? motivoDeBloqueo(preparado?.habilitacionAlUsar)
                 : modal.tirada.grupo === "Aumentos"
                   ? // Fatiga fija (Tempestad): "Tirar otra vez" se apaga si ya no llega.
-                    (ficha.accionesAumentos.filas.find((f) => f.accion.id === modal.tirada.id)?.accion.bloqueada ?? null)
+                    motivoDeBloqueo(filasAumentos.find((f) => f.accion.id === modal.tirada.id)?.accion.habilitacion)
                   : null
             }
             pieResultado={modal.tirada.grupo === "Psiónica" ? piePoder : undefined}

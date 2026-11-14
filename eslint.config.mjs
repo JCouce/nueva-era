@@ -41,6 +41,9 @@ const eslintConfig = defineConfig([
   // Y "te afecta" (fase 2, docs/aportes/plan.md): de qué ítem viene cada aporte de una tirada lo
   // dice su `origen`, y lo lee aportesDeTirada / teAfecta (rules/aportes.ts, rules/teAfecta.ts).
   // La pantalla no mira a qué tiradas alcanza un bono, una casilla o un texto.
+  //
+  // Y la habilitación (fase 6, docs/aportes/plan.md): si una hoja está activa, bloqueada u oculta
+  // lo dice su `habilitacion`, que da el motor. La pantalla no junta motivos ni los produce.
   {
     files: ["src/app/**/*.tsx", "src/components/**/*.tsx", "src/hooks/**/*.{ts,tsx}"],
     rules: {
@@ -152,6 +155,24 @@ const eslintConfig = defineConfig([
               name: "@/lib/rules",
               importNames: ["alcanzaA", "alcanzaAlgunAplicado"],
               message: "Usa aportesDeTirada / teAfecta (src/lib/rules/aportes.ts): cada aporte trae su origen.",
+            },
+            {
+              name: "@/lib/rules",
+              importNames: [
+                "juntarHabilitacion",
+                "bloqueadaPor",
+                "bloqueadaSi",
+                "ocultaPor",
+                "conHabilitacion",
+                "habilitacionEnFicha",
+                "aumentosHabilitados",
+                "bloqueoDeAccionAumento",
+                "habilitacionDeFamilia",
+                "habilitacionPorRequisito",
+                "bloqueoPorRequisito",
+              ],
+              message:
+                "Si una hoja está activa, bloqueada u oculta lo decide el motor (rules/habilitacion.ts): la pantalla lee `habilitacion` con motivoDeBloqueo / esVisible.",
             },
             {
               name: "@/lib/rules",

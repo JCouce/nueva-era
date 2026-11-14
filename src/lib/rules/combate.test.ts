@@ -1,5 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
+import { motivoDeBloqueo } from "./habilitacion";
 import { defaultSheet, type Sheet } from "./sheet";
 import { equipar } from "./equipo";
 import { ajustarRecurso, ajustarGranada, ajustarMunicionEspecial, reconciliarRecursos } from "./recursos";
@@ -751,7 +752,7 @@ describe("lanzagranadas integrado", () => {
     sheet = conTodasLasGranadas(sheet);
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Lanzagranadas (Impetus)")!;
     assert.ok(fila);
-    assert.equal(fila.bloqueada, undefined);
+    assert.equal(fila.habilitacion, undefined);
     assert.deepEqual(fila.ajustesFijos, [{ valor: -2, fuente: "Lanzagranadas acoplado" }]);
     const modo = fila.condiciones?.find((c) => c.id === "modo");
     assert.ok(modo && modo.tipo === "opcion");
@@ -1687,25 +1688,25 @@ describe("escudo roto (durabilidad a 0, S86)", () => {
 
   test("con durabilidad > 0, ni golpear, ni bloquear, ni levantar salen bloqueadas", () => {
     const { golpe, bloqueo, levantar } = filas(ajustarRecurso(conRodela(), "e1", -7)); // 1/8
-    assert.equal(golpe.bloqueada, undefined);
-    assert.equal(bloqueo.bloqueada, undefined);
-    assert.equal(levantar.bloqueada, undefined);
+    assert.equal(golpe.habilitacion, undefined);
+    assert.equal(bloqueo.habilitacion, undefined);
+    assert.equal(levantar.habilitacion, undefined);
   });
 
   test("a 0, las tres salen bloqueadas con «Escudo roto: repáralo»", () => {
     const { golpe, bloqueo, levantar } = filas(ajustarRecurso(conRodela(), "e1", -8));
-    for (const fila of [golpe, bloqueo, levantar]) assert.equal(fila.bloqueada, "Escudo roto: repáralo");
+    for (const fila of [golpe, bloqueo, levantar]) assert.equal(motivoDeBloqueo(fila.habilitacion), "Escudo roto: repáralo");
   });
 
   test("reparado (durabilidad > 0 otra vez), vuelven solas", () => {
     const roto = ajustarRecurso(conRodela(), "e1", -8);
     const { golpe, bloqueo, levantar } = filas(ajustarRecurso(roto, "e1", 8));
-    for (const fila of [golpe, bloqueo, levantar]) assert.equal(fila.bloqueada, undefined);
+    for (const fila of [golpe, bloqueo, levantar]) assert.equal(fila.habilitacion, undefined);
   });
 
   test("un arma melee sin defensa con su recurso inexistente no se bloquea", () => {
     const s = equipar(defaultSheet(), { instanciaId: "c1", catalogoId: "espada_cuchillo_combate" });
-    assert.equal(accionesDeAtaque(s).find((t) => t.id === "ataque_melee_c1")!.bloqueada, undefined);
+    assert.equal(accionesDeAtaque(s).find((t) => t.id === "ataque_melee_c1")!.habilitacion, undefined);
   });
 
   test("el bloqueo sigue llegando bloqueado a la ficha resuelta (conExtrasDeFicha no lo pierde)", () => {
@@ -1714,7 +1715,7 @@ describe("escudo roto (durabilidad a 0, S86)", () => {
     const bloqueo = accionesDeAtaqueCon(s, resuelta.modificadores, resuelta.extrasDotes.permisos)
       .map((t) => conExtrasDeFicha(resuelta, t))
       .find((t) => t.id === "bloquear_melee_e1");
-    assert.equal(bloqueo?.bloqueada, "Escudo roto: repáralo");
+    assert.equal(motivoDeBloqueo(bloqueo?.habilitacion), "Escudo roto: repáralo");
   });
 });
 
@@ -1800,7 +1801,7 @@ describe("Activar camuflaje trifásico (acción sin dado, 1 carga)", () => {
     const a = activar(s)!;
     assert.equal(a.label, "Activar Camuflaje Trifásico");
     assert.deepEqual(a.gastoRecurso, { instanciaId: "cam", cantidad: 1 });
-    assert.equal(a.bloqueada, undefined);
+    assert.equal(a.habilitacion, undefined);
     assert.match(a.nota!, /quedan 10\/10/);
     // T4 (eq-25): los números de su nivel van en el selector de modo, no en la nota.
     const modo = a.condiciones?.find((c) => c.id === ID_MODO_CAMUFLAJE);
@@ -1813,7 +1814,7 @@ describe("Activar camuflaje trifásico (acción sin dado, 1 carga)", () => {
   test("sin cargas sale bloqueada", () => {
     const s = conCamuflaje(1);
     const vacio = ajustarRecurso(s, "cam", -10);
-    assert.equal(activar(vacio)!.bloqueada, MOTIVO_SIN_CARGAS);
+    assert.equal(motivoDeBloqueo(activar(vacio)!.habilitacion), MOTIVO_SIN_CARGAS);
   });
 
   test("sin camuflaje no hay acción", () => {

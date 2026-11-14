@@ -13,6 +13,7 @@ import type { Sheet } from "./sheet";
 import { tieneEspecialidad, type Accion } from "./acciones";
 import type { CondicionTirada } from "./condiciones";
 import type { OrigenAporte } from "./origen";
+import { ACTIVA, bloqueadaPor, bloqueadaSi, juntarHabilitacion, type Habilitacion } from "./habilitacion";
 import { bajarUnPaso, etiquetaEconomia, mismaEconomia } from "./tipoAccion";
 import { DISCIPLINAS, PSIONICA, disciplinaPorId, type DisciplinaId } from "../catalog/psionica";
 import { umbralFatiga, type UmbralFatiga } from "./estados";
@@ -465,8 +466,10 @@ export type PoderDisponible = {
   accion: AccionPoder;
   nivelPoseido: number;
   porDefecto: PoderResuelto; // nivel empleado = poseído, primera opción de cada eje
-  // Requisito de la disciplina sin cumplir (bloqueoPorRequisito): se ve, no se usa.
-  bloqueo: string | null;
+  // La del ítem (habilitacion.ts): bloqueado con el requisito de la disciplina sin cumplir
+  // (bloqueoPorRequisito) o sin fuente psiónica (poderesDeFicha): se ve, no se usa. Lo que
+  // depende del momento (fatiga) lo junta prepararPoder.
+  habilitacion: Habilitacion;
 };
 
 // Requisito sin cumplir: solo pasa cuando el máster cambia de especie sin reset (S25).
@@ -477,6 +480,8 @@ export function bloqueoPorRequisito(disciplina: Disciplina, niveles: NivelesPsio
   if (!r || (niveles[r.disciplina] ?? 0) >= r.nivel) return null;
   return `Requiere ${disciplinaPorId(r.disciplina).label} ${r.nivel}`;
 }
+export const habilitacionPorRequisito = (disciplina: Disciplina, niveles: NivelesPsionica): Habilitacion =>
+  bloqueadaSi(bloqueoPorRequisito(disciplina, niveles), "duro") ?? ACTIVA;
 
 // Mismo gate que el equipo (generaAccionPropia en combate.ts): solo se genera
 // lo que declara en su MotorMetadata una acción accion_sin_equipo construida.
@@ -505,7 +510,7 @@ export function accionesDePsionica(sheet: Sheet, niveles: NivelesPsionica): Pode
         bonoAlcance: bonoAlcanceDeFicha(sheet) ?? undefined,
       });
       return porDefecto
-        ? [{ disciplina, accion, nivelPoseido, porDefecto, bloqueo: bloqueoPorRequisito(disciplina, niveles) }]
+        ? [{ disciplina, accion, nivelPoseido, porDefecto, habilitacion: habilitacionPorRequisito(disciplina, niveles) }]
         : [];
     });
   });
@@ -785,7 +790,8 @@ function etiquetaVentaja(d: Disciplina, v: Disciplina["ventajas"][number]): stri
 export function poderesDeFicha(sheet: Sheet, psionica: Pick<PsionicaResuelta, "paraEfectos" | "sinAcceso">): PoderDisponible[] {
   const sin = psionica.sinAcceso;
   if (!sin) return accionesDePsionica(sheet, psionica.paraEfectos);
-  return accionesDePsionica(sheet, sin.niveles).map((p) => ({ ...p, bloqueo: sin.motivo }));
+  const sinAcceso = bloqueadaPor(sin.motivo, "duro");
+  return accionesDePsionica(sheet, sin.niveles).map((p) => ({ ...p, habilitacion: juntarHabilitacion(sinAcceso, p.habilitacion) }));
 }
 
 // `bonosEnOtrasTiradas` cuyo alcance es el id o el grupo de la tirada.

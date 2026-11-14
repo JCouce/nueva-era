@@ -8,7 +8,8 @@ import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
 import { ACCIONES, CONDICION_MARCHA, ID_APUNTADO, ID_MARCHA, usarHabilidadAlternativa, elegirEspecialidad, type Accion } from "./acciones";
 import { HABILIDADES } from "./habilidades";
-import { resolverFicha, conExtrasDeFicha, tiradaFijaVisible, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
+import { resolverFicha, conExtrasDeFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
+import { esVisible } from "./habilitacion";
 import { montarTirada, eleccionSinTocar, tirarMontada, type TiradaMontada } from "./montaje";
 import { accionesDeAtaque } from "./combate";
 import { equipar } from "./equipo";
@@ -305,7 +306,7 @@ describe("especialidad de las tiradas fijas: la decide la tirada", () => {
 
 const EXPLORACION = ["rastreo", "subsistencia", "trato_animales_lectura", "trato_animales_interaccion", "investigacion"];
 const SUPERVIVENCIA = ["rastreo", "subsistencia", "trato_animales_lectura", "trato_animales_interaccion"];
-const visibles = (f: FichaResuelta) => EXPLORACION.filter((id) => tiradaFijaVisible(f, fila(id)));
+const visibles = (f: FichaResuelta) => EXPLORACION.filter((id) => esVisible(fija(f, id)));
 // Ficha con Exploración 5 y solo estas especialidades de Exploración (el resto, las de dotes).
 const conExploracion = (esp: EspecialidadId[], dotes: DoteComprada[] = []): Sheet => {
   const s = ficha(dotes, ["supervivencia", "investigacion", "tactica"]);
@@ -352,7 +353,7 @@ describe("Exploración: solo se pintan con la especialidad o con algo que les en
   test("sin Supervivencia ni Investigación, ninguna; Buscar / percibir, siempre", () => {
     const f = resolver(conExploracion([]));
     assert.deepEqual(visibles(f), []);
-    assert.ok(tiradaFijaVisible(f, fila("alerta_activa")));
+    assert.ok(esVisible(fija(f, "alerta_activa")));
   });
 
   test("Supervivencia pinta Rastreo, Subsistencia y Trato; Investigación, la suya", () => {
@@ -412,7 +413,7 @@ describe("Rastreo: selector «Marcha» y sus dotes", () => {
 
   test("rastro térmico: nota en Rastreo con Visión Térmica, aunque no haya Supervivencia", () => {
     const f = resolver(conAumento(conExploracion([]), "aum_introgresion_sensorial_heterologa", "vision_termica"));
-    assert.ok(tiradaFijaVisible(f, fija(f, "rastreo")));
+    assert.ok(esVisible(fija(f, "rastreo")));
     assert.match(lineaAntes(fija(f, "rastreo")), /Visión Térmica: ves el rastro de calor reciente/);
   });
 

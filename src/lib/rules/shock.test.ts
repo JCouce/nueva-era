@@ -5,14 +5,15 @@ import type { PiezaEquipada } from "./equipo";
 import { equipoPorId } from "../catalog/equipo";
 import { ACCIONES, type Accion } from "./acciones";
 import { accionesDeAtaque, accionesDirectasDeAtaque } from "./combate";
-import { accionesDeAumentos } from "./aumentosAcciones";
-import { conExtrasDeFicha, conExtrasDirectaDeFicha, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
+import { accionesDeAumentos, usoDeAccionAumento } from "./aumentosAcciones";
+import { bloqueoDeAccionAumento, conExtrasDeFicha, conExtrasDirectaDeFicha, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
 import { eleccionSinTocar, montarTirada, type TiradaMontada } from "./montaje";
 import { descontarDuracion, type EstadoActivo } from "./estados";
 import { operacionesDe } from "./estadosFicha";
 import { aplicarOperacionEstado } from "./vidaPorEstados";
 import { planDeshacerEstados } from "./registro";
 import { afectacionDePiezas, shockDePieza } from "./shock";
+import type { Habilitacion } from "./habilitacion";
 
 // Las piezas van directas a sheet.equipo (los implantes no pasan por equipar).
 const con = (s: Sheet, ...piezas: PiezaEquipada[]): Sheet => ({ ...s, equipo: [...s.equipo, ...piezas] });
@@ -138,17 +139,61 @@ describe("pieza apagada: ninguno de sus aportes llega a ninguna tirada", () => {
     assert.equal(despues.total, montar(sinPiezas, ataque(sinPiezas, "fusil")).total);
   });
 
+  const bloqueadaPor = (motivo: string): Habilitacion => ({ estado: "bloqueada", motivo, arbitraje: "duro" });
+
   test("sus acciones propias salen bloqueadas con el motivo", () => {
-    assert.equal(ataque(apagado, "laser").bloqueada, "Apagada por Shock en el equipo.");
-    assert.equal(ataque(sinShock, "laser").bloqueada, undefined);
+    assert.deepEqual(ataque(apagado, "laser").habilitacion, bloqueadaPor("Apagada por Shock en el equipo."));
+    assert.equal(ataque(sinShock, "laser").habilitacion, undefined);
     const camuflaje = accionesDirectasDeAtaque(apagado.ficha)
       .map((d) => conExtrasDirectaDeFicha(apagado, d))
       .find((d) => d.origen?.instanciaId === "cam");
-    assert.equal(camuflaje?.bloqueada, "Apagada por Shock en el equipo.");
+    assert.deepEqual(camuflaje?.habilitacion, bloqueadaPor("Apagada por Shock en el equipo."));
+    // El servidor (usarAccionAumentoAction) lee FichaResuelta.accionesAumentos: ahí ya sale bloqueada.
     const activar = apagado.accionesAumentos.directas.find((a) => a.origen?.instanciaId === "neuro");
-    assert.equal(activar?.bloqueada, "Apagada por Shock.");
-    // También en el servidor, que lee accionesDeAumentos.
-    assert.equal(accionesDeAumentos(ficha, [shock("fracaso_critico")]).directas.find((a) => a.origen?.instanciaId === "neuro")?.bloqueada, "Apagada por Shock.");
+    assert.deepEqual(activar?.habilitacion, bloqueadaPor("Apagada por Shock."));
+    assert.equal(sinShock.accionesAumentos.directas.find((a) => a.origen?.instanciaId === "neuro")?.habilitacion, undefined);
+    // La lista cruda no sabe del Shock: lo decide habilitacionEnFicha, en un solo sitio.
+    assert.equal(accionesDeAumentos(ficha, [shock("fracaso_critico")]).directas.find((a) => a.origen?.instanciaId === "neuro")?.habilitacion, undefined);
+  });
+
+  test("una tirada que concede un implante apagado sale bloqueada con su motivo (Tempestad Nanobótica)", () => {
+    const conEnjambre = con(base, { instanciaId: "enj", catalogoId: "aum_enjambre_nanobot", nivel: 4 });
+    const tempestad = (f: FichaResuelta) => {
+      const fila = f.accionesAumentos.filas.find((x) => x.tipo === "tirada" && x.accion.origen?.instanciaId === "enj");
+      assert.ok(fila?.tipo === "tirada");
+      return conExtrasDeFicha(f, fila.accion);
+    };
+    assert.equal(tempestad(resolver(conEnjambre, [])).habilitacion, undefined);
+    const apagada = tempestad(resolver(conEnjambre, [shock("fracaso_critico")]));
+    assert.deepEqual(apagada.habilitacion, bloqueadaPor("Apagada por Shock."));
+    // El Shock gana al motivo que ya traía (sin fatiga), como antes.
+    const sinFatiga = tempestad(resolver({ ...conEnjambre, fatigaActual: 1 }, [shock("fracaso_critico")]));
+    assert.deepEqual(sinFatiga.habilitacion, bloqueadaPor("Apagada por Shock."));
+  });
+});
+
+describe("servidor: bloqueoDeAccionAumento (usarAccionAumentoAction)", () => {
+  const activarNeuro = (f: FichaResuelta) => f.accionesAumentos.directas.find((a) => a.origen?.instanciaId === "neuro")!;
+
+  test("implante apagado: rechaza con el motivo", () => {
+    const f = resolver(ficha, [shock("fracaso_critico")]);
+    assert.equal(bloqueoDeAccionAumento(f, activarNeuro(f).id), "Apagada por Shock.");
+  });
+
+  test("sin Shock, pasa", () => {
+    const f = resolver(ficha, []);
+    assert.equal(bloqueoDeAccionAumento(f, activarNeuro(f).id), null);
+    assert.equal(usoDeAccionAumento(ficha, [], activarNeuro(f).id).ok, true);
+  });
+
+  test("sin fatiga no es cosa suya: lo sigue diciendo usoDeAccionAumento", () => {
+    const sinFatiga = { ...ficha, fatigaActual: 0 };
+    const f = resolver(sinFatiga, []);
+    const id = activarNeuro(f).id;
+    assert.equal(bloqueoDeAccionAumento(f, id), null);
+    const uso = usoDeAccionAumento(sinFatiga, [], id);
+    assert.ok(!uso.ok);
+    assert.match(uso.error, /No te llega la fatiga/);
   });
 });
 
@@ -165,7 +210,7 @@ describe("pieza penalizada: aviso a mano, sin tocar el número", () => {
   test("éxito en el equipo: la pistola láser avisa del −1 al usarla", () => {
     const f = resolver(ficha, [shockEquipo("exito")]);
     const t = ataque(f, "laser");
-    assert.equal(t.bloqueada, undefined);
+    assert.equal(t.habilitacion, undefined);
     assert.ok(t.textosDeFicha?.some((x) => x.texto === "−1 al bono de Pistola Láser y a usarla, a mano" && x.fuente === "Shock en el equipo (éxito)"));
   });
 });

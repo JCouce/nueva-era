@@ -1,5 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
+import { motivoDeBloqueo } from "./habilitacion";
 import { defaultSheet, parseSheet, SCHEMA_VERSION, type Sheet } from "./sheet";
 import { atributosEfectivos, desgloseAtributo, modificadoresActivos, salud } from "./derivados";
 import {
@@ -537,7 +538,7 @@ describe("Resonancia +1 del Arianyi: nivel efectivo (sistema.md §14.6)", () => 
     assert.deepEqual(setNivelDisciplina(s, "resonancia", 1, r.psionica.bonos, r.psionica.acceso!).psionica, { resonancia: 1, induccion: 1 });
     const poderes = poderesDeFicha(s, r.psionica);
     assert.ok(poderes.length > 0);
-    assert.ok(poderes.every((p) => p.bloqueo === MOTIVO_SIN_ACCESO_PSIONICO));
+    assert.ok(poderes.every((p) => motivoDeBloqueo(p.habilitacion) === MOTIVO_SIN_ACCESO_PSIONICO));
     // El NPC del máster (libre) no lo mira.
     assert.deepEqual(resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA, libre: true }).psionica.requisitosRotos, []);
   });

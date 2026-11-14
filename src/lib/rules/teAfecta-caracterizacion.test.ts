@@ -11,7 +11,8 @@ import { equipar } from "./equipo";
 import { accionesDeFarmacos } from "./farmacos";
 import { accionesDeHerramientas } from "./herramientas";
 import { accionesDeMovimiento, conEsquivaEnVuelo } from "./movimiento";
-import { conExtrasDeFicha, resolverFicha, tiradaFijaVisible, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
+import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
+import { esVisible } from "./habilitacion";
 import { eleccionSinTocar, montarTirada } from "./montaje";
 import { conEsquivaLevitando, conPsionicaEnTiradaFija } from "./poderes";
 import { defaultSheet, type Sheet } from "./sheet";
@@ -163,8 +164,8 @@ function tiradasDeLaPestana(ficha: FichaResuelta): Accion[] {
   const sheet = ficha.ficha;
   const niveles = ficha.psionica.paraEfectos;
   const conExtras = (t: Accion) => conExtrasDeFicha(ficha, t);
-  const fijas = ACCIONES.filter((t) => tiradaFijaVisible(ficha, t))
-    .map(conExtras)
+  const fijas = ACCIONES.map(conExtras)
+    .filter(esVisible)
     .map((t) => conPsionicaEnTiradaFija(niveles, conEsquivaEnVuelo(sheet, conEsquivaLevitando(niveles, t))));
   return [
     ...fijas,

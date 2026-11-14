@@ -2,6 +2,7 @@
 // y "N por turno" en combate, con los contadores de la escena (usosEscena.ts).
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
+import { motivoDeBloqueo } from "./habilitacion";
 import { defaultSheet, parseSheet, type Sheet } from "./sheet";
 import { HABILIDADES } from "./habilidades";
 import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
@@ -57,7 +58,7 @@ describe("N veces por escena (Humor de afrontamiento)", () => {
   test("sin mesa (NPC): solo texto, como antes", () => {
     const t = tirada(s, ID, null);
     assert.equal(t.usoLimitado, undefined);
-    assert.equal(t.bloqueada, undefined);
+    assert.equal(t.habilitacion, undefined);
     assert.match(t.nota ?? "", /una vez por escena/);
   });
 
@@ -65,10 +66,10 @@ describe("N veces por escena (Humor de afrontamiento)", () => {
     assert.deepEqual(tirada(s, ID).usoLimitado, { accionId: ID, claves: [{ clave: ID, veces: 1 }] });
     const usada = gastar(s, ID);
     assert.equal(contadorEscena(usada.usosEscena, ID), 1);
-    assert.equal(tirada(usada, ID).bloqueada, "Usada esta escena (1/1).");
+    assert.equal(motivoDeBloqueo(tirada(usada, ID).habilitacion), "Usada esta escena (1/1).");
     const r = gastarUsoLimitado(usada, tirada(usada, ID).usoLimitado!, null, MESA.aliados);
     assert.equal(r.ok, false);
-    assert.equal(tirada(terminarEscena(usada), ID).bloqueada, undefined);
+    assert.equal(tirada(terminarEscena(usada), ID).habilitacion, undefined);
   });
 
   test("lo gastado sobrevive a guardar y leer la ficha, y sale en Recursos", () => {
@@ -90,9 +91,9 @@ describe("1 por aliado (Apoyo)", () => {
     assert.deepEqual(aliados(tirada(s, ID)), ["Kira", "Oru"]);
     const conKira = gastar(s, ID, KIRA.id);
     assert.deepEqual(aliados(tirada(conKira, ID)), ["Oru"]);
-    assert.equal(tirada(conKira, ID).bloqueada, undefined);
+    assert.equal(tirada(conKira, ID).habilitacion, undefined);
     const conLosDos = gastar(conKira, ID, ORU.id);
-    assert.equal(tirada(conLosDos, ID).bloqueada, "Ya la has usado con todos tus aliados esta escena.");
+    assert.equal(motivoDeBloqueo(tirada(conLosDos, ID).habilitacion), "Ya la has usado con todos tus aliados esta escena.");
     assert.deepEqual(usosEscenaDeFicha(conLosDos, MESA.aliados).map((u) => u.etiqueta), ["Apoyo · con Kira (1)", "Apoyo · con Oru (1)"]);
   });
 
@@ -104,7 +105,7 @@ describe("1 por aliado (Apoyo)", () => {
   });
 
   test("sin aliados en la mesa, bloqueada", () => {
-    assert.equal(tirada(s, ID, { aliados: [], turno: null }).bloqueada, "No hay aliados en la mesa.");
+    assert.equal(motivoDeBloqueo(tirada(s, ID, { aliados: [], turno: null }).habilitacion), "No hay aliados en la mesa.");
   });
 
   test("el selector no cambia la tirada", () => {
@@ -126,8 +127,8 @@ describe("N por turno, solo en combate (Mirada desafiante)", () => {
 
   test("en combate: agotada este turno; en la ronda siguiente, libre (y la entrada vieja se va)", () => {
     const usada = gastar(s, ID, null, enRonda(1));
-    assert.equal(tirada(usada, ID, enRonda(1)).bloqueada, "Usada este turno (1/1).");
-    assert.equal(tirada(usada, ID, enRonda(2)).bloqueada, undefined);
+    assert.equal(motivoDeBloqueo(tirada(usada, ID, enRonda(1)).habilitacion), "Usada este turno (1/1).");
+    assert.equal(tirada(usada, ID, enRonda(2)).habilitacion, undefined);
     const otra = gastar(usada, ID, null, enRonda(2));
     assert.equal(otra.usosEscena.length, 1);
   });

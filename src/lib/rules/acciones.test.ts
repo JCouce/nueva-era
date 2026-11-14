@@ -1,5 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
+import { motivoDeBloqueo } from "./habilitacion";
 import { defaultSheet, type Sheet } from "./sheet";
 import { setAtributoValue, setHabilidadValue, addEspecialidad, setPrioridad } from "./creacion";
 
@@ -44,8 +45,9 @@ describe("catálogo de tiradas", () => {
   });
 
   test("las bloqueadas declaran el motivo y no tienen habilidad", () => {
-    for (const t of ACCIONES.filter((x) => x.bloqueada)) {
-      assert.ok(t.bloqueada && t.bloqueada.length > 10, `${t.id} sin motivo`);
+    for (const t of ACCIONES.filter((x) => x.habilitacion?.estado === "bloqueada")) {
+      const motivo = motivoDeBloqueo(t.habilitacion);
+      assert.ok(motivo && motivo.length > 10, `${t.id} sin motivo`);
       assert.equal(t.habilidad, null);
     }
   });
@@ -59,9 +61,9 @@ describe("catálogo de tiradas", () => {
   test("iniciativa y buscar/percibir ya no están bloqueadas (C4 resuelto)", () => {
     const iniciativa = buscar("iniciativa");
     const buscarPercibir = buscar("alerta_activa");
-    assert.equal(iniciativa.bloqueada, undefined);
+    assert.equal(iniciativa.habilitacion, undefined);
     assert.equal(iniciativa.habilidad, "exploracion");
-    assert.equal(buscarPercibir.bloqueada, undefined);
+    assert.equal(buscarPercibir.habilitacion, undefined);
     assert.equal(buscarPercibir.habilidad, "exploracion");
   });
 });

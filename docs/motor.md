@@ -75,7 +75,7 @@ que su texto esté copiado en `descripcion`/`detalle`.
 | 2 | **Modificador numérico** (Ajuste) | `condición ? +N : +0` sobre una acción que ya existe | El Puntero Láser da +1 al ataque a corta/media distancia |
 | 3 | **Modificador de texto** (Texto) | `condición ? nota informativa : nada` — no suma ningún número | El Visor Nocturno deja ver a través del humo; no crea su propia acción, solo cuelga una nota de "Buscar/percibir" |
 | 4 | **Modificador narrativo** | No modifica nada, es solo para que quede apuntado | Trasfondo, motivación, y cualquier frase de sabor sin número detrás |
-| 5 | **Modificador habilitador/deshabilitador** (Habilitador) | Habilita o deshabilita una acción entera **o un aporte** | Sin balas, ¿el disparo en F. Auto desaparece de la lista, se atenúa, o solo avisa? — **sin decidir todavía, ver abajo**; `bloqueada`, `soloConEspecialidad`, el permiso de la dote *Bloqueo* |
+| 5 | **Modificador habilitador/deshabilitador** (Habilitador) | Habilita o deshabilita una acción entera **o un aporte** | Sin balas, ¿el disparo en F. Auto desaparece de la lista, se atenúa, o solo avisa? — **sin decidir todavía, ver abajo**; en una hoja, su `habilitacion` (escudo roto, sin cargas, `soloConEspecialidad`, el permiso de la dote *Bloqueo*) |
 | 6 | **Resolución** | Cambia **cómo** se resuelve la tirada, no su total: qué aplicado, qué habilidad o especialidad, dados, umbrales de crítico/fallo, reglas del daño | Sutil (`aplicadoSutil`), `habilidadAlternativa`, `ventaja`, `criticoFijo`, `subeGradoFijo`, `falloCritico`, `anulaPenalizadores`, `ignoraBlindaje`, `extremidad` |
 | 7 | **Coste** | Gasta un recurso al confirmar la acción; no toca el total | `costeFatiga`, `ahorroFatiga`, `usoPorEscena`, munición (`recursoInstanciaId`), `farmacoId`, la fatiga de un poder |
 
@@ -204,6 +204,20 @@ resumen.
   (`TextoEnTirada`) declara su grado con `soloEnCritico` o `grado` (éxito,
   fallo); sin grado sale antes y después, como la nota. Los efectos de un
   ataque esperan al daño (`conDanio`). Ya no se pegan a `nota`/`efectoCritico`.
+- **Habilitación** (fase 6 paso 1, `rules/habilitacion.ts`): si una hoja está
+  **activa**, **bloqueada** (se ve apagada, con el motivo) u **oculta** (no se
+  pinta), con su `arbitraje`. Es el veredicto de todos los Habilitadores que
+  llegan a la hoja: cada productor da su `Habilitacion` y `juntarHabilitacion`
+  las combina (oculta gana a bloqueada; entre bloqueadas, la primera da el
+  motivo). Va en `Accion.habilitacion` / `AccionDirecta.habilitacion` (sin
+  ella, activa), `PoderDisponible.habilitacion` (la del ítem) y
+  `PoderPreparado.habilitacion` / `habilitacionAlUsar` (la de la hoja y la de
+  confirmar con lo elegido). Lo que depende de la ficha lo da
+  `habilitacionEnFicha` (`fichaResuelta.ts`): la pieza de origen apagada por el
+  Shock (`piezasInutilizadas`) y S99; ahí se enchufa un productor nuevo. Se
+  junta con lo que trae la hoja en un solo sitio, `conHabilitacion` (lo de la
+  ficha primero). Las listas del motor no devuelven las ocultas;
+  la pantalla solo pinta según el `estado` (`motivoDeBloqueo`, `esVisible`).
 - **Anclaje**: dónde cuelga una hoja de Acción — lista de (habilidad,
   especialidad?) y quién elige: **fijo** (uno solo), **cualquiera** (cuenta
   si tienes cualquiera, se pinta en cada una: `especialidadesAccion`) o

@@ -1,5 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
+import { motivoDeBloqueo } from "./habilitacion";
 import {
   resolverPoder,
   opcionesDisponibles,
@@ -1416,7 +1417,7 @@ describe("requisito roto (S25): se ve, bloqueado y sin efectos", () => {
   test("los poderes de la disciplina salen en Acciones con el bloqueo", () => {
     const poderes = accionesDePsionica(roto, niv(roto)).filter((p) => p.disciplina.id === "induccion");
     assert.ok(poderes.length > 0);
-    for (const p of poderes) assert.equal(p.bloqueo, "Requiere Resonancia 1");
+    for (const p of poderes) assert.equal(motivoDeBloqueo(p.habilitacion), "Requiere Resonancia 1");
   });
 
   test("sin efectos pasivos: capa 1 no recoge sus poderes", () => {

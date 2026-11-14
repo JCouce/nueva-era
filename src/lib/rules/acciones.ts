@@ -20,6 +20,7 @@ import {
 } from "./modificadores";
 import type { DetallePoder } from "./poderes";
 import type { OrigenAporte } from "./origen";
+import type { Habilitacion } from "./habilitacion";
 import type { TextoEnTirada } from "./especie";
 import type { TipoDanio } from "../catalog/tiposDanio";
 import type { DanioExtra } from "./armasModificadas";
@@ -142,8 +143,8 @@ export type Accion = {
   especialidadesAccion?: readonly EspecialidadId[];
   // Fila fija que solo se pinta si la ficha tiene alguna de `especialidadesAccion` o algo de
   // capa 1 (dote, aumento, especie) le engancha algo por su id (Rastreo, Subsistencia, Trato
-  // con Animales, Investigación; decisión del usuario 2026-10-26). Lo decide tiradaFijaVisible
-  // (fichaResuelta.ts), nunca la UI.
+  // con Animales, Investigación; decisión del usuario 2026-10-26). Si no, conExtrasDeFicha la
+  // deja oculta (habilitacionEnFicha, fichaResuelta.ts), nunca la UI.
   soloConEspecialidad?: true;
   // Tirada que obliga a elegir UNA de estas al tirar (Convencer / mentir): la fila no deja
   // tirar sin elegir; elegirEspecialidad la pasa a `especialidadesAccion`.
@@ -183,11 +184,12 @@ export type Accion = {
   // Poderes psiónicos (tiradaDePoder, poderes.ts) y acciones de dote (dotesAcciones.ts):
   // texto por grado propio y lo que tira el objetivo, para el panel de resultado.
   poder?: DetallePoder;
-  // Cuando una tirada depende de algo que el sistema aún no define, se declara
-  // en vez de inventársela: la UI la muestra apagada con el motivo. También una acción de
-  // aumento con fatiga fija que no llega (A4b), o una de dote con su límite agotado. O la fila de
-  // una pieza apagada por el Shock (conPiezasAfectadas, fichaResuelta.ts): «Apagada por Shock.».
-  bloqueada?: string;
+  // Si se puede tirar (habilitacion.ts): sin él, activa. Lo pone quien genera la tirada (escudo
+  // roto, aumento con fatiga fija que no llega, dote con su límite agotado…) y conExtrasDeFicha
+  // le junta lo que depende de la ficha (habilitacionEnFicha: Rastreo y compañía sin su
+  // especialidad salen ocultas; la pieza de origen apagada por el Shock, bloqueada). La pantalla
+  // la pinta según su `estado`.
+  habilitacion?: Habilitacion;
   // Piezas apagadas (FichaResuelta.piezasInutilizadas) cuyos aportes llegaban a esta tirada y ya
   // no llegan: una línea a 0 en el desglose cada una (montarTirada). Lo pone conPiezasAfectadas.
   piezasApagadas?: { origen: OrigenAporte; motivo: string }[];
@@ -346,7 +348,8 @@ export type AccionDirecta = {
   // Texto del botón que confirma dentro del modal — "Usar" por defecto; la
   // fila en sí siempre dice "Usar", este es el de dentro ("Marcar", "Activar"...).
   confirmarLabel?: string;
-  bloqueada?: string;
+  // Como en Accion: sin él, activa (escudo roto, sin cargas, sin fatiga…).
+  habilitacion?: Habilitacion;
   // Mismo campo y mismo criterio que en Accion arriba: gasta 1 dosis al
   // confirmar (los fármacos sin tirada, docs/prompt-gasto-recursos.md Fase 2).
   farmacoId?: string;

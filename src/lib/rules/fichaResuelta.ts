@@ -78,7 +78,7 @@ import {
   type PermisosDeDotes,
 } from "./dotesEfectos";
 import { accionesDeDotes, type AccionesDeDotes, type MesaDeFicha } from "./dotesAcciones";
-import { accionesDeAumentos, type AccionesDeAumentos } from "./aumentosAcciones";
+import { accionesDeAumentos, type AccionesDeAumentos, type FilaAumento } from "./aumentosAcciones";
 import { efectosDeActivables } from "./aumentosActivables";
 import { conUsosEscena, usosEscenaDeFicha } from "./usosEscena";
 import { poderesDeDotes } from "./dotesPoderes";
@@ -127,6 +127,7 @@ import { afectacionDePiezas, avisoPenalizada, motivoApagada, sinPiezasInutilizad
 import type { OrigenAporte } from "./origen";
 import type { Sheet } from "./sheet";
 import { condicionApuntado, ID_APUNTADO, ID_APUNTAR, tieneEspecialidad, type Accion, type AccionDirecta } from "./acciones";
+import { bloqueadaPor, conHabilitacion, juntarHabilitacion, motivoDeBloqueo, ocultaPor, type Habilitacion } from "./habilitacion";
 import type { CondicionTirada } from "./condiciones";
 import { idSelectorTipoAccion, resolverTiposDeAccion, selectorTipoAccion, textoTipoAccion, type RebajaConFuente } from "./tipoAccion";
 
@@ -463,7 +464,7 @@ export function resolverFicha(
   const carga = cargaMaxima(enUso, modificadores, multiplicadorCarga.valor);
   const ajusteCoste = libre ? AJUSTE_NEUTRO : ajustesDeCoste(especie);
 
-  return {
+  const resuelta: FichaResuelta = {
     ficha: sheet,
     especie,
     estados,
@@ -541,6 +542,19 @@ export function resolverFicha(
     notasFarmacos: notasFarmacosDeEspecie(especie),
     accionesEspecie: accionesSinDadoDeEspecie(especie),
   };
+  // Las acciones de aumento con lo que depende de la ficha (un implante apagado por el Shock):
+  // la pantalla pinta sus directas tal cual.
+  return { ...resuelta, accionesAumentos: aumentosHabilitados(resuelta) };
+}
+
+// `accionesAumentos` con lo que depende de la ficha (resolverFicha). Exportada para la red de
+// seguridad de habilitacion-catalogo.test.ts, que la llama con piezas apagadas a la fuerza.
+export function aumentosHabilitados(ficha: FichaResuelta): AccionesDeAumentos {
+  const { filas, directas, informativas } = ficha.accionesAumentos;
+  const conLaDeFicha = <T extends Accion | AccionDirecta>(a: T): T => conHabilitacion(a, habilitacionEnFicha(ficha, a));
+  const fila = (f: FilaAumento): FilaAumento =>
+    f.tipo === "tirada" ? { tipo: "tirada", accion: conLaDeFicha(f.accion) } : { tipo: "directa", accion: conLaDeFicha(f.accion) };
+  return { filas: filas.map(fila), directas: directas.map(conLaDeFicha), informativas };
 }
 
 // Lo que se pinta en las listas de estados (ficha, Mesa, combate): los derivados de la vida y la
@@ -573,12 +587,10 @@ export function estadosParaPintar(
 type PiezasDeFicha = Partial<Pick<FichaResuelta, "piezasInutilizadas" | "piezasPenalizadas" | "aportesApagados" | "modificadores">>;
 
 export function conExtrasDeFicha(
-  ficha: Pick<FichaResuelta, "indiceCondiciones" | "textosTirada" | "extrasDotes" | "ventajasFijas" | "fallosCriticos"> &
-    Partial<Pick<FichaResuelta, "objetivosTirada" | "casillasMarcadas" | "rebajasTipoAccion">> &
-    PiezasDeFicha,
+  ficha: FichaParaHabilitar & Partial<Pick<FichaResuelta, "objetivosTirada" | "casillasMarcadas" | "rebajasTipoAccion">> & PiezasDeFicha,
   t: Accion,
 ): Accion {
-  return conPiezasAfectadas(ficha, conExtrasSinPiezas(ficha, t));
+  return conPiezasAfectadas(ficha, conExtrasSinPiezas(ficha, conHabilitacion(t, habilitacionEnFicha(ficha, t))));
 }
 
 function conExtrasSinPiezas(
@@ -672,7 +684,8 @@ function conExtrasSinPiezas(
 
 // Shock (S73, rules/shock.ts) sobre una tirada ya con lo de la ficha:
 //   - Lo que la propia fila trae de una pieza apagada (casillas y ajustes de una mejora, la
-//     extremidad del Brazo, textos…) se quita, y la fila de una pieza apagada sale bloqueada.
+//     extremidad del Brazo, textos…) se quita. (Que la fila de una pieza apagada salga bloqueada
+//     lo decide habilitacionEnFicha.)
 //   - Cada pieza apagada que llegaba a la tirada (por la fila o por `aportesApagados`) deja una
 //     línea en el desglose: `piezasApagadas`, que pinta montarTirada.
 //   - Cada pieza penalizada que llega (o que es la de la fila: «a usarla») deja un aviso con el
@@ -749,7 +762,6 @@ export function conPiezasAfectadas(ficha: PiezasDeFicha, t: Accion): Accion {
   }));
   return {
     ...conTextosDeFicha(sin, avisos),
-    ...(propia && { bloqueada: motivoApagada(propia) }),
     ...(apagadas.size > 0 && { piezasApagadas: [...apagadas.values()] }),
   };
 }
@@ -757,20 +769,47 @@ export function conPiezasAfectadas(ficha: PiezasDeFicha, t: Accion): Accion {
 const aplicadosDelAtributo = (id: AtributoId): AplicadoId[] =>
   APLICADOS.filter((a) => (a.de as readonly string[]).includes(id)).map((a) => a.id);
 
-// ¿Se pinta esta tirada fija? Las de `soloConEspecialidad` (Rastreo, Subsistencia, Trato con
-// Animales, Investigación; decisión del usuario 2026-10-26, S99) solo si la ficha tiene alguna
+type FichaParaHabilitar = Pick<
+  FichaResuelta,
+  "ficha" | "modificadores" | "indiceCondiciones" | "textosTirada" | "extrasDotes" | "ventajasFijas" | "fallosCriticos"
+> &
+  Partial<Pick<FichaResuelta, "piezasInutilizadas">>;
+
+// Lo que depende de la ficha en la habilitación de una hoja (fase 6 de docs/aportes/plan.md),
+// sin lo que la hoja ya trae de quien la genera: eso lo junta conHabilitacion. Lo llaman
+// conExtrasDeFicha y conExtrasDirectaDeFicha, por donde pasa toda hoja antes de pintarse,
+// resolverFicha para las acciones de aumento y bloqueoDeAccionAumento (el servidor). Un
+// productor nuevo que dependa de la ficha se añade aquí, en el orden de prioridad de su motivo:
+//   1. La pieza que da la hoja (su `origen.instanciaId`) está apagada (S73, piezasInutilizadas):
+//      bloqueada, «Apagada por <estado>.». Vale para cualquier hoja de pieza: arma, mejora,
+//      subsistema, herramienta, movimiento, implante (sus acciones y tiradas).
+//   2. S99: Rastreo y compañía sin su especialidad ni nada que les enganche, ocultas.
+export function habilitacionEnFicha(ficha: FichaParaHabilitar, hoja: Accion | AccionDirecta): Habilitacion {
+  const pieza = hoja.origen?.instanciaId;
+  const apagada = pieza ? ficha.piezasInutilizadas?.get(pieza) : undefined;
+  return juntarHabilitacion(
+    apagada ? bloqueadaPor(motivoApagada(apagada), "duro") : null,
+    "soloConEspecialidad" in hoja && hoja.soloConEspecialidad && !enganchaTiradaFija(ficha, hoja) ? SIN_ESPECIALIDAD : null,
+  );
+}
+
+// Lo que comprueba el servidor antes de usar una acción de aumento (usarAccionAumentoAction): lo
+// que depende de la ficha (un implante apagado por el Shock). La fatiga la mira
+// usoDeAccionAumento con la fatiga en juego. null si se puede (o no existe: lo dice él).
+export function bloqueoDeAccionAumento(ficha: FichaResuelta, accionId: string): string | null {
+  const accion = ficha.accionesAumentos.directas.find((a) => a.id === accionId);
+  return accion ? motivoDeBloqueo(habilitacionEnFicha(ficha, accion)) : null;
+}
+
+const SIN_ESPECIALIDAD = ocultaPor("Sin su especialidad ni nada que le enganche (S99).", "duro");
+
+// Las tiradas fijas de `soloConEspecialidad` (Rastreo, Subsistencia, Trato con Animales,
+// Investigación; decisión del usuario 2026-10-26, S99) solo se pintan si la ficha tiene alguna
 // de sus especialidades o si algo de capa 1 le engancha algo a ella: una casilla, texto, bono,
 // ventaja o cambio de grado con alcance por su id o por su especialidad. Lo general (alcance por
 // grupo, habilidad, aplicado o "todas") no cuenta: no es de esa fila. El NPC, igual, con sus
 // especialidades y lo derivado de su especie, dotes y aumentos.
-export function tiradaFijaVisible(
-  ficha: Pick<
-    FichaResuelta,
-    "ficha" | "modificadores" | "indiceCondiciones" | "textosTirada" | "extrasDotes" | "ventajasFijas" | "fallosCriticos"
-  >,
-  t: Accion,
-): boolean {
-  if (!t.soloConEspecialidad) return true;
+function enganchaTiradaFija(ficha: FichaParaHabilitar, t: Accion): boolean {
   const especialidades = t.especialidadesAccion ?? [];
   const habilidad = t.habilidad;
   if (habilidad && especialidades.some((e) => tieneEspecialidad(ficha.ficha, habilidad, e))) return true;
@@ -840,18 +879,17 @@ function conTiposDeAccion(
 // (no hay crítico). El tipo de acción (T5c: Inyectarse en «Usar [fármaco]»), a la nota y su
 // selector a las condiciones. Sin nada que añadir, devuelve la misma acción.
 export function conExtrasDirectaDeFicha(
-  ficha: Pick<FichaResuelta, "textosTirada"> & Partial<Pick<FichaResuelta, "rebajasTipoAccion" | "piezasInutilizadas" | "piezasPenalizadas">>,
+  ficha: FichaParaHabilitar & Partial<Pick<FichaResuelta, "rebajasTipoAccion" | "piezasPenalizadas">>,
   d: AccionDirecta,
 ): AccionDirecta {
-  // Shock (rules/shock.ts): la acción de una pieza apagada, bloqueada; la de una penalizada, con
-  // el aviso del −N en la nota.
+  d = conHabilitacion(d, habilitacionEnFicha(ficha, d));
+  // Shock (rules/shock.ts): la de una pieza penalizada, con el aviso del −N en la nota. La de una
+  // apagada sale bloqueada por habilitacionEnFicha.
   const id = d.origen?.instanciaId;
-  const apagada = id ? ficha.piezasInutilizadas?.get(id) : undefined;
   const penalizada = id ? ficha.piezasPenalizadas?.get(id) : undefined;
-  if (apagada || penalizada) {
-    const r = conExtrasDirectaDeFicha({ ...ficha, piezasInutilizadas: undefined, piezasPenalizadas: undefined }, d);
-    if (apagada) return { ...r, bloqueada: motivoApagada(apagada) };
-    return { ...r, nota: junta(r.nota, [`${avisoPenalizada(penalizada!)} (${penalizada!.fuente})`]) };
+  if (penalizada) {
+    const r = conExtrasDirectaDeFicha({ ...ficha, piezasPenalizadas: undefined }, d);
+    return { ...r, nota: junta(r.nota, [`${avisoPenalizada(penalizada)} (${penalizada.fuente})`]) };
   }
   const textos = textosDe(ficha.textosTirada, contextoDe({ ...d, habilidad: null }), false);
   const tipos = d.tiposDeAccionBase?.length ? conTiposDeAccion(d, ficha.rebajasTipoAccion ?? []) : null;

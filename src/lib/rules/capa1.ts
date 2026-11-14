@@ -68,7 +68,7 @@ function fuentesDeDotes(sheet: Sheet): FuenteCapa1[] {
 // catalogoId, y `nivel` es el poseído en la disciplina.
 function fuentesDePoderes(sheet: Sheet, niveles: NivelesPsionica): FuenteCapa1[] {
   return accionesDePsionica(sheet, niveles)
-    .filter((p) => !p.bloqueo)
+    .filter((p) => p.habilitacion.estado === "activa")
     .map(({ accion, nivelPoseido }) => ({
     instanciaId: accion.id,
     catalogoId: accion.id,

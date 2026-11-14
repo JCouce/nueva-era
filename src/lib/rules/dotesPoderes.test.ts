@@ -78,7 +78,7 @@ describe("poderesDeDotes", () => {
     assert.ok(p);
     assert.equal(p.nivelPoseido, 3);
     assert.equal(p.disciplina.id, "singularidad");
-    assert.equal(p.bloqueo, null);
+    assert.equal(p.habilitacion.estado, "activa");
     const n3 = preparar(f, p);
     assert.equal(n3.coste?.total, 3);
     assert.equal(n3.tirada, null); // el ataque del arma se tira aparte (§9.3)

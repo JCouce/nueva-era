@@ -1,6 +1,7 @@
 // T6a (es-01, au-04, au-05, ps-01…04, eq-27): el sobreesfuerzo psiónico y la salvación de sobrecarga.
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
+import { motivoDeBloqueo } from "./habilitacion";
 import { resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
 import { defaultSheet, type Sheet } from "./sheet";
 import { salud } from "./derivados";
@@ -199,7 +200,7 @@ describe("usar un poder (ps-01)", () => {
   test("sin fuente psiónica, los poderes salen bloqueados y no hay sobreesfuerzo", () => {
     const f = resolver(ficha({ especieId: "humano" }));
     assert.equal(f.sobreesfuerzo, null);
-    assert.ok(poderesDeFicha(f.ficha, f.psionica).every((p) => p.bloqueo));
+    assert.ok(poderesDeFicha(f.ficha, f.psionica).every((p) => motivoDeBloqueo(p.habilitacion)));
   });
 
   test("con el implante 1, nivel 3 salta (6 + 3); prolongar Proeza no vuelve a tirarlo", () => {

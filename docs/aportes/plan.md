@@ -86,7 +86,7 @@ Cada cosa concreta que hace un ítem. Un ítem tiene uno o varios; cada aporte e
 | **Resolución** | Cambia **cómo** se resuelve, no el total: aplicado, habilidad, especialidad, dados, umbrales, reglas del daño | Sutil (`aplicadoSutil`), `habilidadAlternativa`, `ventaja`, `criticoFijo`, `subeGradoFijo`, `falloCritico`, `anulaPenalizadores`, `ignoraBlindaje`, `extremidad`, `danio` de casilla |
 | **Coste** | Gasta un recurso al confirmar; no toca el total | `costeFatiga`, `ahorroFatiga`, `usoPorEscena`, munición (`recursoInstanciaId`, `gasto*`), `farmacoId`, fatiga del poder |
 | **Texto** | Información sin número | `nota`, `efectoCritico`, `efectoCriticoNatural`, `efectos`, `textosTirada`, Visor Nocturno |
-| **Habilitador** | Enciende o apaga una hoja **o un aporte** | `bloqueada`, `poder.bloqueo`, `soloConEspecialidad`, permisos de dote (Bloquear, Sutil), escudo roto, Shock (`piezasInutilizadas`) |
+| **Habilitador** | Enciende o apaga una hoja **o un aporte** | en una hoja, su `habilitacion` (fase 6 paso 1): escudo roto, sin cargas, sin fatiga, límite agotado, requisito roto, `soloConEspecialidad`, permiso de dote (Bloquear); en un aporte, el permiso Sutil y el Shock (`piezasInutilizadas`) |
 
 Correspondencia con `MotorMetadata.tipo` (`src/lib/rules/motor.ts`): Acción = `accion`,
 Ajuste = `numerico`, Texto = `texto`, Habilitador = `habilitador`. **Resolución y Coste son
@@ -453,7 +453,10 @@ mismos números en las cuatro pantallas consumidoras; las ★ guardadas siguen m
 visible; ningún número existente cambia:
 - **Exploración siempre en el árbol**: Rastreo, Subsistencia, Trato con animales e
   Investigación se pintan en su especialidad aunque la ficha no la tenga (a la mitad).
-  `tiradaFijaVisible` (S99) sigue mandando para ★ y cabina. Actualizar el texto de S99 en
+  S99 sigue mandando para ★ y cabina. Ojo: desde la fase 6 paso 1, S99 es una habilitación
+  `oculta` que pone `habilitacionEnFicha` (vía `conExtrasDeFicha`) en la hoja; el árbol tendrá
+  que pintarla igualmente, así que o el árbol no filtra por `esVisible` o S99 deja de ser
+  habilitación y pasa a ser un dato de dónde pintar. Actualizar el texto de S99 en
   `docs/sistema.md` para que diga dónde aplica.
 - **Genérica por habilidad**: una hoja "Tirar <Habilidad>" en el nodo de cada habilidad, con
   selector de aplicado, la habilidad entera (§3: no nombra especialidad) y grupo `Libre`, como
@@ -529,13 +532,14 @@ Coste, que es nuevo.
 
 ---
 
-### Fase 6 — Habilitador a nivel de aporte y Shock 🟡 (paso 2 hecho en T7a, 2026-11-14; paso 1 en curso aparte)
+### Fase 6 — Habilitador a nivel de aporte y Shock 🟡 (pasos 1 y 2 hechos, 2026-11-14; queda el 3)
 **Estado.** S73 dejó de esperar a Murillo: lo decidió el usuario en el cuestionario de cierre
 (pl-01…03). **Paso 2 hecho** en la T7a del barrido (`rules/shock.ts`): `piezasInutilizadas` se
 rellena con el Shock, la ficha se resuelve sin las piezas apagadas (`fichaSinApagadas`), lo que
 la fila trae de ellas se quita por `origen.instanciaId` (`conPiezasAfectadas`) y el desglose lo
-explica (`Accion.piezasApagadas`); sus acciones propias usan el `bloqueada` de siempre. **Paso 1**
-(unificar la habilitación) va en su worktree aparte y se pone encima de T7a.
+explica (`Accion.piezasApagadas`). **Paso 1** (unificar la habilitación) se puso encima: las
+acciones propias de una pieza apagada salen bloqueadas por una sola regla en
+`habilitacionEnFicha`.
 
 **Tipo:** motor. **Quién:** subagente.
 
@@ -544,9 +548,50 @@ cualquier "pieza averiada") rellena `FichaResuelta.piezasInutilizadas` y los apo
 piezas no entran en `montarTirada`.
 
 **Pasos:**
-1. Unificar `Accion.bloqueada`, `PoderDisponible.bloqueo`, `soloConEspecialidad`
-   (`tiradaFijaVisible`) y los permisos de dote en un `habilitacion: { estado: "activa" |
-   "bloqueada" | "oculta"; motivo?: string; arbitraje: Arbitraje }` que da el motor.
+1. ✅ (2026-11-14, sin commit todavía) Unificar `Accion.bloqueada`, `PoderDisponible.bloqueo`,
+   `soloConEspecialidad` (`tiradaFijaVisible`) y los permisos de dote en un `habilitacion`
+   que da el motor. **Hecho así:**
+   - Tipo `Habilitacion` (`rules/habilitacion.ts`): `{ estado: "activa" }` o `{ estado:
+     "bloqueada" | "oculta"; motivo; arbitraje }`. Todos los productores de hoy declaran
+     arbitraje `"duro"`.
+   - Productores → `habilitacion`: escudo roto y sin cargas (`combate.ts`), aumento sin fatiga
+     (`aumentosAcciones.ts`), límite de dote agotado (`dotesAcciones.ts`), requisito roto
+     (`habilitacionPorRequisito`) y sin fuente psiónica (`poderesDeFicha`), poder que no
+     funciona con la fatiga de ahora (`prepararPoder`), permiso de familia de dote
+     (`habilitacionDeFamilia`: oculta, y `accionesDeAtaque` no la devuelve) y S99
+     (`habilitacionEnFicha`: oculta).
+   - Dónde se juntan: `juntarHabilitacion` (oculta gana; entre bloqueadas, la primera da el
+     motivo, como las cadenas `??` de antes). **Lo que depende de la ficha** lo da
+     `habilitacionEnFicha` (`fichaResuelta.ts`), solo eso: la pieza de origen apagada (Shock,
+     `piezasInutilizadas` por `origen.instanciaId`: «Apagada por <estado>.», para cualquier
+     hoja que dé una pieza: arma, mejora, subsistema, herramienta, movimiento, implante) y S99.
+     Se junta con lo que trae la hoja en **un solo sitio**, `conHabilitacion(hoja, deFuera)`:
+     lo de fuera primero (así el Shock gana al «sin fatiga»). Lo llaman `conExtrasDeFicha` y
+     `conExtrasDirectaDeFicha` para toda hoja con o sin dado, `resolverFicha` para
+     `accionesAumentos` (`aumentosHabilitados`: sus directas se pintan tal cual) y
+     `accionesDeAtaque` con el permiso de familia. El servidor de las acciones de aumento
+     (`usarAccionAumentoAction`) rechaza con `bloqueoDeAccionAumento` (la misma
+     `habilitacionEnFicha`; la fatiga la sigue mirando `usoDeAccionAumento`). Al ponerse encima
+     de T7a se quitaron los tres sitios a mano (`conPiezasAfectadas`, `conExtrasDirectaDeFicha`,
+     `accionesDeAumentos`).
+   - Poderes: `PoderDisponible.habilitacion` (la del ítem), `PoderPreparado.habilitacion` (la de
+     la hoja: ítem + fatiga; fila y árbol), `noFuncionaAhora` (ps-06: la fila sale atenuada) y
+     `habilitacionAlUsar` (más el peso de la Proeza y la fatiga del coste; el modal).
+     Desaparecen `bloqueo` e `inhabilitado`.
+   - Fuera de este paso: `CondicionTirada.bloqueada` (casilla gastada por escena), las
+     casillas de blindaje/escudo de Resistir daño (`blindaje.ts`, `resistirDanio.ts`) y el
+     permiso Sutil (habilita un aporte de Resolución, `aplicadoSutil`, no una hoja): son
+     habilitadores de aporte, paso 2.
+   - Caracterización: `rules/habilitacion-caracterizacion.test.ts` (12 fichas: sin
+     especialidad, enganchadas, escudo roto, sin cargas, sin fatiga, dote gastada, psiónica sin
+     acceso / sin acceso y exhausta / exhausta / requisito roto); los esperados se fijaron con
+     el código de antes.
+   - Red de seguridad: `rules/habilitacion-catalogo.test.ts` recorre todo `EQUIPO` (suelto y
+     instalado en un arma de fuego, una melee y una armadura) y comprueba que cada hoja que
+     aparece por llevar la pieza sale «Apagada por …» con la pieza en `piezasInutilizadas`,
+     por los mismos caminos que la pantalla. Fuera: los poderes de un implante fuente psiónica
+     (los apaga la pérdida de acceso, no esta regla).
+   - ESLint: la pantalla no puede importar los productores ni `juntarHabilitacion`.
 2. Filtrado por `piezasInutilizadas` en `resolverFicha`/`conExtrasDeFicha` usando `origen`
    (fase 2): por eso va después.
 3. La UI decide solo la presentación según `arbitraje` (ocultar/atenuar/avisar).

@@ -51,6 +51,7 @@ import type { TextoEnTirada } from "./especie";
 import { conTextosDeFicha, contextoDe, textosDe, textosSinDado, type ObjetivoEnTirada } from "./textosTirada";
 import { consultaIndiceCondiciones, type IndiceCondiciones } from "./equipo";
 import { fatigaEfectiva } from "./vitalidad";
+import { bloqueadaSi, juntarHabilitacion, type Habilitacion } from "./habilitacion";
 import { FUENTES_EXTERNAS_FATIGA } from "../catalog/psionica";
 import { resultadoElegido, sobreesfuerzoDeUso, type ResultadoSobreesfuerzo, type SobreesfuerzoDeUso } from "./sobreesfuerzo";
 
@@ -98,10 +99,15 @@ export type PoderPreparado = {
   coste: CosteFatiga | null;
   casillas: ToggleFatiga[];
   cargas: { derivacion: Derivacion; puntos: number; gastar: number; max: number } | null;
-  bloqueo: string | null;
-  // El poder no funciona ahora (ps-06: Alerta pasiva exhausto): la fila sale atenuada con el
-  // motivo y no se puede usar. También va en `bloqueo`.
-  inhabilitado: string | null;
+  // La de la hoja (fila y árbol): la del poder (requisito, acceso) y si funciona ahora (ps-06:
+  // Alerta pasiva exhausto, `noFuncionaConFatiga`).
+  habilitacion: Habilitacion;
+  // El poder no funciona ahora (ps-06: Alerta pasiva exhausto, `noFuncionaConFatiga`): la fila sale
+  // atenuada. Va también, con su motivo, en `habilitacion`.
+  noFuncionaAhora: boolean;
+  // La de confirmar el uso con esta selección (el modal): la de la hoja, más el peso de la
+  // Proeza y la fatiga que cuesta.
+  habilitacionAlUsar: Habilitacion;
   fatigaActual: number; // efectiva (menos la temporal de Proeza)
   // Tirada lista para el modal, con los ajustes de las casillas ya puestos; null
   // si el poder no tira.
@@ -150,12 +156,13 @@ export function prepararPoder({
   const pago = sinCargas && derivacion ? pagoConCargas(sinCargas, derivacion, seleccion.puntosCargas) : null;
   const coste = pago?.coste ?? sinCargas;
   const fatigaActual = efectivaEnJuego ?? fatigaEfectiva(ficha);
-  const inhabilitado = noFuncionaPorFatiga(poder.accion, fatigaActual, salud(ficha, modificadores).fatiga);
-  const bloqueo =
-    poder.bloqueo ??
-    inhabilitado ??
-    sinTextos.exceso?.bloqueo ??
-    (coste ? bloqueoPorFatiga(poder.accion, coste.total, Math.max(0, fatigaActual)) : null);
+  const noFunciona = noFuncionaPorFatiga(poder.accion, fatigaActual, salud(ficha, modificadores).fatiga);
+  const habilitacion = juntarHabilitacion(poder.habilitacion, bloqueadaSi(noFunciona, "duro"));
+  const habilitacionAlUsar = juntarHabilitacion(
+    habilitacion,
+    bloqueadaSi(sinTextos.exceso?.bloqueo, "duro"),
+    coste ? bloqueadaSi(bloqueoPorFatiga(poder.accion, coste.total, Math.max(0, fatigaActual)), "duro") : null,
+  );
 
   // Casillas externas marcadas (Xovromium +1, Supresora −2): líneas del desglose.
   const base = tiradaDePoder(poder.accion, sinTextos);
@@ -200,8 +207,9 @@ export function prepararPoder({
             max: maxPuntosConCargas(sinCargas.total, derivacion),
           }
         : null,
-    bloqueo,
-    inhabilitado,
+    habilitacion,
+    noFuncionaAhora: noFunciona !== null,
+    habilitacionAlUsar,
     fatigaActual,
     tirada,
     enEspecialidad,
@@ -362,7 +370,7 @@ export function estadosPropiosDeUso(
   actuales: readonly EstadoActivo[] = [],
 ): EstadoActivo[] {
   const poder = accionesDePsionica(ficha, niveles).find((p) => p.accion.id === poderId);
-  if (!poder || poder.bloqueo) return [];
+  if (!poder || poder.habilitacion.estado !== "activa") return [];
   const resuelto = resolverPoder(poder.accion, {
     nivelPoseido: poder.nivelPoseido,
     elecciones,
@@ -439,7 +447,7 @@ export function falloDeSobreesfuerzo(
 ): { uso: SobreesfuerzoDeUso; resultado: ResultadoSobreesfuerzo } | null {
   const niveles = f.psionica.paraEfectos;
   const poder = [...accionesDePsionica(f.ficha, niveles), ...f.poderesDotes].find((p) => p.accion.id === op.poderId);
-  if (!poder || poder.bloqueo) return null;
+  if (!poder || poder.habilitacion.estado !== "activa") return null;
   const resuelto = resolverPoder(poder.accion, {
     nivelPoseido: poder.nivelPoseido,
     elecciones: op.elecciones,

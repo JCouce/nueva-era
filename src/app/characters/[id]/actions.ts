@@ -153,6 +153,8 @@ import {
   estadosActivosDe,
   salvacionPropiaDe,
   textoDeConsecuencia,
+  motivoDeBloqueo,
+  bloqueoDeAccionAumento,
 } from "@/lib/rules";
 import { mesaDeFicha } from "@/lib/mesaDeFicha";
 import { ajustarVidaDePersonajes } from "@/lib/vidaMando";
@@ -776,7 +778,8 @@ export async function gastarUsoLimitadoAction(characterId: string, entrada: unkn
   const ficha = resolverFicha(ctx.sheet, { estados: ctx.estados, vitalidad: VITALIDAD_DE_FICHA, aprobada: ctx.aprobada, mesa });
   const tirada = ficha.accionesDotes.tiradas.find((t) => t.usoLimitado?.accionId === parsed.data.accionId);
   if (!tirada?.usoLimitado) return { ok: false, error: "Esa acción no tiene un límite que contar." };
-  if (tirada.bloqueada) return { ok: false, error: tirada.bloqueada };
+  const bloqueo = motivoDeBloqueo(tirada.habilitacion);
+  if (bloqueo) return { ok: false, error: bloqueo };
   const r = gastarUsoLimitado(ctx.sheet, tirada.usoLimitado, parsed.data.aliadoId, mesa.aliados);
   if (!r.ok) return { ok: false, error: r.error };
   return persist(ctx, characterId, r.sheet);
@@ -827,6 +830,10 @@ export async function usarAccionAumentoAction(characterId: string, accionId: unk
   // La fatiga que se comprueba y se cobra es la en juego: con combate en curso, la de la foto (td-25).
   const foto = await fotoEnJuego(characterId);
   const enJuego = fatigaEnJuego(ctx.sheet, foto);
+  // Lo que depende de la ficha (un implante apagado por el Shock); la fatiga, usoDeAccionAumento.
+  const resuelta = resolverFicha(ctx.sheet, { estados: ctx.estados, vitalidad: VITALIDAD_DE_FICHA, aprobada: ctx.aprobada });
+  const bloqueo = bloqueoDeAccionAumento(resuelta, parsed.data);
+  if (bloqueo) return { ok: false, error: bloqueo };
   const uso = usoDeAccionAumento(ctx.sheet, ctx.estados, parsed.data, parsedExtra.data ?? {}, enJuego);
   if (!uso.ok) return { ok: false, error: uso.error };
   const coste = uso.coste;

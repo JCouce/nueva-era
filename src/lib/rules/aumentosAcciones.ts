@@ -40,7 +40,7 @@ import { ajustarVida, pagarFatiga, topesDeVida } from "./vitalidad";
 import { conContador, contadorEscena } from "./usosEscena";
 import type { Sheet } from "./sheet";
 import { origenDePieza, type OrigenAporte } from "./origen";
-import { afectacionDePiezas, motivoApagada } from "./shock";
+import { bloqueadaPor, motivoDeBloqueo } from "./habilitacion";
 import { esEstadoDeAumento, estadoPorId } from "../catalog/estados";
 
 // Lo que hace la acción además de cobrar:
@@ -157,7 +157,7 @@ const fatigaTexto = (n: number) => `${n} de fatiga`;
 
 // `fatigaActual`: la fatiga en juego (fatigaEnJuego, td-25): en combate, la de la foto.
 const sinFatiga = (coste: number, fatigaActual: number) =>
-  coste > fatigaActual ? { bloqueada: `No te llega la fatiga: cuesta ${coste} y te quedan ${fatigaActual}.` } : {};
+  coste > fatigaActual ? { habilitacion: bloqueadaPor(`No te llega la fatiga: cuesta ${coste} y te quedan ${fatigaActual}.`, "duro") } : {};
 
 
 function selectorEleccion(e: NonNullable<Extract<EfectoAccionAumento, { tipo: "activar" }>["eleccion"]>): CondicionTirada {
@@ -282,21 +282,18 @@ export function accionesDeAumentos(
   const filas: FilaAumento[] = [];
   const informativas: InfoDeAumento[] = [];
   const usos = sheet.usosEscena ?? [];
-  // Las de un implante apagado por el Shock (rules/shock.ts) siguen en la lista, bloqueadas: así
-  // las rechaza también usoDeAccionAumento.
-  const apagadas = afectacionDePiezas(sheet, estados).inutilizadas;
+  // Las de un implante apagado por el Shock (rules/shock.ts) siguen en la lista: las bloquea
+  // habilitacionEnFicha (resolverFicha), y el servidor las rechaza con FichaResuelta.accionesAumentos.
   for (const ap of aportes(sheet)) {
-    const motivo = ap.origen.instanciaId ? apagadas.get(ap.origen.instanciaId) : undefined;
-    const bloqueo = motivo ? { bloqueada: motivoApagada(motivo) } : {};
     for (const a of ap.acciones) {
       filas.push(
         a.tirada
-          ? { tipo: "tirada", accion: { ...conTirada(a, a.tirada, ap.fuente, fatiga), origen: ap.origen, ...bloqueo } }
-          : { tipo: "directa", accion: { ...directa(a, ap.fuente, fatiga, estados, usos), origen: ap.origen, ...bloqueo } },
+          ? { tipo: "tirada", accion: { ...conTirada(a, a.tirada, ap.fuente, fatiga), origen: ap.origen } }
+          : { tipo: "directa", accion: { ...directa(a, ap.fuente, fatiga, estados, usos), origen: ap.origen } },
       );
       const hechas = a.efecto?.tipo === "contador" ? contadorEscena(usos, a.id) : 0;
       if (a.efecto?.tipo === "contador" && hechas > 0) {
-        filas.push({ tipo: "directa", accion: { ...reiniciar(a, ap.fuente, hechas, a.efecto.cada), origen: ap.origen, ...bloqueo } });
+        filas.push({ tipo: "directa", accion: { ...reiniciar(a, ap.fuente, hechas, a.efecto.cada), origen: ap.origen } });
       }
     }
     if (ap.defensa) {
@@ -431,7 +428,8 @@ export function usoDeAccionAumento(
 ): UsoAccionAumento {
   const accion = accionesDeAumentos(sheet, estados, fatiga).directas.find((a) => a.id === accionId);
   if (!accion) return { ok: false, error: "No tienes esa acción (falta el aumento o tiene un requisito roto)." };
-  if (accion.bloqueada) return { ok: false, error: accion.bloqueada };
+  const bloqueo = motivoDeBloqueo(accion.habilitacion);
+  if (bloqueo) return { ok: false, error: bloqueo };
   const efecto = accion.efecto;
   if (efecto?.tipo === "accionAdicional") return usoDeAdicional(efecto, accion, sheet, estados, extra.repetida === true, fatiga);
   const cobrado = accion.costeFatiga ?? 0;

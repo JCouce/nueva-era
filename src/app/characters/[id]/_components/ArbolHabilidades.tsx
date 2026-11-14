@@ -13,6 +13,7 @@ import {
   etiquetaEspecialidad,
   eleccionSinTocar,
   montarTirada,
+  motivoDeBloqueo,
   teAfecta,
   usarHabilidadAlternativa,
   valorFueraDeEspecialidad,
@@ -329,9 +330,10 @@ export function HojaTirada({
   const montada = montarTirada(ficha, efectiva, eleccionSinTocar(efectiva, sutilActivo));
   const aplicado = APLICADOS.find((a) => a.id === montada.aplicado.id)!;
   const afecta = teAfecta(ficha, efectiva, montada);
+  const bloqueo = motivoDeBloqueo(t.habilitacion);
 
   return (
-    <div className={`${MARCO_HOJA} ${t.bloqueada ? "border-dashed opacity-60" : ""}`}>
+    <div className={`${MARCO_HOJA} ${bloqueo ? "border-dashed opacity-60" : ""}`}>
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
           <span className="block font-display text-sm font-semibold uppercase leading-tight">{t.label}</span>
@@ -339,7 +341,7 @@ export function HojaTirada({
             {aplicado.abbr} · {origen}
           </span>
         </div>
-        {t.bloqueada ? (
+        {bloqueo ? (
           <span className="shrink-0 font-mono text-[10px] uppercase text-danger">no disponible</span>
         ) : (
           <>
@@ -356,9 +358,9 @@ export function HojaTirada({
         <p className="break-words font-mono text-[10px] uppercase leading-relaxed text-muted">te afecta: {afecta.join(", ")}</p>
       )}
 
-      {t.bloqueada && <p className="font-mono text-[10px] leading-relaxed text-muted">{t.bloqueada}</p>}
+      {bloqueo && <p className="font-mono text-[10px] leading-relaxed text-muted">{bloqueo}</p>}
 
-      {!t.bloqueada && (t.aplicadoSutil || t.habilidadAlternativa) && (
+      {!bloqueo && (t.aplicadoSutil || t.habilidadAlternativa) && (
         <div className="flex flex-wrap items-center gap-1.5">
           {t.aplicadoSutil && (
             <button
@@ -384,7 +386,7 @@ export function HojaTirada({
         </div>
       )}
 
-      {t.especialidadAElegir && !alternativa && !t.bloqueada && (
+      {t.especialidadAElegir && !alternativa && !bloqueo && (
         <div className="flex flex-wrap items-center gap-1.5">
           <span className={`font-mono text-[10px] uppercase ${pendienteElegir ? "text-danger" : "text-muted"}`}>
             {pendienteElegir ? "elige especialidad:" : "especialidad:"}
@@ -432,8 +434,8 @@ export function HojaPoder({
   const aplicado = APLICADOS.find((a) => a.id === montada.aplicado.id)!;
   const fatiga = preparado.coste ? preparado.coste.total : textoValor(p.fatiga);
   const datos = [etiquetaEconomia(p.economia), `${fatiga} fatiga`].join(" · ");
-  // Requisito roto o, ps-06, un poder que ahora no funciona (Alerta pasiva exhausto).
-  const bloqueo = poder.bloqueo ?? preparado.inhabilitado;
+  // Requisito roto, sin acceso o, ps-06, un poder que ahora no funciona (Alerta pasiva exhausto).
+  const bloqueo = motivoDeBloqueo(preparado.habilitacion);
   return (
     <div className={`${MARCO_HOJA} ${bloqueo ? "border-dashed opacity-60" : ""}`}>
       <div className="flex items-center justify-between gap-2">
