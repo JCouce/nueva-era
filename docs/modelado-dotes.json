@@ -6894,6 +6894,47 @@
       "candidataUX": null
     },
     {
+      "id": "dote_salto_servoasistido",
+      "label": "Salto Servoasistido",
+      "grupo": "pilotaje",
+      "coste": 2,
+      "requisitos": [
+        {
+          "tipo": "especialidad",
+          "habilidad": "pilotaje",
+          "id": "exoarmadura",
+          "min": 1
+        },
+        {
+          "tipo": "especialidad",
+          "habilidad": "atletismo",
+          "id": "salto",
+          "min": 1
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "texto",
+          "lugar": "atletismo",
+          "texto": "Saltando con el exoesqueleto en marcha, su bono de Fuerza se duplica para la distancia o la altura del salto.",
+          "condicion": null,
+          "porque": "sin_regla"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "bloquear_danio",
+          "texto": "Caídas con el exoesqueleto en marcha: la altura efectiva se reduce en 2 m.",
+          "condicion": null,
+          "porque": "sin_regla"
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_movimiento_sigiloso",
       "label": "Movimiento Sigiloso",
       "grupo": "sigilo",

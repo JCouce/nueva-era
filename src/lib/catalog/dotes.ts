@@ -7378,6 +7378,71 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_salto_servoasistido",
+    "label": "Salto Servoasistido",
+    "grupo": "pilotaje",
+    "coste": 2,
+    "requisitos": [
+      {
+        "tipo": "especialidad",
+        "habilidad": "pilotaje",
+        "id": "exoarmadura",
+        "min": 1
+      },
+      {
+        "tipo": "especialidad",
+        "habilidad": "atletismo",
+        "id": "salto",
+        "min": 1
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "El personaje sincroniza la potencia explosiva del exoesqueleto de su armadura con la técnica de salto. A la hora de calcular la distancia o la altura máxima en las pruebas de **salto horizontal y salto vertical**, el bonificador de **Fuerza** aportado por el **exoesqueleto** se **duplica**. Además, el personaje reduce en 2 metros la altura de caída efectiva al aterrizar gracias a la amortiguación de las servopiernas cuando utilice el exoesqueleto.",
+    "efectos": [
+      {
+        "tipo": "texto",
+        "lugar": "atletismo",
+        "texto": "Saltando con el exoesqueleto en marcha, su bono de Fuerza se duplica para la distancia o la altura del salto.",
+        "condicion": null,
+        "porque": "sin_regla",
+        "borrador": 0
+      },
+      {
+        "tipo": "texto",
+        "lugar": "bloquear_danio",
+        "texto": "Caídas con el exoesqueleto en marcha: la altura efectiva se reduce en 2 m.",
+        "condicion": null,
+        "porque": "sin_regla",
+        "borrador": 1
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "atletismo"
+        },
+        "mecanismo": "nota_fija",
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "bloquear_danio"
+        },
+        "mecanismo": "nota_fija",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_movimiento_sigiloso",
     "label": "Movimiento Sigiloso",
     "grupo": "sigilo",
@@ -9007,9 +9072,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   219 efectos (209 en el borrador)
+//   221 efectos (211 en el borrador)
 //   construidos: 122
-//   texto: 97
+//   texto: 99
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

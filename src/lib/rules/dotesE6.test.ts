@@ -7,6 +7,7 @@ import { defaultSheet, type Sheet } from "./sheet";
 import { ACCIONES, usarHabilidadAlternativa, type Accion } from "./acciones";
 import { equipar } from "./equipo";
 import { conEsquivaEnVuelo } from "./movimiento";
+import { resolverGolpe } from "./resistirDanio";
 import { HABILIDADES } from "./habilidades";
 import { resolverFicha, conExtrasDeFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
 import { montarTirada, eleccionSinTocar } from "./montaje";
@@ -26,7 +27,7 @@ function ficha(dotes: DoteComprada[]): Sheet {
     ...base,
     atributos: Object.fromEntries(Object.keys(base.atributos).map((k) => [k, 4])) as Sheet["atributos"],
     habilidades: Object.fromEntries(
-      HABILIDADES.map((h) => [h.id, { valor: 4, especialidades: [...new Set(esp[h.id] ?? [])].slice(0, 3) }]),
+      HABILIDADES.map((h) => [h.id, { valor: 4, especialidades: [...new Set(esp[h.id] ?? [])] }]),
     ) as Sheet["habilidades"],
     dotes,
   };
@@ -172,5 +173,27 @@ describe("As de Exoarmadura", () => {
   test("el −1 a los ataques en vuelo no se aplica en la app: la anulación va en la tarjeta", () => {
     const dote = DOTES.find((d) => d.id === "dote_as_de_exoarmadura")!;
     assert.ok(dote.efectos.some((e) => e.tipo === "texto" && e.lugar === "ficha" && /no sufres el −1 a los ataques/.test(e.texto)));
+  });
+});
+
+describe("Salto Servoasistido", () => {
+  const f = resolver(ficha([{ id: "dote_salto_servoasistido" }]));
+
+  test("aviso en Saltar: el bono de Fuerza del exoesqueleto, doble para la distancia o altura", () => {
+    assert.match(lineaAntes(fija(f, "atletismo")), /exoesqueleto en marcha, su bono de Fuerza se duplica/);
+  });
+
+  test("y en Resistir daño: 2 m menos de caída con el exoesqueleto", () => {
+    const g = resolverGolpe(f, {
+      tipo: "cinetico",
+      critico: false,
+      danio: 0,
+      reactivo: false,
+      conBrazo: false,
+      marcadas: [],
+      rompeBlindaje: 0,
+      categoria: null,
+    });
+    assert.ok(g.notas.some((n) => /la altura efectiva se reduce en 2 m.*\(Salto Servoasistido\)/.test(n)));
   });
 });

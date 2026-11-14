@@ -65,6 +65,9 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // TODO(revisar): no se topa con la maniobrabilidad: con la Progresión de Maniobrabilidad del
   // nivel 3 (−2), el +3 de As deja +1 de más.
   defensa: tirada("defensa"),
+  // «Saltar, levantarse». Salto Servoasistido (E6): texto.
+  // TODO(revisar): S10 ya cuenta doble el bono del exoesqueleto en las fórmulas de movimiento
+  // (salto incluido, derivados.ts); ¿la dote lo vuelve a duplicar o S10 no debería contar el salto?
   atletismo: tirada("atletismo"),
   escalar: tirada("escalar"),
   // «Ocultarse» (id sigilo). Paso de Fantasma (E6): casilla +3 por terreno difícil o ruidoso.

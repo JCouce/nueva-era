@@ -16,8 +16,8 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **120 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 2 · Sigilo 8 ·
+> Recuento: **121 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 3 · Sigilo 8 ·
 > Tecnociencia 1 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
@@ -1252,6 +1252,17 @@ El personaje reduce en 2 el penalizador por dificultad para maniobras de su prop
 
 **Efecto:**
 El personaje anula el penalizador de -1 en los ataques realizados mientras se encuentra utilizando la propulsión aérea de su exoarmadura. Además, reduce en 3 el penalizador por dificultad para maniobras de su propulsión aéra *(sic)* de la armadura o el traje cuando realiza acciones defensivas de esquiva.
+
+### Salto Servoasistido
+
+**Coste:** 2
+
+**Requisitos:**
+- Exoarmadura 1 · especialidad (Pilotaje)
+- Salto 1 · especialidad (Atletismo)
+
+**Efecto:**
+El personaje sincroniza la potencia explosiva del exoesqueleto de su armadura con la técnica de salto. A la hora de calcular la distancia o la altura máxima en las pruebas de **salto horizontal y salto vertical**, el bonificador de **Fuerza** aportado por el **exoesqueleto** se **duplica**. Además, el personaje reduce en 2 metros la altura de caída efectiva al aterrizar gracias a la amortiguación de las servopiernas cuando utilice el exoesqueleto.
 
 ## Sigilo
 
