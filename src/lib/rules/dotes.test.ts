@@ -528,3 +528,23 @@ describe("E6: dotes cuyo requisito cambia, solo con el aviso de requisito roto",
     assert.deepEqual(dotesConRequisitoRoto(s, valoresRequisitoDeFicha(s)), []);
   });
 });
+
+describe("E6: Movimiento Sigiloso pide Ocultación (foto de Drive 2026-11-14)", () => {
+  test("costes 2 / 4 / 6; requisitos Ocultación 1, 3 y 5, y la anterior de la cadena", () => {
+    const ids = ["dote_movimiento_sigiloso", "dote_movimiento_sigiloso_mejorado", "dote_movimiento_sigiloso_constante"];
+    assert.deepEqual(ids.map((id) => dotePorId(id)!.coste), [2, 4, 6]);
+    assert.deepEqual(
+      ids.map((id) => requisitos(id).map(textoRequisitoDote)),
+      [["Ocultación 1 (Sigilo)"], ["Movimiento Sigiloso", "Ocultación 3 (Sigilo)"], ["Movimiento Sigiloso Mejorado", "Ocultación 5 (Sigilo)"]],
+    );
+  });
+
+  test("con Sigilo y sin Ocultación ya no se cumple; con Ocultación 1 sí (y cuesta 2)", () => {
+    const sinOcultacion = conHabilidad(ficha(), "sigilo", 3, ["juego_de_manos"]);
+    assert.equal(cumple(sinOcultacion, "dote_movimiento_sigiloso"), false);
+    const con = conHabilidad(ficha(), "sigilo", 1, ["ocultacion"]);
+    assert.equal(cumple(con, "dote_movimiento_sigiloso"), true);
+    const s = compra(con, "dote_movimiento_sigiloso");
+    assert.equal(puntosDotesGastados(s), 2);
+  });
+});

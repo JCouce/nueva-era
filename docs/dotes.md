@@ -1229,20 +1229,21 @@ Si el personaje fracasa en una tirada de **investigación** o se queda estancado
 
 ### Movimiento Sigiloso
 
-**Coste:** 3
+**Coste:** 2
 
 **Requisitos:**
-- Sigilo 2 · habilidad
+- Ocultación 1 · especialidad (Sigilo)
 
 **Efecto:**
 El personaje reduce en 2 los penalizadores por moverse oculto.
 
 ### Movimiento Sigiloso Mejorado
 
-**Coste:** 5
+**Coste:** 4
 
 **Requisitos:**
-- Sigilo 3 · habilidad
+- Movimiento Sigiloso · dote previa
+- Ocultación 3 · especialidad (Sigilo)
 
 **Efecto:**
 El personaje reduce en 4 los penalizadores por moverse oculto.
@@ -1252,7 +1253,8 @@ El personaje reduce en 4 los penalizadores por moverse oculto.
 **Coste:** 6
 
 **Requisitos:**
-- Sigilo 5 · habilidad
+- Movimiento Sigiloso Mejorado · dote previa
+- Ocultación 5 · especialidad (Sigilo)
 
 **Efecto:**
 El personaje se mueve en sigilo sin penalizador

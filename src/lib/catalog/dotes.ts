@@ -7269,12 +7269,13 @@ export const DOTES: readonly DoteCatalogo[] = [
     "id": "dote_movimiento_sigiloso",
     "label": "Movimiento Sigiloso",
     "grupo": "sigilo",
-    "coste": 3,
+    "coste": 2,
     "requisitos": [
       {
-        "tipo": "habilidad",
-        "id": "sigilo",
-        "min": 2
+        "tipo": "especialidad",
+        "habilidad": "sigilo",
+        "id": "ocultacion",
+        "min": 1
       }
     ],
     "eleccion": null,
@@ -7344,11 +7345,16 @@ export const DOTES: readonly DoteCatalogo[] = [
     "id": "dote_movimiento_sigiloso_mejorado",
     "label": "Movimiento Sigiloso Mejorado",
     "grupo": "sigilo",
-    "coste": 5,
+    "coste": 4,
     "requisitos": [
       {
-        "tipo": "habilidad",
-        "id": "sigilo",
+        "tipo": "dote",
+        "id": "dote_movimiento_sigiloso"
+      },
+      {
+        "tipo": "especialidad",
+        "habilidad": "sigilo",
+        "id": "ocultacion",
         "min": 3
       }
     ],
@@ -7422,8 +7428,13 @@ export const DOTES: readonly DoteCatalogo[] = [
     "coste": 6,
     "requisitos": [
       {
-        "tipo": "habilidad",
-        "id": "sigilo",
+        "tipo": "dote",
+        "id": "dote_movimiento_sigiloso_mejorado"
+      },
+      {
+        "tipo": "especialidad",
+        "habilidad": "sigilo",
+        "id": "ocultacion",
         "min": 5
       }
     ],

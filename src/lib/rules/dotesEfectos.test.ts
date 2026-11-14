@@ -196,9 +196,11 @@ describe("efectos de dotes en las tiradas (D2a)", () => {
     assert.ok(!idsDeCasillas(t).some((c) => c.startsWith("dote_movimiento_sigiloso")));
     // −4 → 0, no 2 + 4.
     assert.equal(movimiento([{ id: "dote_movimiento_sigiloso" }, { id: "dote_movimiento_sigiloso_mejorado" }], "total"), 0);
-    assert.equal(movimiento([{ id: "dote_movimiento_sigiloso_mejorado" }], "esprint"), -4);
+    // Desde la foto del 2026-11-14 la Mejorada pide la básica y la Constante la Mejorada.
+    const mejorada = [{ id: "dote_movimiento_sigiloso" }, { id: "dote_movimiento_sigiloso_mejorado" }];
+    assert.equal(movimiento(mejorada, "esprint"), -4);
     // La Constante, todo.
-    assert.equal(movimiento([{ id: "dote_movimiento_sigiloso_constante" }], "esprint"), 0);
+    assert.equal(movimiento([...mejorada, { id: "dote_movimiento_sigiloso_constante" }], "esprint"), 0);
   });
 
   test("Paso Defensivo: texto en el crítico de la esquiva, no en la nota", () => {
@@ -276,9 +278,9 @@ describe("efectos de dotes en las tiradas (D2a)", () => {
   });
 
   test("una mejorada con el requisito roto deja valer la básica", () => {
-    // Sigilo 2: cumple la básica (2) y no la Mejorada (3). Desde T4, bonos por opción de «¿Te mueves?».
+    // Ocultación 2: cumple la básica (1) y no la Mejorada (3). Desde T4, bonos por opción de «¿Te mueves?».
     const s = fichaCapaz([{ id: "dote_movimiento_sigiloso" }, { id: "dote_movimiento_sigiloso_mejorado" }]);
-    const conSigilo2 = { ...s, habilidades: { ...s.habilidades, sigilo: { valor: 2, especialidades: [] } } };
+    const conSigilo2 = { ...s, habilidades: { ...s.habilidades, sigilo: { valor: 2, especialidades: ["ocultacion" as const] } } };
     const fuentes = resolver(conSigilo2).extrasDotes.bonosTramo.filter((b) => b.bono.condicion === ID_MOVIMIENTO_OCULTO).map((b) => b.bono.fuente);
     assert.deepEqual([...new Set(fuentes)], ["Movimiento Sigiloso"]);
   });
