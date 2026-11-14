@@ -2026,7 +2026,7 @@ sobreesfuerzo.
 ### 11.1 Las dos ramas `[FIRME · AUM]`
 | | Operaciones genéticas | Implantes |
 |---|---|---|
-| Cuántas | 26 | 11: 6 cerrados y 5 **en proceso** (de Control Anímico al final; no se modelan) |
+| Cuántas | 26 | 11: 9 en la app y 2 **en proceso** (Chasis Osteomuscular y Módulo de Respaldo: después de la partida, usuario 2026-11-14) |
 | Niveles | No: cada operación es una pieza | 1-4, 1-3 o 1-2; precio y rareza **por nivel** |
 | Rareza | "Operación \<Rareza\>" (Poco Habitual · Extraña · Muy Extraña) | "Objeto \<Rareza\>" (de Común a Muy Extraña) |
 | Precio | 15.000-45.000 créditos | De 1.500 (MQE 1) a 240.000 (IRM 4) |
@@ -2067,8 +2067,8 @@ sobreesfuerzo.
   pieza) con «Incompatible con <pieza>.»: Tienda, NPC y servidor pasan por ahí. Una ficha que
   ya tiene las dos solo lleva el **aviso** «incompatible con …» en Equipo
   (`aumentosIncompatibles`, junto al requisito roto); no se quita nada ni se apaga ningún
-  efecto (usuario, 2026-11-14; S108). Hoy solo está declarada la pareja del Ojo: Chasis y
-  Metabolismo declararán la suya al darse de alta (E5).
+  efecto (usuario, 2026-11-14; S108). Declaradas hoy: la del Ojo y la del Metabolismo (E5a); el
+  Chasis declarará la suya al darse de alta (E5b).
 - *En la app (A1, atributos y derivados):* cada operación da sus +1 como `Modificador`
   "atributo" con origen `"aumento"` y la pieza de fuente (`modificadoresDeAumentos`,
   `rules/aumentos.ts`), y entran en `modificadoresActivos` y en `resolverFicha` (también al
@@ -2094,10 +2094,12 @@ sobreesfuerzo.
     que tengan alguna amenaza cubierta: "Nada en especial" por defecto y una opción por
     amenaza (`AMENAZAS`). La opción suma todo lo que le aplica, con una línea por fuente en
     el desglose. Fortaleza: ceguera, ceguera por detonación (suma también lo de ceguera),
-    sordera, aturdimiento, shock, toxinas, venenos, enfermedad, radiación y frío o
-    calor del ambiente. Voluntad: confusión, asfixia (sync Drive 2026-11-14), miedo, coerción,
-    intimidación, manipulación mental, dominación, sugestión coercitiva, alteración de la
-    voluntad y «Otro efecto emocional» (Regulación, sync Drive 2026-11-14).
+    sordera, aturdimiento, shock, toxinas, venenos, enfermedad, radiación, fatiga inducida y
+    parálisis (Metabolismo, E5a) y frío o calor del ambiente. Voluntad: confusión, asfixia (sync
+    Drive 2026-11-14), miedo, coerción, intimidación, manipulación mental, dominación, sugestión
+    coercitiva (cuenta también como efecto sugestivo, S109), alteración de la voluntad, «Otro
+    efecto emocional» (Regulación, sync Drive 2026-11-14) y «Efecto sugestivo» (Control Anímico,
+    E5a).
   - **Ventaja:** no se acumula. Si una fuente la da gratis (Resiliencia), no se cobra la de
     pago (Biogénesis). Si solo hay de pago, salen dos opciones, sin pagar y "pagando
     fatiga" (ventaja y 1 de fatiga), porque el texto lo deja a elección ("permite emplear").
@@ -2466,6 +2468,39 @@ sobreesfuerzo.
     (antes, uno por acción): texto, la regeneración pasiva no está mecanizada (au-01). Tempestad
     Nanobótica con **Reflejos + Biónica (Biociencia)** y la destrucción de blindaje automática
     salvo kerzul (A4b, abajo).
+- *Metabolismo Sintético, Control Anímico y Control Sensorial (E5a, sync Drive 2026-11-14)*
+  `[FIRME · docs/fuente/aumentos.md + usuario 2026-11-14]`. Cerrados por el diseñador; sustituyen a
+  Soporte Vital (el implante), que nunca llegó a la app. Supuestos y decisiones: S109.
+  - **Metabolismo Sintético** (18 000 / 36 000 / 72 000 / 144 000; shock y sabotaje como cualquier
+    implante del cuerpo). «+1 por nivel» a lo numérico del nivel 1 (usuario): **fatiga máxima +1 …
+    +4** (Modificador `derivado` fatiga) y **+1 … +4** en el «Contra…» de Fortaleza contra
+    congelación, enfermedad, toxinas y venenos (envenenamiento), fatiga inducida, parálisis y shock
+    (shock eléctrico). **Apnea ×2 … ×5**: nota en la opción «Asfixia» de la Salvación de Voluntad,
+    sin bono; desde el 3, también «ignoras el gasto de fatiga por acción en asfixia de grado 1».
+    **Nivel 2**: −1 a los penalizadores por fatiga (`NivelImplante.reduceUmbrales`, ajuste de
+    umbrales como Estabilización); el +1 de fatiga del descanso corto, texto (los descansos no
+    están en la app). **Nivel 3**: el ×2 de la comida, texto (no hay acción de comer, usuario).
+    **Nivel 4**: «Sobrecarga metabólica», activable (acción gratuita, 2 de fatiga, estado
+    `aum_metabolismo_sobrecarga` 3 rondas que corren en combate; fuera, se desactiva a mano): sin
+    penalizadores por fatiga (`eliminaPenalizadoresUmbrales: "fatiga"`, también su media velocidad
+    y su recorte de carga, td-10; los de heridas siguen) y **ventaja sin casilla en la Salvación de
+    Fortaleza** (`ActivoAumento.ventajasFijas`). «Una vez por descanso», texto en la nota.
+    **Incompatible** con Biogénesis, Angiogénesis y Regeneración Tisular (`incompatibleCon`, E4).
+  - **Control Anímico** (12 000 / 36 000). **Nivel 1**: +1 a toda tirada de **Actitud**, entrenada o
+    no («habilidades sociales», S109); +1 en el «Contra…» de Voluntad contra **Efecto sugestivo**
+    (amenaza nueva; la sugestión coercitiva lo incluye) y **miedo**. **Nivel 2**: casilla
+    «Inteligencia en lugar de Voluntad» en la Salvación de Voluntad, 2 de fatiga, que la tira con
+    **Perspicacia** (S109, `TODO(revisar)`); «Inmunidad al miedo», activable de 1 de fatiga, estado
+    `aum_control_animico` **10 rondas** (los «10 turnos»), que da inmunidad al miedo mientras dura
+    (`ActivoAumento.inmuneA`: `inmunidadesDe` lee también los activables encendidos, con los
+    estados puestos; poner el miedo a un inmune no lo pone, y uno puesto antes no hace nada, A7).
+  - **Control Sensorial** (15 000 / 42 000). **Nivel 1**: Percepción +1 **no apilable con aumentos
+    genéticos** (`Implante.atributosNoApilanConGeneticos`: solo suma lo que pase de lo que dan a la
+    Percepción las operaciones que funcionan; con Foveo, Vestíbulo, Consciencia o Prefrontal su
+    línea queda a 0 «no se apila con …»); +1 en el «Contra…» de Fortaleza contra aturdimiento, shock
+    y sordera; −1 a los penalizadores por heridas y fatiga. **Nivel 2**: +2 y −2. La frase final
+    («el primer nivel ambos efectos que divide su movimiento básico dejará de hacerlo») está rota:
+    solo texto, sin interpretar (`TODO(revisar)`); la media velocidad de los umbrales sigue.
 - *En la app (A7, inmunidades; usuario, 2026-10-22):* `rules/inmunidades.ts`, con los datos en el
   catálogo (`inmuneA` del nivel del implante o de la operación).
   - **Quién:** Ojo Biónico 2, 3 y 4 contra la **ceguera** (fuente "Ojo Biónico N"; el 1, nada) y
@@ -3387,6 +3422,7 @@ una decisión reversible**, y está aislado en `src/lib/rules.ts`:
 | S106 | **Bajón y rechazo de fármacos (T7c, 2026-11-14)**, supuestos al construir fa-03 (§12): (1) **Salvaciones incluidas** en «tiradas con atributos mentales» (el Ultra excluye las salvaciones de las «acciones físicas»; aquí el texto dice «tiradas»). (2) **Fatiga en combate**: a la foto que enseña la Mesa, como la pestaña Vida; fuera, a la ficha. (3) **Fatiga insuficiente** para el bajón: se cobra la que quede (hasta 0) y se avisa; no bloquea. (4) **El servidor acepta la consecuencia del fármaco ya agotado** (el cliente gasta la dosis antes; con la última, la fila ya no está): `accionesDeFarmacos(…, conAgotados)`. (5) ~~Los cinco estados los puede quitar el propio jugador~~: los bajones y el rechazo, solo el máster (usuario, 2026-11-14); los recordatorios, también el jugador. `TODO(revisar)` (4): no comprueba que la ficha haya tenido nunca esa dosis (solo se perjudica a sí mismo). | Construcción de T7c; decisiones de fa-03 del usuario. |
 | S107 | **Sync Drive 2026-11-14, tanda T2 (medianos)**, decisiones del usuario (2026-11-14) y supuestos al construirla (`docs/plan-sync-2026-11-14.md`): (1) **Brazo Biónico, blindaje (lectura A, usuario)**: compite contra la **suma** de armadura + armadura natural (especie y aumentos) y aporta lo que le falte; Deflector, blindaje reactivo y Contención suman aparte. El Tejido Conductor también suma aparte (usuario). (2) **Requisito de atributo en los aumentos (usuario)**: se construye para el Brazo 4 Fuerte (Fuerza 2); supuesto: se mira solo al comprar, con la Fuerza permanente (la de los requisitos de dote), y no se rompe después. (3) **Brazo, ventaja por 2 de fatiga (usuario)**: «prueba que utilice el brazo» = las de Fortaleza, Potencia o Reflejos sin salvaciones, con casilla; límites por descanso, texto (usuario: límites de uso = texto salvo «por escena»). (4) **Densificar «contra traumatismos» (usuario)** = solo daño Cinético, como la Osteotendinosa. (5) **Sanar grave (usuario)**: un botón que cobra 4 y cura 1 grave en el acto; «tarda un minuto», nota. Se borra el efecto `contador` (sin otro uso); las claves viejas de su contador se ignoran al leer, sin migración. (6) **Ojo 4 (usuario)**: manda el documento nuevo, −2 a la cobertura visual y termo-óptica hasta 100 m, ya no la física (cae la lectura de A3 para este nivel). (7) **Aceptados por el usuario (2026-11-14)**: Diagnóstico de Sistemas en las tiradas de Tecnociencia, sin tirada fija de diagnóstico; la visión del Ojo 1 «como los visores de nivel 2», solo texto. (8) **Arköru, Modelos a Medida (usuario)**: el +20 % de peso y +10 % de coste va a toda la familia `armadura`, Ropa Reforzada e Inteligente incluidas; se devuelve al quitarla lo pagado con el recargo (§14.7). (9) **Proyector de Pulso, modo Pulso (usuario)**: «1 carga × 3 disparos» = contador de disparos sueltos guardado en la pieza (`PiezaEquipada.disparosPulso`, 0-2, opcional y tolerante al leer, sin subir `SCHEMA_VERSION`); el primer disparo de cada tres gasta la carga (`dispararPulso`, `rules/recursos.ts`, que llama la server action al confirmar la tirada); cualquier subida de cargas lo pone a 0: `comprarRecarga` y también el «+» a mano de Recursos (`ajustarRecurso`; usuario, 2026-11-14). Los otros modos no tocan el contador: el «× 3 disparos» es solo del modo Pulso (supuesto). (10) **Aguijón (usuario)** («1 carga × nivel en turnos»; fuera la «Duración: Nivel»): acción «Activar Aguijón» que gasta 1 carga y pone el estado propio «Aguijón activo» (`ESTADOS_DE_EQUIPO`, `catalog/estados.ts`) con N rondas (N = nivel), por el camino de «Activar camuflaje» (`estadoAlUsar`); las rondas corren en combate y fuera se quita a mano («Replegar el Aguijón»). Golpear y bloquear con el Aguijón no gastan y, sin el estado, salen bloqueados (`Accion.requiereEstado`, `habilitacionEnFicha`). Supuesto: el bloqueo con el Aguijón también pide el estado. (11) **Nutrición (usuario)**: sin acción «Comer»; los tres consumibles se compran con cantidad (pool de los fármacos, `sheet.farmacos`) y sus efectos van como texto (§12). (12) **Armas modificadas pesadas (usuario)**: los % de peso de varias modificaciones se suman sobre el básico para comparar con el 50 % (§12, Armas Modificadas); supuesto: el −1 va a golpear, bloquear y lanzar con el arma («en su empleo»). | Plan de sync y decisiones del usuario (2026-11-14). |
 | S108 | **Incompatibilidades entre aumentos (E4, sync Drive 2026-11-14)** (§11.1): (1) **Ficha que ya tiene las dos piezas (usuario)**: solo un aviso «incompatible con …» en Equipo, como el requisito roto (A0); no se quita nada, no se bloquea su uso y las dos siguen dando sus efectos. (2) Supuesto: **subir de nivel** un implante que convive con su incompatible también se rechaza (es una compra). (3) El NPC del máster (modo libre) respeta el bloqueo, como los requisitos (§11.1). | Decisión del usuario (1); construcción (2) y (3). |
+| S109 | **Implantes nuevos (E5a, sync Drive 2026-11-14)** (§11.1): Metabolismo Sintético, Control Anímico y Control Sensorial. Decisiones del usuario (2026-11-14): (1) los tres, cerrados por el diseñador; (2) Metabolismo: el «+1 por nivel» sube también la fatiga máxima (+1 … +4), apnea ×2 … ×5 y salvaciones +1 … +4; (3) límites por descanso, texto; «durante N turnos» = activable con N rondas que corren en combate (patrón Neuroprótesis); (4) comer no existe: la comida, texto; (5) Metabolismo incompatible con Biogénesis, Angiogénesis y Regeneración Tisular. Supuestos al construirlo, `TODO(revisar)`: (6) **«habilidades sociales» = Actitud**, la que la app ya trata como social (Proyección); la lectura más estrecha. (7) **«Inteligencia en lugar de Voluntad»** = la salvación se tira con **Perspicacia** (Inteligencia + Percepción), el aplicado con Inteligencia que no comparte nada con Voluntad; podría ser Expresión o el atributo solo. (8) **Parálisis y fatiga inducida** se salvan con Fortaleza (la fuente no lo dice de la parálisis; la causan el daño tóxico y el shock). (9) **Efecto sugestivo**: amenaza nueva del «Contra…» de Voluntad; la sugestión coercitiva cuenta también como efecto sugestivo. (10) Control Anímico y Control Sensorial, sin descripción: sabotaje y Shock del cuerpo por la regla general de los implantes. (11) La reducción de penalizadores de un implante penalizado por el Shock no baja (como la de la Neuroprótesis); apagado, no cuenta. (12) Control Sensorial 2, frase final rota: no se interpreta. (13) La inmunidad de un activable (Control Anímico 2) también la miran el panel del máster y los NPC con sus estados. | Decisiones del usuario (1)-(5); construcción (6)-(13). |
 
 ## Conflictos detectados
 

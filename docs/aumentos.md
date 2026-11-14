@@ -17,11 +17,13 @@
 >   Biónico) van en lista.
 > - **Reglas generales** que el documento pone al principio de los implantes: van aparte.
 >
-> **Recuento: 26 operaciones genéticas y 11 implantes.** De los 11, **6 están cerrados**
-> (IRM, MQE, Brazo, Ojo, Neuroprótesis y Enjambre) y **5 EN PROCESO**: desde Control Anímico
-> hasta el final del documento, el diseñador aún los está escribiendo (usuario, 2026-10-16).
-> Los 5 se transcriben, pero **no se modelan** ni se le mandan erratas sobre ellos. Ver
-> "Notas de transcripción" al final.
+> **Recuento: 26 operaciones genéticas y 11 implantes.** De los 11, **9 están cerrados y en la
+> app** (IRM, MQE, Brazo, Ojo, Neuroprótesis, Enjambre y, desde el sync Drive 2026-11-14,
+> Metabolismo Sintético, Control Anímico y Control Sensorial: tanda E5a) y **2 EN PROCESO**
+> (Chasis Osteomuscular y Módulo de Respaldo: se construyen después de la partida, usuario
+> 2026-11-14). Refuerzo Protésico, Sistema de Emergencia y Soporte Vital desaparecieron de la
+> fuente el 2026-11-14 (los sustituyen Chasis, Módulo y Metabolismo). Ver "Notas de
+> transcripción" al final.
 
 ## Operaciones genéticas
 
@@ -614,12 +616,42 @@ Además, como reacción y con el gasto de un punto de fatiga el enjambre puede d
 El cénit de la simbiosis nanotecnológica. El enjambre rompe las limitaciones biológicas previas: la regeneración pasiva del implante funciona incluso si el personaje se encuentra fatigado o exhausto, y duplica su velocidad mientras no esté fatigado (regenera un nivel de daño no letal por acción, uno letal por turno y uno grave por cada 10 turnos).
 Además, introduce la capacidad de **Tempestad Nanobótica**: como acción estándar y gastando 2 puntos de fatiga, el usuario puede forzar al enjambre a desbordarse momentáneamente a través de la piel para atacar o sabotear el entorno inmediato. El ataque se resuelve como acción estándar, su alcance es melee y requiere de una tirada de **reflejos + tecnociencia.** Su daño básico es de 1 Grave, y es cuando acierta *(sic: frase rota; ¿"y cuando acierta"?)* al blindaje destruye 1 punto por contacto físico. De la misma forma se puede emplear para sabotear objetos.
 
-## EN PROCESO — no se modela
+### Metabolismo Sintético (Nivel 1-4)
 
-> El diseñador sigue escribiendo **todo lo que va de aquí al final** (usuario, 2026-10-16).
-> Se deja transcrito para tenerlo a mano, pero no entra en el modelado. Cuando llegue la
-> versión nueva, `npm run sync-drive`, se vuelve a transcribir esta parte y se modela en
-> una pasada corta.
+**Descripción:**
+Conjunto de microimplantes de purificación intravascular, filtración molecular y reguladores enzimáticos acoplados de forma permanente al sistema cardiocirculatorio y linfático. Su propósito es maximizar la eficiencia en la absorción de oxígeno, neutralizar de forma autónoma patógenos hemáticos, metabolizar toxinas antes de que comprometan los órganos vitales y reescribir los umbrales de fatiga celular mediante la inyección controlada de biomoléculas de alta energía y la diálisis continua de metabolitos de desecho. Al ser un sistema electrónico-biológico integrado, es susceptible al estado de **shock** y al sabotaje por otros medios.
+Este implante satura el sistema circulatorio, linfático y hematopoyético con hardware, lo que suprime por completo las vías orgánicas que modifican los tratamientos de la sangre y los tejidos. Por este motivo, es **completamente incompatible** con los aumentos genéticos de: **Biogénesis Mitocondrial, Angiogénesis Sistémica y Regeneración Tisular Acelerada.**
+
+#### Nivel 1
+
+**Rareza:** Poco Habitual · **Coste:** 18000 créditos
+
+**Efecto:**
+El personaje **amplía su reserva máxima en +1 Punto de Fatiga**.
+El sistema optimiza el intercambio gaseoso y la respuesta inmunológica artificial. El personaje gana un bonificador de **+1 en tiradas de salvación** contra congelación, enfermedad, envenenamiento, fatiga inducida, parálisis y shock eléctrico. Además, duplica (**x2**) el tiempo máximo que el organismo puede permanecer en apnea o sin oxígeno ante un efecto de asfixia.
+Los bonificadores y efectos numéricos de este implante en primer nivel aumentan en 1 por cada nivel subsiguiente. También el tiempo capaz de resistir sin oxígeno aumenta su multiplicador en 1 por nivel.
+
+#### Nivel 2
+
+**Rareza:** Extraña · **Coste:** 36000 créditos
+
+**Efecto:**
+Gracias a su eficacia circulatoria, cuando el personaje realiza un **descanso corto** de 10 minutos, recupera **1 punto extra de fatiga** (sumando un total de 4 puntos recuperados en lugar de los 3 habituales). Adicionalmente, **reduce en 1 los penalizadores acumulados por fatiga**.
+
+#### Nivel 3
+
+**Rareza:** Extraña · **Coste:** 72000 créditos
+
+**Efecto:**
+Asimila con mayor eficiencia los nutrientes: **duplica** la cantidad de fatiga recuperada por comida.
+Además, el usuario de este implante ignora el gasto de fatiga por acción cuando se encuentre en el estado de **asfixia de grado 1**.
+
+#### Nivel 4
+
+**Rareza:** Muy Extraña · **Coste:** 144000 créditos
+
+**Efecto:**
+Como acción gratuita durante su turno, el personaje puede inyectarse una sobrecarga metabólica gastando **2 puntos de fatiga**: durante 3 turnos, elimina por completo cualquier penalizador por fatiga, y obtiene **ventaja** en todas las tiradas de salvación de Fortaleza. Esta habilidad solo puede usarse una vez por descanso corto o largo.
 
 ### Control Anímico (Nivel 1-2)
 
@@ -656,87 +688,102 @@ Además, disminuye en 1 los penalizadores obtenidos por heridas y fatiga.
 **Rareza:** Extraña · **Coste:** 42000 créditos
 
 **Efecto:**
-El personaje dobla el bonificador en tiradas de salvación y la disminución del penalizador por daño y fatiga, además el primer nivel ambos efectos que divide su movimiento básico dejará de hacerlo. *(sic: frase rota)*
+El personaje dobla el bonificador en tiradas de salvación y la disminución del penalizador por daño y fatiga, además el primer nivel ambos efectos que divide su movimiento básico dejará de hacerlo. *(sic: frase rota; la app no la interpreta, TODO(revisar))*
 
-### Refuerzo Protésico (Nivel 1-3)
+## EN PROCESO — no se modela
 
-*(La fuente no trae descripción.)*
+> **Pendiente, usuario 2026-11-14**: Chasis Osteomuscular y Módulo de Respaldo están cerrados en
+> la fuente, pero se construyen después de la partida (tanda E5b de
+> `docs/plan-sync-2026-11-14.md`). Se dejan transcritos para tenerlos a mano.
+
+### Chasis Osteomuscular (Nivel 1-4)
+
+**Descripción:**
+El Chasis Osteomuscular es una intervención quirúrgica radical que fusiona la biología con la tecnología avanzada mediante la osteointegración de nanotubos de carbono en la matriz ósea, la sustitución parcial de la musculatura por polímeros electroactivos y el anclaje subdérmico de una malla de cerámica no newtoniana. Esta densificación estructural altera de forma permanente la morfología del usuario y satura su espacio tisular, bloqueando por completo la regeneración celular acelerada o la genética hiperplásica.
+Al carecer por completo de microprocesadores lógicos o software, el sistema es absolutamente **inmune al *hacking*, al rastreo remoto y al sabotaje informático**. Sin embargo, sí **le afecta el shock** en su funcionamiento físico: al utilizar micro-corrientes eléctricas para accionar sus polímeros sintéticos, las descargas directas o los pulsos EMP inducen picos de voltaje analógicos que desestabilizan los actuadores, provocando espasmos neuromusculares y el fallo temporal del implante bajo las reglas estándar de *shock* para sistemas biónicos.
+Este implante es **completamente incompatible** con los aumentos genéticos de: **Integridad Osteotendinosa, Matriz Ósea Adaptativa, Hipertrofia Miofibrilar, Sincronización Neuromotora Profunda y Regeneración Tisular Acelerada,** ya que la presencia masiva de hardware sintético y la saturación tisular del chasis sustituyen las estructuras orgánicas que estos tratamientos pretenden modificar, impidiendo la aceleración celular y provocando un rechazo metabólico catastrófico si se intenta su combinación.
 
 #### Nivel 1
 
-**Rareza:** Poco Habitual · **Coste:** 36000 créditos
+**Rareza:** Poco Habitual · **Coste:** 18000 créditos
 
 **Efecto:**
-El personaje adquiere un aumento efectivo de 1 en sus puntuaciones de Fuerza y Resistencia *(sic: no es atributo; ¿Aguante?)*, más 1 puntos de Armadura Natural y transforma el daño de sus golpes desarmado en Letal.
-Esta serie de implantes no pueden ser saboteados ni pirateados pues no son de naturaleza electrónica, por otra parte los beneficios de este implante no se apilan con los otorgados por los aumentos de: Hiperplasia, Estructura Ósea Aumentada y Resistencia de Tejidos Aumentada *(sic: ninguno existe en el documento)*. Además, impide acceder al aumento de Regeneración *(sic: ¿Regeneración Tisular Acelerada?)*.
+Primera fase de osteointegración de nanotubos y micro-actuadores básicos en las extremidades principales.
+El personaje adquiere un aumento efectivo de **+1 en Fuerza**, **+1 punto de Armadura Natural** (por la malla subdérmica de cerámica) y transforma el daño de sus **golpes desarmados en Letal**.
 
 #### Nivel 2
 
-**Rareza:** Extraña · **Coste:** 108000 créditos
+**Rareza:** Extraña · **Coste:** 36000 créditos
 
 **Efecto:**
-El personaje adquiere un aumento efectivo de 2 en sus puntuaciones de Fuerza y Resistencia *(sic)*, más 2 puntos de Armadura Natural y aumenta el daño de sus golpes desarmado en 1 nivel.
-Además, de forma excepcional, podrá incluir en su cuerpo un dispositivo de armadura de hasta nivel 2. La instalación de este dispositivo exige incluir componentes electrónicos lo que hace que esta función si sea susceptible de saboteo. Para utilizar el dispositivo se consumirán puntos de fatiga del usuario en lugar de la habitual carga de la célula de alimentación de las armaduras. Por cada carga que utilizase el dispositivo, deberá emplear 2 puntos de fatiga.
-El personaje podrá emplear este dispositivo corporal llevando armadura o traje, incluso al mismo tiempo que otro dispositivo en su armadura si lo tuviese, pero nunca si se trata del mismo tipo de dispositivo.
+Sustitución parcial de la musculatura profunda por polímeros electroactivos y densificación total de la caja torácica y la faja pélvica.
+El aumento de Fuerza asciende a **+2**, la **Armadura Natural sube a 2 puntos** y el daño desarmado aumenta en 1 nivel adicional. Otorga un **bonificador pasivo de +2 a las tiradas de salvación contra derribo y aturdimiento** por impactos.
+**· Integración Táctica:** Permite anclar quirúrgicamente en el cuerpo **un subsistema táctico de hasta Nivel 2** como los que utilizan las armaduras. El personaje podrá elegir exclusivamente entre: el **Proyector de Pulso** o el **Camuflaje Trifásico**. Al alimentarse directamente de la bioelectricidad y el metabolismo del usuario en lugar de baterías externas, cada uso o activación consume **2 puntos de fatiga** del personaje. En el caso del El *(sic)* camuflaje subdérmico este puede "traspasar" o sincronizarse con **Traje Ultra Ligero, Ropa Inteligente o Ropa Reforzada**, pero queda bloqueado por armaduras más pesadas.
 
 #### Nivel 3
 
-**Rareza:** Muy Extraña · **Coste:** 216000 créditos
+**Rareza:** Extraña · **Coste:** 72000 créditos
 
 **Efecto:**
-El personaje adquiere un aumento efectivo de 3 en su puntuación de Fuerza y de 2 en Resistencia *(sic)*, más 3 puntos de Armadura Natural y aumenta el daño de sus golpes desarmado en 2 niveles. Además, en caso de emplear un dispositivo corporal, el límite de su nivel será de 3.
-Al alcanzar este nivel la apariencia del personaje queda modificada de forma evidente por los implantes, pudiendo ser objeto de penalizadores o bonificadores en según que acciones del tipo social. De forma permanente gana un bonificador de +1 en tiradas de Intimidar con componente visual y adquiere un penalizador de -1 en tiradas de Seducir (Embaucar) y para tratar de pasar desapercibido.
+Redundancia de los actuadores sintéticos, blindaje de las articulaciones principales y anclajes estructurales de grado industrial pesado.
+Otorga **+3 en Fuerza**, **3 puntos de Armadura Natural** y el **daño** desarmado aumenta en **2**. El bonificador contra **derribo** y **aturdimiento** físico sube a **+3**. El límite para **subsistemas** corporales integrados asciende a **nivel 3.**
+La modificación a estos niveles suele hacerse muy evidente a simple vista alterando el aspecto físico del usuario.
 
-### Sistema de Emergencia (Nivel 1-2)
+#### Nivel 4
 
-*(La fuente no trae descripción.)*
+**Rareza:** Muy Extraña · **Coste:** 144000 créditos
+
+**Efecto:**
+El cuerpo del usuario opera prácticamente como un exoesqueleto interno de aleación de titanio-carbono y polímeros de alto rendimiento, donde la carne restante sirve meramente como soporte vital auxiliar.
+Otorga un aumento efectivo de **+4 en Fuerza**, **4 puntos de Armadura Natural** y eleva el **daño** desarmado en **3 niveles**. El bonificador contra **derribo** y **aturdimiento** físico alcanza un imponente **+4**. El límite de **subsistemas** corporales integrados llega a **nivel 4**.
+Una vez por descanso, el usuario puede gastar **2 puntos de fatiga** para duplicar durante un turno su capacidad de carga o para realizar una prueba de **potencia** o **fortaleza** que implique soportar o vencer una resistencia con ventaja: Realizar o evitar **agarres** y **derribos**, soportar impactos cinéticos extremos, resistir efectos de aturdimiento físico y llevar a cabo proezas de fuerza bruta como romper objetos.
+
+### Módulo de Respaldo (Nivel 1-4)
+
+**Descripción:**
+Una unidad de hardware redundante dotada de un bus de datos secundario y un circuito de aislamiento galvánico de alta seguridad. Está diseñada para aislar núcleos lógicos colapsados, reenrutar flujos de energía y puentear estados de shock o sabotaje informático en los demás implantes del usuario.
+En la práctica, este módulo funciona como un «botón de reinicio de emergencia y escudo interno» para los implantes biónicos.
 
 #### Nivel 1
 
-**Rareza:** Poco Habitual · **Coste:** 15000 créditos
+**Rareza:** Poco Habitual · **Coste:** 8000 créditos
 
 **Efecto:**
-Este sistema está diseñado para reactivar un implante inactivo o saboteado. Con el gasto de un punto de fatiga el personaje puede reactivar como acción gratuita durante su turno un implante que se encontrase en estas condiciones, el implante reactivado funcionará un turno completo hasta el principio de su nuevo turno, tras esto volverá a su estado anterior hasta que termine la duración del sabotaje.
+El módulo otorga un bonificador permanente de **+1 en todas las tiradas de salvación** contra los efectos de **shock**, interferencias electromagnéticas y desactivación forzosa que afecten a la biónica del personaje.
+Mediante el gasto de **1 punto de fatiga**, el personaje puede ejecutar una **reacción** o una **acción simple** para forzar la reactivación instantánea de un implante que se encuentre inactivo o afectado por sabotaje o shock. El implante recupera su funcionalidad completa durante una ronda completa desde el momento en que lo reactivó, tras lo cual reanuda su estado de fallo a menos que concluya la interferencia.
 
 #### Nivel 2
 
-**Rareza:** Extraña · **Coste:** 45000 créditos
+**Rareza:** Poco Habitual · **Coste:** 16000 créditos
 
 **Efecto:**
-Aumenta la duración a tantos turnos como el bonificador de Resistencia *(sic)* del personaje.
-
-### Soporte Vital (Nivel 1-3)
-
-*(La fuente no trae descripción. Ojo: ya existe una mejora estándar de equipo con el mismo
-nombre, `soporte_vital` en `src/lib/catalog/mejorasEstandar.ts`.)*
-
-#### Nivel 1
-
-**Rareza:** Común · **Coste:** 10000 créditos
-
-**Efecto:**
-El personaje gana un bonus de +1 en tiradas de salvación contra efectos de enfermedad, envenenamiento, congelación, fatiga, parálisis y shock.
-Además dobla la duración total en la que puede permanecer sin respiración.
-
-#### Nivel 2
-
-**Rareza:** Poco Habitual · **Coste:** 30000 créditos
-
-**Efecto:**
-Como en el primer nivel, pero doblando los beneficios.
+Amplía los búferes de energía de emergencia y los protocolos de reescritura de firmware.
+Aumenta la duración de la reactivación de emergencia como reacción o acción simple: el implante afectado reactivado se mantiene operativo durante un número de rondas igual al **nivel del módulo de respaldo.**
 
 #### Nivel 3
 
-**Rareza:** Extraña · **Coste:** 60000 créditos
+**Rareza:** Extraña · **Coste:** 32000 créditos
 
 **Efecto:**
-Como el primer nivel, pero triplicando los beneficios.
+Arquitectura de doble canal y aislamiento mejorado.
+Permite al usuario reactivar hasta dos implantes de forma simultánea gastando 1 solo punto de fatiga como reacción o acción simple.
+Además, como acción estándar y el gasto de 1 punto de fatiga el usuario puede tratar de restablecer por completo un implante saboteado con una tirada de **perspicacia + biónica** con dificultad 6; si la tirada tiene éxito, el implante se purga y recupera su estado nominal, mientras que un fracaso crítico deja el módulo de respaldo temporalmente bloqueado durante 1 minuto.
+
+#### Nivel 4
+
+**Rareza:** Muy Extraña · **Coste:** 64000 créditos
+
+**Efecto:**
+Redundancia predictiva de última generación. El módulo integra un subnúcleo con capacidad de respuesta autónoma en nanosegundos.
+Permite al usuario reactivar hasta cuatro implantes de forma simultánea gastando 1 solo punto de fatiga como reacción o acción simple.
+Además, el sistema puede actuar de forma inmediata ante un estado de shock o desactivación forzosa, el usuario puede tratar de restablecer por completo un implante saboteado con una tirada de **perspicacia + biónica** igual que en nivel 3 como **reacción** (o acción simple) y con el gasto de *(sic: «de1»)* 1 punto de fatiga.
 
 ---
 
 ## Notas de transcripción
 
-**Recuento:** 26 operaciones genéticas y 11 implantes; 5 de los implantes están EN PROCESO.
+**Recuento:** 26 operaciones genéticas y 11 implantes; 2 de los implantes están EN PROCESO
+(Chasis Osteomuscular y Módulo de Respaldo, pendientes por decisión del usuario, 2026-11-14).
 No hay ninguna pieza sin coste ni sin rareza.
 
 **Cosas de la fuente que no son erratas pero conviene tener presentes**
@@ -745,8 +792,7 @@ No hay ninguna pieza sin coste ni sin rareza.
 - **Requisitos.** Solo los tienen las operaciones genéticas, y siempre son otras
   operaciones. Los implantes no traen requisitos ni de nivel anterior: no se dice si hace
   falta el nivel 1 para comprar el 2.
-- **Sin descripción.** Control Anímico, Control Sensorial, Refuerzo Protésico, Sistema de
-  Emergencia y Soporte Vital no tienen texto de entrada.
+- **Sin descripción.** Control Anímico y Control Sensorial no tienen texto de entrada.
 - **"Una vez por escena o combate"** (Proyección Neuro-Expresiva) frente a "una vez por
   escena" en las demás.
 - **"Biónica" es especialidad de Biociencia** (`sistema.md` §3). La extracción y el arma del
@@ -757,9 +803,7 @@ No hay ninguna pieza sin coste ni sin rareza.
 - **El MQE no da nada a quien lo lleva.** Toda su mecánica es la dificultad y el
   contragolpe de quien intenta la infiltración psiónica.
 
-**Erratas para Murillo** (solo de las piezas cerradas. Las marcadas *(sic)* en la sección EN
-PROCESO, como "Resistencia", los nombres viejos de Refuerzo Protésico o la frase rota de
-Control Sensorial 2, no se le mandan mientras siga escribiéndolas)
+**Erratas para Murillo** (solo de las piezas cerradas; las de la sección EN PROCESO, no)
 1. **Ojo Biónico**: hay dos "Nivel 3" y ningún "Nivel 2". El primero (Extraño, 32000) es,
    por precio y orden, el nivel 2.
 2. **IRM nivel 3**: repite la frase del nivel 2 ("Optimiza los conductos…").
@@ -768,5 +812,7 @@ Control Sensorial 2, no se le mandan mientras siga escribiéndolas)
 4. **Bucle de Realimentación Motora** dice "por turno" donde sus requisitos dicen "por
    ronda".
 5. **Enjambre Nanobot 4**: frase rota ("y es cuando acierta al blindaje destruye…").
-6. **Ortografía**: hemorrogia, efeco, sientido, capcidad, infilitración, usario,
+6. **Control Sensorial 2** (cerrado desde el 2026-11-14): frase rota «además el primer nivel
+   ambos efectos que divide su movimiento básico dejará de hacerlo». La app no la interpreta.
+7. **Ortografía**: hemorrogia, efeco, sientido, capcidad, infilitración, usario,
    desprendese, atudimiento, sobeesfuerzo, "un tirada", "cambio de" (por "a cambio de").
