@@ -220,3 +220,14 @@ describe("Propulsión Aérea (foto de Drive 2026-11-14)", () => {
     assert.equal(defensa.efectoCritico, undefined);
   });
 });
+
+describe("E6: quien volaba con Tecnociencia (S110: sin compensación)", () => {
+  test("con Tecnociencia y sin Pilotaje, Volar ya no usa Tecnociencia: Pilotaje sin entrenar", () => {
+    const base = equiparMovilidadAerea(1);
+    const s: Sheet = { ...base, habilidades: { ...base.habilidades, tecnociencia: { valor: 4, especialidades: ["mecanica"] } } };
+    const f = resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+    const t = conExtrasDeFicha(f, f.accionesMovimiento[0]);
+    const m = montarTirada(f, t, eleccionSinTocar(t));
+    assert.deepEqual(m.habilidad, { id: "pilotaje", valor: -1 });
+  });
+});
