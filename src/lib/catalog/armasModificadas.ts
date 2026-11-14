@@ -4,7 +4,7 @@
 // No son piezas: no se instalan ni ocupan ranura, son "creaciones especiales sobre
 // la base de un arma" (usuario, 2026-10-23, S87). Viven como
 // `PiezaEquipada.modificaciones` del arma melee que transforman. Cada tabla de la
-// fuente va por tramo de "Daño Modelo Básico" (2 / 3 a 6 / 7 o +); el tramo, el
+// fuente va por tramo de "Daño Modelo Básico" (3 o menos / 4 a 5 / 6 o +); el tramo, el
 // coste, la rareza, el peso y el daño resultantes los calcula
 // lib/rules/armasModificadas.ts — aquí solo los datos tal cual.
 import type { Rareza } from "./equipo";
@@ -52,7 +52,7 @@ export type ModificacionArma = {
   exclusiva?: true;
   // "Peso Adicional", en % del peso del arma básica.
   pesoPorcentaje: number;
-  // Índice 0: "2", 1: "3 a 6", 2: "7 o +".
+  // Índice 0: "3 o menos", 1: "4 a 5", 2: "6 o +".
   tramos: readonly [TramoModificacion, TramoModificacion, TramoModificacion];
   motor: MotorMetadata[];
 };

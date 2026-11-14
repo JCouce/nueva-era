@@ -7,8 +7,9 @@
 // - Admiten modificación todas las armas melee que se compran salvo las de kerzul.
 //   Escudos: solo Electrificante. Nanofilamento: solo armas de filo (ArmaMelee.filo).
 // - Plasma no se combina con nada; las otras tres, libremente.
-// - El tramo sale del +N del PRIMER modo del arma SIN modificar ("2 o menos" cae en la
-//   fila "2"), igual para todas las modificaciones, y su daño extra va a todos los modos.
+// - El tramo sale del +N del PRIMER modo del arma SIN modificar, igual para todas las
+//   modificaciones, y su daño extra va a todos los modos. Tramos «3 o menos / 4 a 5 / 6 o +»
+//   (sync Drive 2026-11-14; la fuente pone «3», y Fue+2 cae ahí: usuario, 2026-11-14).
 // - Coste multiplicativo: básico × N₁ × N₂…; convertir un arma que ya tienes cuesta la
 //   diferencia. Rareza: la mayor entre la del arma y las de sus modificaciones.
 import type { EfectoEnTirada } from "./efectosArma";
@@ -37,7 +38,7 @@ export function bonoFormulaFuerza(formula: string): number | null {
 export const modificacionArmaSchema = z.enum(MODIFICACIONES_ARMA_IDS);
 export const listaModificacionesSchema = z.array(modificacionArmaSchema).min(1).max(MODIFICACIONES_ARMA_IDS.length);
 
-export const ETIQUETA_TRAMO = ["2", "3 a 6", "7 o +"] as const;
+export const ETIQUETA_TRAMO = ["3 o menos", "4 a 5", "6 o +"] as const;
 export type IndiceTramo = 0 | 1 | 2;
 
 // Fila de la tabla ("Daño Modelo Básico") que le toca al arma, o null si su fórmula no
@@ -45,7 +46,7 @@ export type IndiceTramo = 0 | 1 | 2;
 export function tramoDanioBasico(arma: ArmaMelee): IndiceTramo | null {
   const bono = bonoFormulaFuerza(arma.modos[0].formulaDanio);
   if (bono === null) return null;
-  return bono <= 2 ? 0 : bono <= 6 ? 1 : 2;
+  return bono <= 3 ? 0 : bono <= 5 ? 1 : 2;
 }
 
 const IDS_PELEA = new Set(PELEA.map((p) => p.id));

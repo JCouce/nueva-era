@@ -4,6 +4,7 @@ import { defaultSheet, parseSheet, type Sheet } from "./sheet";
 import { equipar, costeDePieza, costeDeRetirar, rarezaDePieza, pesoDePieza, fabricar, encargoFabricacion, piezaEquipadaEntradaSchema } from "./equipo";
 import {
   tramoDanioBasico,
+  ETIQUETA_TRAMO,
   admiteModificaciones,
   validarModificaciones,
   opcionesModificacion,
@@ -41,21 +42,32 @@ const RODELA = arma("escudo_rodela"); // Fue+2, 130 cr., Común, 1 kg
 const HOJA_DENTADA = arma("mecanica_hoja_dentada"); // Fue+4, 700 cr., 5 kg, no es de filo
 
 describe("tramo de daño básico", () => {
-  test("sale del +N del primer modo: 2 o menos / 3 a 6 / 7 o más", () => {
+  // Sync Drive 2026-11-14: «3 o menos / 4 a 5 / 6 o +» (antes, «2 / 3 a 6 / 7 o +»).
+  test("sale del +N del primer modo: 3 o menos / 4 a 5 / 6 o +", () => {
     assert.equal(tramoDanioBasico(arma("asta_baston_combate")), 0); // Fue+2
     assert.equal(tramoDanioBasico(RODELA), 0); // Fue+2
-    assert.equal(tramoDanioBasico(CUCHILLO), 1); // Fue+3
+    assert.equal(tramoDanioBasico(CUCHILLO), 0); // Fue+3
     assert.equal(tramoDanioBasico(ESPADA), 1); // Fue+4 (el segundo modo, Fue+6, no cuenta)
     assert.equal(tramoDanioBasico(arma("asta_hacha_guerra")), 1); // Fue+5
-    const pesada: ArmaMelee = { ...ESPADA, modos: [{ ...ESPADA.modos[0], formulaDanio: "Fue+7" }] };
-    assert.equal(tramoDanioBasico(pesada), 2);
-    const aPelo: ArmaMelee = { ...ESPADA, modos: [{ ...ESPADA.modos[0], formulaDanio: "Fuerza" }] };
-    assert.equal(tramoDanioBasico(aPelo), 0);
+    const conFormula = (formulaDanio: string): ArmaMelee => ({ ...ESPADA, modos: [{ ...ESPADA.modos[0], formulaDanio }] });
+    assert.equal(tramoDanioBasico(conFormula("Fue+6")), 2);
+    assert.equal(tramoDanioBasico(conFormula("Fue+7")), 2);
+    assert.equal(tramoDanioBasico(conFormula("Fuerza")), 0);
+    assert.deepEqual(ETIQUETA_TRAMO, ["3 o menos", "4 a 5", "6 o +"]);
+  });
+
+  test("Bastón de Combate (Fue+2) electrificado: +1 eléctrico, Shock (6), primer tramo", () => {
+    const perfil = perfilGolpe(arma("asta_baston_combate"), ["electrificante"]);
+    assert.deepEqual(perfil?.extras, [{ tipo: "electrico", valor: 1, fuente: "Electrificante" }]);
+    assert.deepEqual(perfil?.efectos, ["Shock (6)"]);
+    const s = equipar(defaultSheet(), { instanciaId: "b", catalogoId: "asta_baston_combate", modificaciones: ["electrificante"] });
+    const golpe = accionesDeAtaque(s).find((a) => a.id === "ataque_melee_b")!;
+    assert.deepEqual(golpe.ataque!.modos[0].danioExtra, [{ tipo: "electrico", valor: 1, fuente: "Electrificante" }]);
   });
 
   test("todas las modificaciones usan el tramo del arma sin modificar", () => {
     // Térmica suma +2 de fuego al básico de la Espada, pero Electrificante sigue en la
-    // fila "3 a 6" (+2, ×10), no sube.
+    // fila "4 a 5" (+2, ×10), no sube.
     const perfil = perfilGolpe(ESPADA, ["termica", "electrificante"]);
     assert.deepEqual(perfil?.extras, [{ tipo: "electrico", valor: 2, fuente: "Electrificante" }]);
     assert.equal(precioArmaModificada(ESPADA, ["termica", "electrificante"]), 100 * 125 * 10);
@@ -103,8 +115,8 @@ describe("compatibilidad", () => {
 
 describe("coste, rareza, peso y nombre", () => {
   test("coste multiplicativo y total", () => {
-    assert.equal(precioArmaModificada(CUCHILLO, ["nanofilamento"]), 30 * 300);
-    assert.equal(precioArmaModificada(CUCHILLO, ["nanofilamento", "electrificante"]), 30 * 300 * 10);
+    assert.equal(precioArmaModificada(CUCHILLO, ["nanofilamento"]), 30 * 250);
+    assert.equal(precioArmaModificada(CUCHILLO, ["nanofilamento", "electrificante"]), 30 * 250 * 5);
     assert.equal(precioArmaModificada(ESPADA, []), 100);
   });
 
@@ -112,7 +124,7 @@ describe("coste, rareza, peso y nombre", () => {
     assert.equal(rarezaArmaModificada(ESPADA, ["electrificante"]), "Poco Habitual");
     assert.equal(rarezaArmaModificada(arma("corta_pico_cuervo"), ["electrificante"]), "Poco Habitual"); // el arma manda
     assert.equal(rarezaArmaModificada(ESPADA, ["electrificante", "nanofilamento"]), "Muy Extraño");
-    assert.equal(rarezaArmaModificada(CUCHILLO, ["nanofilamento"]), "Muy Extraño");
+    assert.equal(rarezaArmaModificada(CUCHILLO, ["nanofilamento"]), "Extraño");
   });
 
   test("peso: el % sobre el básico", () => {
@@ -168,10 +180,10 @@ describe("el golpe", () => {
   test("Nanofilamento + Térmica: golpe grave y de fuego, ignora blindaje", () => {
     const p = perfilGolpe(CUCHILLO, ["nanofilamento", "termica"]);
     assert.equal(p?.tipoBase, "fuego");
-    assert.equal(p?.sumaBase, 3); // +1 grave (nano) + 2 fuego (térmica, tramo "3 a 6")
+    assert.equal(p?.sumaBase, 2); // +1 grave (nano) + 1 fuego (térmica, tramo "3 o menos")
     assert.equal(p?.categoria, "Grave");
-    assert.equal(p?.ignoraBlindaje, 3);
-    assert.deepEqual(p?.efectos, ["Llamarada (7)", "Hemorragia (1d8 turnos)"]);
+    assert.equal(p?.ignoraBlindaje, 2);
+    assert.deepEqual(p?.efectos, ["Llamarada (6)", "Hemorragia (1d6 turnos)"]);
   });
 
   test("la tirada de golpear y la de lanzar llevan el daño, la nota y el crítico", () => {
@@ -189,8 +201,8 @@ describe("el golpe", () => {
     assert.equal(m.danio, (m0.danio ?? 0) + 1);
     assert.equal(m.categoriaDanio, "Grave");
     assert.equal(m.tipoDanio, "cinetico");
-    assert.deepEqual(m.danioExtra, [{ tipo: "electrico", valor: 2, fuente: "Electrificante" }]);
-    assert.match(golpe.nota ?? "", /Shock \(7\).*Hemorragia \(1d8 turnos\)/);
+    assert.deepEqual(m.danioExtra, [{ tipo: "electrico", valor: 1, fuente: "Electrificante" }]);
+    assert.match(golpe.nota ?? "", /Shock \(6\).*Hemorragia \(1d6 turnos\)/);
     // T3a: el crítico ya no es texto: los efectos van como dato, cada uno con su fuente.
     assert.equal(golpe.efectoCritico, undefined);
     assert.deepEqual(
@@ -202,13 +214,13 @@ describe("el golpe", () => {
         ["Nanofilamento", "critico", "hemorragia"],
       ],
     );
-    assert.deepEqual(golpe.ignoraBlindaje, { valor: 3, fuente: "Cuchillo de Combate de Nanofilamento Electrificante" });
+    assert.deepEqual(golpe.ignoraBlindaje, { valor: 2, fuente: "Cuchillo de Combate de Nanofilamento Electrificante" });
 
     const lanzar = accionesDeAtaque(mod).find((a) => a.id === "lanzar_melee_c1")!;
     assert.equal(lanzar.ataque!.modos[0].categoriaDanio, "Grave");
     assert.deepEqual(lanzar.ataque!.modos[0].danioExtra, m.danioExtra);
-    assert.ok(lanzar.nota?.includes("Shock (7)"));
-    assert.equal(lanzar.ignoraBlindaje?.valor, 3);
+    assert.ok(lanzar.nota?.includes("Shock (6)"));
+    assert.equal(lanzar.ignoraBlindaje?.valor, 2);
     assert.deepEqual(lanzar.efectosObjetivo, golpe.efectosObjetivo);
 
   });
@@ -279,8 +291,8 @@ describe("sobre la ficha", () => {
     const s = equipar(defaultSheet(), { instanciaId: "c", catalogoId: "espada_cuchillo_combate", modificaciones: ["nanofilamento"] });
     const conv = conversionDeArma(s, "c", ["nanofilamento", "electrificante"]);
     assert.ok(conv.ok);
-    assert.equal(conv.coste, 30 * 300 * 10 - 30 * 300);
-    assert.equal(conv.rareza, "Muy Extraño");
+    assert.equal(conv.coste, 30 * 250 * 5 - 30 * 250);
+    assert.equal(conv.rareza, "Extraño");
     assert.equal(conversionDeArma(s, "c", ["electrificante"]).ok, false); // quita nano
     assert.equal(conversionDeArma(s, "c", ["nanofilamento"]).ok, false); // nada nuevo
     assert.equal(conversionDeArma(s, "c", ["nanofilamento", "plasma"]).ok, false);
@@ -290,7 +302,7 @@ describe("sobre la ficha", () => {
   });
 
   test("Fabricar: un arma nueva ya modificada, o la modificación sobre una tuya pagando la diferencia", () => {
-    // Rodela 130 cr. × 5 (Electrificante, tramo "2") = 650 → 3 unidades de 250.
+    // Rodela 130 cr. × 5 (Electrificante, tramo "3 o menos") = 650 → 3 unidades de 250.
     let s = ajustarMaterial(defaultSheet(), "sencillos", 6);
     const encargo = encargoFabricacion(s, "escudo_rodela", { modificaciones: ["electrificante"] });
     assert.deepEqual(encargo, { ok: true, coste: 650, rareza: "Común", nombre: "Rodela Electrificante" });
