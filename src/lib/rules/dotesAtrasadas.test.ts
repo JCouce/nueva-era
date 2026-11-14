@@ -9,6 +9,8 @@ import { resolverFicha, conExtrasDeFicha, VITALIDAD_DE_FICHA, type FichaResuelta
 import { accionesDeAtaque } from "./combate";
 import { equipar } from "./equipo";
 import { lineaAntes } from "./textosDeTirada";
+import { montarTirada, eleccionSinTocar } from "./montaje";
+import { efectosSobreObjetivo } from "./efectosArma";
 import type { Accion } from "./acciones";
 import { DOTES } from "../catalog/dotes";
 import type { EspecialidadId } from "../catalog/especialidades";
@@ -34,6 +36,14 @@ const resolver = (s: Sheet) => resolverFicha(s, { estados: [], vitalidad: VITALI
 const armado = (s: Sheet, ...ids: string[]) => ids.reduce((x, id, i) => equipar(x, { instanciaId: `a${i}`, catalogoId: id }), s);
 const filas = (f: FichaResuelta) => accionesDeAtaque(f.ficha, f.modificadores, f.extrasDotes.permisos).map((t) => conExtrasDeFicha(f, t));
 const fila = (f: FichaResuelta, prefijo: string): Accion => filas(f).find((t) => t.id.startsWith(prefijo))!;
+type Toggle = Extract<NonNullable<Accion["condiciones"]>[number], { tipo: "toggle" }>;
+const total = (f: FichaResuelta, t: Accion, marcadas: string[] = []) => {
+  const e = eleccionSinTocar(t);
+  return montarTirada(f, t, { ...e, estadoCondiciones: { ...e.estadoCondiciones, ...Object.fromEntries(marcadas.map((id) => [id, true])) } })
+    .total;
+};
+const ACIERTA = { exito: true, critico: false, dificultad: 7, total: 14 };
+const FALLA = { exito: false, critico: false, dificultad: 7, total: 5 };
 
 describe("Disparo Relámpago", () => {
   test("aviso en los disparos: atacar como reacción a quien se mueve, si el ataque es de acción simple", () => {
@@ -48,5 +58,37 @@ describe("Disparo Relámpago", () => {
       { tipo: "habilidad", id: "combate_distancia", min: 2 },
       { tipo: "aplicado", id: "reflejos", min: 2 },
     ]]);
+  });
+});
+
+describe("Disparo de Interdicción", () => {
+  const f = resolver(armado(ficha([{ id: "dote_disparo_de_interdiccion" }]), "pistola_mosquito", "espada"));
+  const casilla = (t: Accion) =>
+    (t.condiciones ?? []).find((c): c is Toggle => c.tipo === "toggle" && c.id.startsWith("dote_disparo_de_interdiccion"));
+
+  test("casilla −2 en los disparos, no en los golpes", () => {
+    const t = fila(f, "ataque_fuego_");
+    const c = casilla(t)!;
+    assert.match(c.etiqueta, /^Disparo de interdicción/);
+    assert.equal(total(f, t, [c.id]) - total(f, t), -2);
+    assert.equal(casilla(fila(f, "ataque_melee_")), undefined);
+  });
+
+  test("con la casilla y acierto: Entorpecido (grado de acierto) 1d6 turnos, tirados por la app", () => {
+    const t = fila(f, "ataque_fuego_");
+    const c = casilla(t)!;
+    const caras: number[] = [];
+    const avisos = efectosSobreObjetivo(t, { [c.id]: true }, ACIERTA, (n) => (caras.push(n), 5));
+    assert.deepEqual(caras, [6]);
+    assert.equal(avisos.length, 1);
+    assert.equal(avisos[0].titulo, "El objetivo sufre Entorpecido durante 5 turnos (1d6)");
+    assert.equal(avisos[0].fuente, "Disparo de Interdicción");
+    assert.equal(avisos[0].grado?.id, "fallo");
+  });
+
+  test("sin la casilla o fallando, nada", () => {
+    const t = fila(f, "ataque_fuego_");
+    assert.deepEqual(efectosSobreObjetivo(t, {}, ACIERTA, () => 1), []);
+    assert.deepEqual(efectosSobreObjetivo(t, { [casilla(t)!.id]: true }, FALLA, () => 1), []);
   });
 });

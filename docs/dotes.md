@@ -16,8 +16,8 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **122 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 13 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 3 · Sigilo 8 ·
+> Recuento: **123 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 14 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 3 · Sigilo 8 ·
 > Tecnociencia 1 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
@@ -34,7 +34,7 @@
 >
 > **Dotes atrasadas** (estaban en Drive desde fotos anteriores y no se habían transcrito;
 > sync del 2026-11-14, `docs/plan-sync-2026-11-14.md`, «Después del sync»), con el mismo criterio:
-> *Disparo Relámpago*.
+> *Disparo Relámpago*, *Disparo de Interdicción*.
 
 ## Actitud
 
@@ -1073,6 +1073,16 @@ Si atacas a un enemigo en larga distancia el penalizador se reduce en 1 punto.
 
 **Efecto:**
 No hay penalizador por larga distancia en ataques de especialidad.
+
+### Disparo de Interdicción
+
+**Coste:** 3
+
+**Requisitos:**
+- Combate a Distancia 2 · habilidad
+
+**Efecto:**
+El personaje realiza un ataque a distancia con un penalizador de -2 por dificultad que causa **entorpecimiento.** La duración del efecto es de 1d6 turnos.
 
 ### Arquero Poderoso
 

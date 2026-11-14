@@ -6552,6 +6552,71 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_disparo_de_interdiccion",
+    "label": "Disparo de Interdicción",
+    "grupo": "combate_distancia",
+    "coste": 3,
+    "requisitos": [
+      {
+        "tipo": "habilidad",
+        "id": "combate_distancia",
+        "min": 2
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "El personaje realiza un ataque a distancia con un penalizador de -2 por dificultad que causa **entorpecimiento.** La duración del efecto es de 1d6 turnos.",
+    "efectos": [
+      {
+        "tipo": "bono",
+        "alcance": "familia:ataque_fuego",
+        "valor": -2,
+        "condicion": "Disparo de interdicción (causa entorpecimiento)",
+        "borrador": 0
+      },
+      {
+        "tipo": "objetivo",
+        "lugar": "familia:ataque_fuego",
+        "condicion": "Disparo de interdicción (causa entorpecimiento)",
+        "efecto": {
+          "tipo": "estado",
+          "estadoId": "entorpecido",
+          "duracion": {
+            "tipo": "dado",
+            "caras": 6
+          },
+          "gradoId": "fallo",
+          "cuando": "acierto"
+        },
+        "borrador": 1
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "numerico",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "familia:ataque_fuego"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "objetivo_tercero",
+          "id": "familia:ataque_fuego"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_vigilancia_tactica",
     "label": "Vigilancia Táctica",
     "grupo": "exploracion",
@@ -9153,9 +9218,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   224 efectos (214 en el borrador)
-//   construidos: 124
-//   texto: 100
+//   226 efectos (216 en el borrador)
+//   construidos: 125
+//   texto: 101
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0
