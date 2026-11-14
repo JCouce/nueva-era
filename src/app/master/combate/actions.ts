@@ -11,6 +11,7 @@ import { refresh, revalidatePath } from "next/cache";
 import type { Prisma } from "@/generated/prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { nombresNumerados } from "@/lib/numeracionNpc";
 import { requireUser, canAdjustCombatiente, canEditCharacter } from "@/lib/auth-helpers";
 import {
   ajustarDanioVital,
@@ -237,8 +238,9 @@ export async function agregarNpcDeCatalogoAction(
   if (!npc) return { ok: false, error: "No existe ese NPC." };
   if (npc.deletedAt) return { ok: false, error: "Ese NPC está en la papelera." };
 
+  const [nombre] = await nombresParaNpcs(combateId, [npc]);
   await prisma.combatiente.create({
-    data: { combateId, ...fotoDeNpc(npc), orden: await ordenSiguiente(combateId) },
+    data: { combateId, ...fotoDeNpc(npc), nombre, orden: await ordenSiguiente(combateId) },
   });
   revalidateCombate();
   return { ok: true };
@@ -259,11 +261,22 @@ export async function agregarNpcsDeCatalogoAction(combateId: string, npcTemplate
   if (enOrden.length === 0) return { ok: false, error: "Ninguno de esos NPCs está en el catálogo." };
 
   const base = await ordenSiguiente(combateId);
+  const nombres = await nombresParaNpcs(combateId, enOrden);
   await prisma.combatiente.createMany({
-    data: enOrden.map((npc, i) => ({ combateId, ...fotoDeNpc(npc), orden: base + i })),
+    data: enOrden.map((npc, i) => ({ combateId, ...fotoDeNpc(npc), nombre: nombres[i], orden: base + i })),
   });
   revalidateCombate();
   return { ok: true };
+}
+
+// «Goblin 1», «Goblin 2»…: la cuenta mira todas las filas del combate con esa plantilla,
+// derrotadas incluidas (lib/numeracionNpc.ts).
+async function nombresParaNpcs(combateId: string, npcs: { id: string; nombre: string }[]) {
+  const existentes = await prisma.combatiente.findMany({
+    where: { combateId, npcTemplateId: { in: npcs.map((n) => n.id) } },
+    select: { nombre: true, npcTemplateId: true },
+  });
+  return nombresNumerados(existentes, npcs);
 }
 
 // Ficha congelada del NPC para su fila de combate. Modo libre, como lo resuelven el editor y

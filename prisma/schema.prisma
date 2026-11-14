@@ -128,8 +128,9 @@ model Combatiente {
   // dos orígenes, no tres: el ad-hoc desapareció el 2026-09-11, todo NPC
   // sale del catálogo con ficha). Nunca se lee en vivo de ninguno de los
   // dos — mismo motivo que la foto de PG/fatiga de abajo. También es lo que
-  // permite "Goblin #1, #2, #3" al clonar (subtarea 5.3): cada clon es su
-  // propia fila con su propio nombre, sin tocar el NpcTemplate.
+  // permite numerarlos al añadirlos ("Goblin 1", "Goblin 2"…, ver
+  // lib/numeracionNpc.ts): cada uno es su propia fila con su propio nombre,
+  // sin tocar el NpcTemplate.
   nombre        String
   // Foto del Sheet del NPC al añadirlo (null para un Combatiente-jugador,
   // que sigue leyendo su Sheet en vivo de Character.stats vía su propia
