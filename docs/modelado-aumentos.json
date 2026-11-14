@@ -4554,7 +4554,7 @@
         {
           "nivel": 1,
           "rareza": "Poco Habitual",
-          "coste": 20000,
+          "coste": 18000,
           "sustituye": [],
           "variantes": null,
           "efectos": [
@@ -4702,7 +4702,7 @@
         {
           "nivel": 2,
           "rareza": "Extraño",
-          "coste": 40000,
+          "coste": 36000,
           "sustituye": [
             {
               "efecto": "activable del nivel 1: atributo fuerza +1 / agilidad +1",
@@ -4762,7 +4762,7 @@
         {
           "nivel": 3,
           "rareza": "Muy Extraño",
-          "coste": 80000,
+          "coste": 72000,
           "sustituye": [],
           "variantes": null,
           "efectos": [
@@ -4841,7 +4841,7 @@
         {
           "nivel": 4,
           "rareza": "Muy Extraño",
-          "coste": 160000,
+          "coste": 144000,
           "sustituye": [],
           "variantes": null,
           "efectos": [

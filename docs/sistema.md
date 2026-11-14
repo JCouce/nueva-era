@@ -2500,6 +2500,11 @@ sobreesfuerzo.
     Fuerza o Agilidad elegido en cada activación (el otro y Percepción, +1). Nivel 3: la
     acción simple extra solo pide que el implante **no esté saboteado ni apagado***, no que
     esté activado. Nivel 4: es el segundo uso del nivel 3, y el +2 sustituye al +1/+2.
+    **Sync Drive 2026-11-14**: costes 18 000 / 36 000 / 72 000 / 144 000; la segunda reacción del
+    nivel 3 no se apila con la de otros aumentos (texto); la fuente pasa a decir «−1 a los
+    penalizadores por heridas y fatiga» (antes, «por estado») y el bono, a las **pruebas** de
+    potencia, reflejos y perspicacia (antes, a Fuerza, Agilidad y Percepción). Esos dos cambios
+    siguen `TODO(revisar)` en `catalog/aumentos.ts`: la app hace lo de arriba hasta decidirlos.
   - **Regulación Límbico-Prefrontal**: cualquier tirada para resistir la intimidación; +1
     aunque el efecto sea miedo y coerción a la vez. Con Matriz de Red (+2) se suma: +3.
     **Sync Drive 2026-11-14** `[FIRME · docs/fuente/aumentos.md + usuario, 2026-11-14]`: +1 a

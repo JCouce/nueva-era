@@ -1034,7 +1034,7 @@ export const ESTADOS_DE_AUMENTO: Estado[] = [
         detalle: [
           "+2 a Fuerza, Agilidad y Percepción, que sustituye al +1/+2 de la Neuroprótesis activa (no " +
             "se suman; no cuenta para requisitos de dote). Sin penalizadores por heridas ni fatiga. No " +
-            "se puede volver a usar hasta un descanso breve o largo.",
+            "se puede volver a usar hasta un descanso corto o largo.",
         ],
         duracionTurnos: 1,
       },

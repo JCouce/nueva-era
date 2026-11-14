@@ -138,6 +138,17 @@ describe("implantes: cualquier nivel directo y subir paga la diferencia", () => 
     assert.equal(planCompraAumento(defaultSheet(), { catalogoId: OJO, nivel: 5 }).ok, false);
   });
 
+  test("Neuroprótesis (sync Drive 2026-11-14): 18.000 / 36.000 / 72.000 / 144.000; subir paga la diferencia", () => {
+    const NEURO = "aum_neuroprotesis_simpatica";
+    const precios = [1, 2, 3, 4].map((nivel) => planCompraAumento(defaultSheet(), { catalogoId: NEURO, nivel }));
+    assert.deepEqual(precios.map((p) => p.ok && p.precio), [18_000, 36_000, 72_000, 144_000]);
+    assert.deepEqual([1, 2, 3, 4].map((nivel) => costeDePieza({ instanciaId: "n", catalogoId: NEURO, nivel })), [18_000, 36_000, 72_000, 144_000]);
+    const s = compra(defaultSheet(), { catalogoId: NEURO, nivel: 1 });
+    const sube = planCompraAumento(s, { catalogoId: NEURO, nivel: 4 });
+    assert.ok(sube.ok);
+    assert.equal(sube.precio, 144_000 - 18_000);
+  });
+
   test("subir de 1 a 3 cuesta 64.000 − 16.000 y sube la misma instancia", () => {
     const s = compra(defaultSheet(), { catalogoId: OJO, nivel: 1 });
     const inst = s.equipo[0].instanciaId;

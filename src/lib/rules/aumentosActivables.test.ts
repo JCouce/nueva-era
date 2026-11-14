@@ -189,6 +189,16 @@ describe("Neuroprótesis: −1 a cada penalizador sin pasar de 0", () => {
     assert.deepEqual(linea(sin, /^(Malherido|Fatigado)/).map((l) => l.valor), [-3, -1]);
   });
 
+  // Sync Drive 2026-11-14: «−1 a los penalizadores por heridas y fatiga», en todos los niveles.
+  test("heridas y fatiga −1 con la activa, en los cuatro niveles", () => {
+    for (const nivel of [1, 2, 3, 4]) {
+      const grado = nivel === 1 ? "activo" : "fuerza";
+      const m = montar(resolver(conNeuro(nivel), [neuro(grado)], HERIDO_Y_FATIGADO), "atletismo");
+      assert.deepEqual(linea(m, /^Malherido/), [{ etiqueta: `Malherido (Neuroprótesis Simpática ${nivel})`, valor: -2 }], `nivel ${nivel}`);
+      assert.deepEqual(linea(m, /^Fatigado/), [], `nivel ${nivel}`);
+    }
+  });
+
   test("estados: cada penalizador de tirada, con su línea; sin pasar de 0", () => {
     // Aturdido (Fracaso crítico): −2 a la Defensa. Aturdido (Éxito): −1 a todo.
     const aturdido = (grado: string): EstadoActivo => ({ estadoId: "aturdido", gradoId: grado, rondasRestantes: 1 });
@@ -336,6 +346,7 @@ describe("A5b: acción simple adicional (Neuroprótesis 3)", () => {
     assert.equal(reaccion(resolver(conNeuro(3), [])).length, 0);
     const [t] = reaccion(resolver(conNeuro(3), [neuro("fuerza")]));
     assert.deepEqual(t.en, { tipo: "grupo", grupo: "Defensa" });
+    assert.match(t.texto, /no se apila con la de otros aumentos/); // sync Drive 2026-11-14
     assert.equal(t.fuente, "Neuroprótesis Simpática 3");
     assert.equal(reaccion(resolver(conNeuro(2), [neuro("fuerza")])).length, 0);
   });

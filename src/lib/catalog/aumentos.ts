@@ -193,6 +193,9 @@ export type Aumento = OperacionGenetica | Implante;
 const ACTIVO_NEUROPROTESIS: ActivoAumento = {
   estadoId: "aum_neuroprotesis",
   atributos: { fuerza: 1, agilidad: 1, percepcion: 1 },
+  // TODO(revisar): la fuente nueva (sync Drive 2026-11-14) dice «reducir penalizadores por heridas
+  // y fatiga en 1»; antes, «por estado». `reducePenalizadores` sigue rebajando también los −N de
+  // los estados (td-10, td-11): decidir si eso se cae.
   reducePenalizadores: 1,
   salvaciones: [{ contra: ["enfermedad", "radiacion", "toxinas", "venenos"], bono: -1 }],
 };
@@ -206,7 +209,7 @@ function activarNeuroprotesis(conEleccion: boolean, segundaReaccion = false): Ac
     nota:
       (conEleccion ? "+2 a Fuerza o Agilidad (eliges al activar) y +1 a los otros dos de Fuerza, Agilidad y Percepción" : "+1 a Fuerza, Agilidad y Percepción") +
       " (no cuenta para requisitos de dote), −1 a cada penalizador por estado, heridas y fatiga (sin pasar de 0) y −1 a las salvaciones de Fortaleza contra enfermedad, radiación, toxinas y venenos. Dura 3 rondas, que solo corren en combate: fuera de él, desactívala a mano." +
-      (segundaReaccion ? " Mientras dura, segunda reacción por ronda (nivel 3)." : ""),
+      (segundaReaccion ? " Mientras dura, segunda reacción por ronda (nivel 3; no se apila con la de otros aumentos)." : ""),
     efecto: {
       tipo: "activar",
       estadoId: "aum_neuroprotesis",
@@ -230,7 +233,7 @@ function activarNeuroprotesis(conEleccion: boolean, segundaReaccion = false): Ac
 const ACTIVO_NEUROPROTESIS_3: ActivoAumento = {
   ...ACTIVO_NEUROPROTESIS,
   mejora: { atributos: ["fuerza", "agilidad"], valor: 2 },
-  textos: [{ en: { tipo: "grupo", grupo: "Defensa" }, texto: "Segunda reacción por ronda mientras la Neuroprótesis está activa." }],
+  textos: [{ en: { tipo: "grupo", grupo: "Defensa" }, texto: "Segunda reacción por ronda mientras la Neuroprótesis está activa (no se apila con la de otros aumentos)." }],
 };
 
 // A5b: Neuroprótesis 4, la acción adicional pagada a 3. Estado propio de 1 ronda que convive
@@ -252,9 +255,9 @@ function accionAdicionalNeuroprotesis(nivel4: boolean): AccionAumentoCatalogo {
     economia: "En tu turno, una vez",
     costeFatiga: 2,
     nota:
-      "Ganas una acción simple más este turno. No hace falta tener la Neuroprótesis activada, solo que el implante no esté saboteado ni apagado. Vuelve a usarla antes de un descanso breve o largo y cuesta 3 (marca la casilla; la app no lleva los descansos)." +
+      "Ganas una acción simple más este turno. No hace falta tener la Neuroprótesis activada, solo que el implante no esté saboteado ni apagado. Vuelve a usarla antes de un descanso corto o largo y cuesta 3 (marca la casilla; la app no lleva los descansos)." +
       (nivel4
-        ? " Nivel 4: pagando 3, durante esta ronda +2 a Fuerza, Agilidad y Percepción (sustituye al +1/+2 de la activa) y sin penalizadores por heridas ni fatiga; esa parte no se puede volver a usar hasta un descanso breve o largo."
+        ? " Nivel 4: pagando 3, durante esta ronda +2 a Fuerza, Agilidad y Percepción (sustituye al +1/+2 de la activa) y sin penalizadores por heridas ni fatiga; esa parte no se puede volver a usar hasta un descanso corto o largo."
         : ""),
     efecto: {
       tipo: "accionAdicional",
@@ -1852,7 +1855,7 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 1,
         rareza: "Poco Habitual",
-        coste: 20000,
+        coste: 18000,
         detalle: [
           "Como acción gratuita durante su turno o reacción en cualquier momento del turno, el personaje puede emplear 2 puntos de fatiga y de forma temporal adquirir un aumento de 1 punto en los atributos de fuerza, agilidad y percepción así como reducir penalizadores por estado en 1, en contrapartida mientras dure este efecto recibe un penalizador de -1 a tiradas de salvación de fortaleza contra enfermedades, radiación, toxinas y venenos. El efecto dura tres turnos.",
         ],
@@ -1873,7 +1876,7 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 2,
         rareza: "Extraño",
-        coste: 40000,
+        coste: 36000,
         detalle: [
           "Al activar el implante se recibe un aumento de 2 puntos en lugar de 1 en la fuerza o la agilidad, quedando a elección del usuario.",
         ],
@@ -1888,10 +1891,10 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 3,
         rareza: "Muy Extraño",
-        coste: 80000,
+        coste: 72000,
         detalle: [
-          "Mientras el implante esté activo, se obtiene una segunda reacción por turno.",
-          "El personaje puede adquirir una única acción simple adicional durante su turno por el gasto de 2 puntos de fatiga. Una vez empleada esta habilidad, volver a usarla tendrá un coste de 3 puntos de fatiga, hasta que el personaje realice un descanso breve o largo.",
+          "Mientras el implante esté activo, se obtiene una segunda reacción por turno (no se apila con otros aumentos).",
+          "El personaje puede adquirir una única acción simple adicional durante su turno por el gasto de 2 puntos de fatiga. Una vez empleada esta habilidad, volver a usarla tendrá un coste de 3 puntos de fatiga, hasta que el personaje realice un descanso corto o largo.",
         ],
         modificadores: [],
         // A5b: la segunda reacción, texto mientras está activa; la acción adicional, sin activarla.
@@ -1905,9 +1908,9 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 4,
         rareza: "Muy Extraño",
-        coste: 160000,
+        coste: 144000,
         detalle: [
-          "Si el personaje emplea 3 puntos de fatiga para conseguir una acción simple adicional durante un turno además durante ese turno obtiene un aumento de +2 a fuerza, agilidad y percepción de forma simultánea y elimina por completo penalizadores por heridas o fatiga. Esta habilidad de nivel 4 no se puede volver a usar hasta que el personaje realice un descanso breve o largo.",
+          "Si el personaje emplea 3 puntos de fatiga para conseguir una acción simple adicional durante un turno además durante ese turno obtiene un aumento de +2 a fuerza, agilidad y percepción de forma simultánea y elimina por completo penalizadores por heridas o fatiga. Esta habilidad de nivel 4 no se puede volver a usar hasta que el personaje realice un descanso corto o largo.",
         ],
         modificadores: [],
         // A5b: la misma acción, ahora con el estado de 1 ronda al pagar 3.
