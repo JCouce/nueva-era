@@ -220,7 +220,9 @@ describe("pieza penalizada: −N a cada bono (suelo 0) y −N al usarla", () => 
     // Menos que sin Shock (no −2 justo: la Mira, que no se apila con el Ojo, recupera su sitio).
     assert.ok(montar(con, t).total < montar(sin, ataque(sin, "fusil")).total);
     // Su casilla de cobertura (+1) pasa a +0, y lo dice.
-    const casilla = (f: FichaResuelta) => ataque(f, "fusil").condiciones!.find((c) => c.origen?.instanciaId === "ojo" && c.tipo === "toggle");
+    // Por id: desde el sync Drive 2026-11-14 el Ojo trae además su casilla de ventaja en el ataque.
+    const casilla = (f: FichaResuelta) =>
+      ataque(f, "fusil").condiciones!.find((c) => c.origen?.instanciaId === "ojo" && c.tipo === "toggle" && c.id === "aum_ojo_cobertura_distancia");
     const antes = casilla(sin);
     assert.ok(antes?.tipo === "toggle" && antes.valorActivo === 1);
     const tocada = casilla(con)!;

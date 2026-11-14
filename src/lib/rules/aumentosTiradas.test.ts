@@ -664,6 +664,38 @@ describe("A3: cobertura (casillas, sin apilar)", () => {
     assert.equal(suma(f4, tiradaFija(f4, "alerta_activa"), ["aum_ojo_cobertura_alerta"]), 2);
   });
 
+  // Sync Drive 2026-11-14 (M3.4): ventaja por 2 de fatiga en percepción visual o ataque a
+  // distancia; el límite (día, descanso, hora; el 4 sin límite) en la nota.
+  test("Ojo: casilla de ventaja por 2 de fatiga en el disparo y en Buscar/percibir", () => {
+    const f = conFusil([[OJO, 1]]);
+    for (const [t, id] of [
+      [disparo(f), "aum_ojo_ventaja_distancia"],
+      [tiradaFija(f, "alerta_activa"), "aum_ojo_ventaja_alerta"],
+    ] as const) {
+      const c = t.condiciones!.find((x) => x.id === id)!;
+      assert.ok(c.tipo === "toggle" && c.ventaja === true && c.costeFatiga === 2, id);
+      const sin = montar(f, t);
+      const con = montar(f, t, { [id]: true });
+      assert.equal(sin.ventaja, null);
+      assert.equal(con.ventaja, c.etiqueta);
+      assert.equal(con.costeFatiga, 2);
+      assert.equal(con.modificador, sin.modificador);
+    }
+    assert.equal(tiradaFija(f, "defensa").condiciones?.some((x) => x.id.startsWith("aum_ojo_ventaja")) ?? false, false);
+  });
+
+  test("Ojo: el límite de la ventaja por nivel, como nota", () => {
+    const nota = (nivel: number) => {
+      const c = tiradaFija(conFusil([[OJO, nivel]]), "alerta_activa").condiciones!.find((x) => x.id === "aum_ojo_ventaja_alerta")!;
+      assert.ok(c.tipo === "toggle" && c.usoPorEscena === undefined);
+      return c.tipo === "toggle" ? (c.nota ?? "") : "";
+    };
+    assert.match(nota(1), /Una vez al día\./);
+    assert.match(nota(2), /Una vez por descanso largo; la recuperas tras un descanso corto\./);
+    assert.match(nota(3), /Una vez por hora\./);
+    assert.match(nota(4), /Sin límite de uso\./);
+  });
+
   test("Foveo + Ojo 4 marcadas: solo la mayor (+2); Foveo sale a 0 diciendo por qué", () => {
     const f = conFusil([[FOVEO], [OJO, 4]]);
     const t = disparo(f);

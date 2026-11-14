@@ -1379,6 +1379,30 @@ function casillaVisualOjo(valor: number): CondicionTirada {
   };
 }
 
+// Ojo Biónico (sync Drive 2026-11-14): «por el gasto de dos puntos de fatiga, el personaje puede
+// emplear este implante para ganar ventaja en una tirada de percepción visual o de ataque a
+// distancia». Dos casillas (ataques a distancia y Buscar/percibir), con el mismo id en los cuatro
+// niveles: el alto sustituye al bajo. El límite (día, descanso, hora) es texto: la app no mide el
+// tiempo; el 4, sin límite.
+function casillasVentajaOjo(limite: string | null): CondicionTirada[] {
+  const comun = {
+    tipo: "toggle",
+    etiqueta: "Ventaja del Ojo Biónico (2 de fatiga)",
+    valorActivo: 0,
+    ventaja: true,
+    costeFatiga: 2,
+    nota: `Ventaja en una tirada de percepción visual o de ataque a distancia. ${limite ?? "Sin límite de uso."}`,
+  } as const;
+  return [
+    { ...comun, id: "aum_ojo_ventaja_distancia", alcance: { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" } },
+    { ...comun, id: "aum_ojo_ventaja_alerta", alcance: { tipo: "tiradaId", id: "alerta_activa" } },
+  ];
+}
+const MOTOR_VENTAJA_OJO: MotorMetadata[] = [
+  { tipo: "resolucion", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia|alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
+  { tipo: "coste", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia|alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
+];
+
 // Las dos casillas de cobertura de una pieza: ataques a distancia y Buscar/percibir. Las del
 // Ojo llevan el mismo id en los niveles 2 y 4, para que el 4 sustituya al 2 (acumulaPorClave).
 // Los alcances van escritos aquí (no DISTANCIA): Foveo la llama antes de que exista.
@@ -1794,12 +1818,13 @@ export const IMPLANTES: Implante[] = [
           "El personaje obtiene un bonificador de +1 a tiradas de percepción visual y a las de ataques a distancia.",
           "Además, gana un bonificador de +3 en tiradas de salvación contra efectos de ceguera. La mejora no se apila con miras telescópicas u otros objetos de visión aumentada; en tal caso, usa siempre el mayor bonificador.",
           "Incluye visión nocturna y termo-óptica con las mismas características de los visores de nivel 2.",
+          "Por el gasto de dos puntos de fatiga, el personaje puede emplear este implante para ganar ventaja en una tirada de percepción visual o de ataque a distancia una vez al día.",
         ],
         modificadores: [
           { tipo: "tirada", alcance: DISTANCIA, valor: 1, noApila: VISION_AUMENTADA },
           { tipo: "derivado", id: "alerta", valor: 1, noApila: VISION_AUMENTADA },
         ],
-        condiciones: [casillaVisualOjo(1)],
+        condiciones: [casillaVisualOjo(1), ...casillasVentajaOjo("Una vez al día.")],
         salvaciones: [{ contra: ["ceguera"], bono: 3 }],
         // Sync Drive 2026-11-14: «con las mismas características de los visores de nivel 2» (antes,
         // 500 m). Solo texto: lo que los visores 2 suman (cobertura, destellos) no se copia aquí.
@@ -1811,6 +1836,7 @@ export const IMPLANTES: Implante[] = [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" },
+          ...MOTOR_VENTAJA_OJO,
         ],
       },
       {
@@ -1820,6 +1846,7 @@ export const IMPLANTES: Implante[] = [
         detalle: [
           "El implante aumenta el bonificador en tiradas de percepción visual a +2 y hace inmune a efecto de ceguera.",
           "El ojo incluye un sistema de seguimiento predictivo que permite ignorar penalizadores menores por cobertura visual, reduciendo en 1 los niveles de cobertura visual y termo-óptica de cualquier tipo dentro de un alcance de 50 metros.",
+          "Por el gasto de dos puntos de fatiga, el personaje puede emplear este implante para ganar ventaja en una tirada de percepción visual o de ataque a distancia una vez por decanso largo, recuperando la capacidad tras un descanso corto.",
         ],
         // El nivel 2 no sube el bono a distancia: sigue el +1 del nivel 1.
         modificadores: [
@@ -1828,7 +1855,11 @@ export const IMPLANTES: Implante[] = [
         // A3: la cobertura visual (−1 nivel) llega en el nivel 2; el 1 no la trae.
         // Sync Drive 2026-11-14: «cobertura visual y termo-óptica de cualquier tipo dentro de un
         // alcance de 50 metros» (el alcance, en la etiqueta: la app no mide distancias).
-        condiciones: [casillaVisualOjo(2), ...casillasCobertura("aum_ojo", 1, false, "Objetivo con cobertura visual o termo-óptica a 50 m o menos")],
+        condiciones: [
+          casillaVisualOjo(2),
+          ...casillasCobertura("aum_ojo", 1, false, "Objetivo con cobertura visual o termo-óptica a 50 m o menos"),
+          ...casillasVentajaOjo("Una vez por descanso largo; la recuperas tras un descanso corto."),
+        ],
         // A7: "inmune a efecto de ceguera". Si cubre una ceguera física lo arbitra el máster con
         // "Aplicar igualmente" (pregunta a Murillo, §11.2).
         inmuneA: ["ceguera"],
@@ -1837,6 +1868,7 @@ export const IMPLANTES: Implante[] = [
           { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:ceguera" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          ...MOTOR_VENTAJA_OJO,
         ],
       },
       {
@@ -1846,17 +1878,19 @@ export const IMPLANTES: Implante[] = [
         detalle: [
           "El ojo aumenta sus bonificadores, otorga un bonificador de +3 a tiradas de percepción visual y otro de +2 a las de ataques a distancia.",
           "Incorpora visión de rayos X que permite ver a través de tejidos sencillos con un alcance de 10 metros.",
+          "Por el gasto de dos puntos de fatiga, el personaje puede emplear este implante para ganar ventaja en una tirada de percepción visual o de ataque a distancia una vez por hora.",
         ],
         modificadores: [
           { tipo: "tirada", alcance: DISTANCIA, valor: 2, noApila: VISION_AUMENTADA },
           { tipo: "derivado", id: "alerta", valor: 3, noApila: VISION_AUMENTADA },
         ],
-        condiciones: [casillaVisualOjo(3)],
+        condiciones: [casillaVisualOjo(3), ...casillasVentajaOjo("Una vez por hora.")],
         textos: [{ id: "rayos_x", en: BUSCAR, texto: "Rayos X: ves a través de tejidos sencillos, hasta 10 m." }],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "siempre_activo", estado: "construido" },
           { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" },
+          ...MOTOR_VENTAJA_OJO,
         ],
       },
       {
@@ -1866,6 +1900,7 @@ export const IMPLANTES: Implante[] = [
         detalle: [
           "El cenit de la tecnología optoelectrónica táctica. El personaje obtiene un bonificador de +4 a tiradas de percepción visual y un +3 a las de ataques a distancia.",
           "Integra un sistema de visión multi-espectro simultáneo (nocturna, térmica y rayos X con un alcance de 50 metros a través de paredes ligeras o blindajes no reforzados) y un procesador de seguimiento que reduce en 2 niveles los penalizadores por cobertura visual y termo-óptica de cualquier tipo en un alcance de 100 metros.",
+          "Por el gasto de dos puntos de fatiga, el personaje puede emplear este implante para ganar ventaja en una tirada de percepción visual o de ataque a distancia, sin límite de veces al día.",
         ],
         modificadores: [
           { tipo: "tirada", alcance: DISTANCIA, valor: 3, noApila: VISION_AUMENTADA },
@@ -1878,6 +1913,7 @@ export const IMPLANTES: Implante[] = [
         condiciones: [
           casillaVisualOjo(4),
           ...casillasCobertura("aum_ojo", 2, true, "Objetivo con cobertura (física, visual o termo-óptica) a 100 m o menos"),
+          ...casillasVentajaOjo(null),
         ],
         // Los 50 m son solo de los rayos X; nocturna y térmica, las de los visores 2 (nivel 1).
         textos: [
@@ -1895,6 +1931,7 @@ export const IMPLANTES: Implante[] = [
           { tipo: "texto", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "nota_fija", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupoHabilidad:Ataques+combate_distancia" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "alerta_activa" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          ...MOTOR_VENTAJA_OJO,
         ],
       },
     ],
