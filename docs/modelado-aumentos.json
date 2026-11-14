@@ -5955,7 +5955,13 @@
       "sabotaje": false,
       "extraible": null,
       "electronico": true,
-      "incompatibleCon": [],
+      "incompatibleCon": [
+        "aum_integridad_osteotendinosa",
+        "aum_matriz_osea_adaptativa",
+        "aum_hipertrofia_miofibrilar",
+        "aum_sincronizacion_neuromotora_profunda",
+        "aum_regeneracion_tisular_acelerada"
+      ],
       "niveles": [
         {
           "nivel": 1,

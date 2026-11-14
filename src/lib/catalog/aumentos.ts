@@ -2504,6 +2504,14 @@ export const IMPLANTES: Implante[] = [
     sabotaje: false,
     shock: "cuerpo",
     extraible: null,
+    // E4/E5b: declarada aquí (las operaciones no la repiten).
+    incompatibleCon: [
+      "aum_integridad_osteotendinosa",
+      "aum_matriz_osea_adaptativa",
+      "aum_hipertrofia_miofibrilar",
+      "aum_sincronizacion_neuromotora_profunda",
+      "aum_regeneracion_tisular_acelerada",
+    ],
     niveles: [
       {
         nivel: 1,

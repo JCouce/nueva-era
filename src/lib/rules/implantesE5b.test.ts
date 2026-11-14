@@ -13,6 +13,7 @@ import { accionesDeAtaque } from "./combate";
 import { permisosDeDotes } from "./dotesEfectos";
 import { resolverGolpe, type EntradaResistir } from "./resistirDanio";
 import type { EstadoActivo } from "./estados";
+import { aumentosIncompatibles, planCompraAumento } from "./aumentos";
 
 const CHASIS = "aum_chasis_osteomuscular";
 
@@ -116,5 +117,33 @@ describe("E5b · Chasis Osteomuscular, niveles 2-4", () => {
     }
     const n1 = resolver(conChasis(1));
     assert.equal(tiradaFija(n1, "atletismo").condiciones?.some((c) => c.id === "aum_chasis_derribo") ?? false, false);
+  });
+});
+
+describe("E5b · Chasis Osteomuscular, incompatibilidades", () => {
+  const INCOMPATIBLES = [
+    "aum_integridad_osteotendinosa",
+    "aum_matriz_osea_adaptativa",
+    "aum_hipertrofia_miofibrilar",
+    "aum_sincronizacion_neuromotora_profunda",
+    "aum_regeneracion_tisular_acelerada",
+  ];
+
+  test("no se compra con ninguna de las cinco operaciones, en los dos sentidos (también al subir de nivel)", () => {
+    for (const op of INCOMPATIBLES) {
+      const plan = planCompraAumento(con(base(), op), { catalogoId: CHASIS, nivel: 1 });
+      assert.equal(plan.ok, false, op);
+      assert.match(plan.ok ? "" : plan.motivo, /^Incompatible con /);
+      assert.equal(planCompraAumento(conChasis(1), { catalogoId: op }).ok, false, `${op} tras el Chasis`);
+      assert.equal(planCompraAumento(con(conChasis(1), op), { catalogoId: CHASIS, nivel: 2, eleccion: "proyector_pulso" }).ok, false, `subir con ${op}`);
+    }
+    assert.equal(planCompraAumento(base(), { catalogoId: CHASIS, nivel: 1 }).ok, true);
+    assert.equal(planCompraAumento(conChasis(1), { catalogoId: "aum_mielinizacion_central" }).ok, true, "las demás, sí");
+  });
+
+  test("una ficha que ya tiene las dos solo lleva el aviso", () => {
+    const s = con(conChasis(1), "aum_integridad_osteotendinosa");
+    assert.equal(aumentosIncompatibles(s).length, 2);
+    assert.equal(resolver(s).atributos.fuerza - resolver(base()).atributos.fuerza, 2, "las dos siguen dando su Fuerza");
   });
 });
