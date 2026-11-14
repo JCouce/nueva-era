@@ -412,14 +412,15 @@ function montarSalvacion(ficha: FichaParaTirada, base: string, id: string, label
   return montarTirada(ficha, { ...salv, id, label, nota: undefined }, SIN_ELECCION);
 }
 
-// Salvación de Fortaleza de la sobrecarga (§10.6). eq-27: la Derivación Psiónica nivel 1 le da +1
-// («resistir el retroceso por el uso prolongado de disciplinas psiónicas»), como línea propia.
+// Salvación de Fortaleza de la sobrecarga (§10.6), con id propio para los modificadores que
+// sean solo de ella. (El +1 de la Derivación Psiónica pasó al sobreesfuerzo: sync Drive 2026-11-14.)
 export const ID_SALVACION_SOBRECARGA = "salv_sobrecarga";
 export function montarSalvacionSobrecarga(ficha: FichaParaTirada): TiradaMontada {
   return montarSalvacion(ficha, "salv_fortaleza", ID_SALVACION_SOBRECARGA, "Sobrecarga: salvación de Fortaleza");
 }
 
 // Salvación de Voluntad del sobreesfuerzo (ps-01). Sin blindaje: el daño entra directo.
+// Derivación Psiónica: +1 desde el nivel 1, +3 en el 4 (sync Drive 2026-11-14), línea propia.
 export const ID_SALVACION_SOBREESFUERZO = "salv_sobreesfuerzo";
 export function montarSobreesfuerzo(ficha: FichaParaTirada): TiradaMontada {
   return montarSalvacion(ficha, "salv_voluntad", ID_SALVACION_SOBREESFUERZO, "Sobreesfuerzo: salvación de Voluntad");

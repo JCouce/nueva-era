@@ -251,29 +251,40 @@ describe("la salvación y el fallo", () => {
   });
 });
 
-describe("salvación de sobrecarga: Derivación Psiónica +1 (eq-27)", () => {
-  test("una línea propia de la Derivación, desde el nivel 1", () => {
-    const sin = montarSalvacionSobrecarga(resolver(ficha(MAOLHER)));
-    const conDerivacion = (nivel: number) =>
-      montarSalvacionSobrecarga(
-        resolver(
-          ficha({
-            ...MAOLHER,
-            equipo: [
-              { instanciaId: "a", catalogoId: "armadura_pesada" },
-              { instanciaId: "d", catalogoId: "derivacion_psionica", nivel, instaladoEnId: "a" },
-            ],
-          }),
-        ),
-      );
-    assert.equal(sin.aplicado.id, "fortaleza");
+describe("Derivación Psiónica: +1 al sobreesfuerzo, +3 en el nivel 4 (sync Drive 2026-11-14, tumba eq-27)", () => {
+  const conDerivacion = (nivel: number) =>
+    resolver(
+      ficha({
+        ...MAOLHER,
+        equipo: [
+          { instanciaId: "a", catalogoId: "armadura_pesada" },
+          { instanciaId: "d", catalogoId: "derivacion_psionica", nivel, instaladoEnId: "a" },
+        ],
+      }),
+    );
+  const lineaDerivacion = (m: ReturnType<typeof montarSobreesfuerzo>) =>
+    m.desglose.filter((l) => l.etiqueta.includes("Derivación Psiónica")).map((l) => l.valor);
+
+  test("una línea propia en la salvación de Voluntad del sobreesfuerzo: +1 a nivel 1, +3 a nivel 4", () => {
+    const sin = montarSobreesfuerzo(resolver(ficha(MAOLHER)));
+    assert.equal(sin.aplicado.id, "voluntad");
+    assert.deepEqual(lineaDerivacion(sin), []);
+    const n1 = montarSobreesfuerzo(conDerivacion(1));
+    assert.deepEqual(lineaDerivacion(n1), [1]);
+    assert.equal(n1.total, sin.total + 1);
+    const n4 = montarSobreesfuerzo(conDerivacion(4));
+    assert.deepEqual(lineaDerivacion(n4), [3]);
+    assert.equal(n4.total, sin.total + 3);
+  });
+
+  test("ya no toca la salvación de sobrecarga ni la de Voluntad normal", () => {
     for (const nivel of [1, 4]) {
-      const m = conDerivacion(nivel);
-      assert.ok(m.desglose.some((l) => l.etiqueta.includes("Derivación Psiónica") && l.valor === 1), `nivel ${nivel}`);
+      const f = conDerivacion(nivel);
+      assert.deepEqual(lineaDerivacion(montarSalvacionSobrecarga(f)), [], `sobrecarga nivel ${nivel}`);
+      assert.ok(
+        !f.modificadores.some((m) => m.tipo === "tirada" && m.alcance.tipo === "tiradaId" && m.alcance.id === "salv_voluntad"),
+        `voluntad nivel ${nivel}`,
+      );
     }
-    // La salvación de Fortaleza normal no lo lleva.
-    assert.ok(!resolver(ficha({ ...MAOLHER, equipo: [{ instanciaId: "a", catalogoId: "armadura_pesada" }, { instanciaId: "d", catalogoId: "derivacion_psionica", nivel: 1, instaladoEnId: "a" }] })).modificadores.some(
-      (m) => m.tipo === "tirada" && m.alcance.tipo === "tiradaId" && m.alcance.id === "salv_fortaleza",
-    ));
   });
 });

@@ -3,7 +3,7 @@ import type { LineaDesglose } from "@/lib/rules";
 
 // Bloque de sobrecarga bajo el resultado de un poder: la inconsciencia se avisa
 // (la marca el máster), la salvación la tira la app y su daño se resta solo. `lineas`: el
-// desglose de la salvación antes de tirar (eq-27: la línea de la Derivación Psiónica, +1).
+// desglose de la salvación antes de tirar.
 export function SobrecargaPanel({
   dificultad,
   lineas,

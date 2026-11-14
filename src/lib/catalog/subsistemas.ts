@@ -244,18 +244,17 @@ export const SUBSISTEMAS: Subsistema[] = [
         coste: 12000,
         detalle: [
           "Conversión Psiónica: 4 cargas para absorber 1 punto de fatiga psiónica.",
-          "Ventaja Táctica — Estabilizador Neuronal Básico: +1 a las tiradas para resistir el " +
-            "retroceso o la desorientación por el uso prolongado de disciplinas psiónicas.",
+          "Ventaja Táctica — Estabilizador Neuronal Básico: +1 a las tiradas para resistir los " +
+            "efectos del sobreesfuerzo por el uso de disciplinas psiónicas.",
         ],
         modificadores: [
-          // eq-27 (usuario, 2026-11-13): el «retroceso por el uso prolongado» es la salvación de
-          // Fortaleza de la sobrecarga (5 + nivel): +1, como línea propia en esa tirada
-          // (montarSalvacionSobrecarga, usoPoder.ts). Desde el nivel 1, acumulado (S9).
-          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_sobrecarga" }, valor: 1 },
+          // Sync Drive 2026-11-14 (tumba eq-27): +1 a la salvación de Voluntad del sobreesfuerzo
+          // (montarSobreesfuerzo, usoPoder.ts), como línea propia. Desde el nivel 1, acumulado (S9).
+          { tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_sobreesfuerzo" }, valor: 1 },
         ],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Conversión Psiónica: contador "Pagar con cargas" en el modal de todo poder (derivacionDeFicha, poderes.ts)
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_sobrecarga" }, mecanismo: "siempre_activo", estado: "construido" }, // Estabilizador Neuronal Básico
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_sobreesfuerzo" }, mecanismo: "siempre_activo", estado: "construido" }, // Estabilizador Neuronal Básico
         ],
       },
       {
@@ -273,7 +272,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         modificadores: [],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" }, // cambia la eficiencia (3 cargas), la acción ya se declaró en nivel 1
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_sobrecarga" }, mecanismo: "siempre_activo", estado: "construido" }, // Estabilizador Neuronal, heredado (S9)
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_sobreesfuerzo" }, mecanismo: "siempre_activo", estado: "construido" }, // Estabilizador Neuronal, heredado (S9)
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "suma_derivado", estado: "construido" }, // Canal de Alta Resonancia: +10 % al alcance en metros, mínimo 2 m (bonoAlcanceDeFicha, poderes.ts; pregunta 33 cerrada)
         ],
       },
@@ -286,7 +285,7 @@ export const SUBSISTEMAS: Subsistema[] = [
           "Ventaja Táctica — Blindaje Psico-Reactivo: +1 para resistir efectos de poderes de " +
             "metasensoria contra el usuario.",
         ],
-        // Solo lo NUEVO de este nivel — salv_sobrecarga (nivel 1)
+        // Solo lo NUEVO de este nivel — salv_sobreesfuerzo (nivel 1)
         // y el +10% de alcance (nivel 2, sin número) ya llegan acumulados.
         modificadores: [],
         // Resistir un poder de metasensoría es una salvación: casilla en las tres
@@ -302,7 +301,7 @@ export const SUBSISTEMAS: Subsistema[] = [
         ],
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_sobrecarga" }, mecanismo: "siempre_activo", estado: "construido" }, // heredado de nivel 1 (S9)
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_sobreesfuerzo" }, mecanismo: "siempre_activo", estado: "construido" }, // heredado de nivel 1 (S9)
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "suma_derivado", estado: "construido" }, // Canal de Alta Resonancia, heredado
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "Salvaciones" }, mecanismo: "eleccion_jugador", estado: "construido" }, // Blindaje Psico-Reactivo
         ],
@@ -314,19 +313,21 @@ export const SUBSISTEMAS: Subsistema[] = [
         detalle: [
           "Conversión Psiónica: 1 carga por 1 punto de fatiga (máxima eficiencia).",
           "Ventaja Táctica — Simbiosis Sináptica Total: reduce en 1 los penalizadores por fatiga " +
-            "al hacer una tirada relacionada con el empleo de un poder psiónico.",
+            "al hacer una tirada relacionada con el empleo de un poder psiónico. Además, +2 a las " +
+            "tiradas para resistir los efectos del sobreesfuerzo.",
         ],
-        // Solo lo NUEVO de este nivel — salv_sobrecarga (n1) y
-        // resistir_metasensoria (n3) ya llegan acumulados.
+        // resistir_metasensoria (n3) llega acumulado. El +2 al sobreesfuerzo (sync Drive
+        // 2026-11-14) se suma al +1 del nivel 1: misma clave que la de nivel 1, así que este
+        // nivel declara el total (+3) y la sustituye (acumulaPorClave, S9).
         // Simbiosis Sináptica Total (S94): "reduce en 1 los penalizadores por fatiga cuando vaya a
         // realizar una tirada relacionada con el empleo de un poder psiónico" — compensación del
         // umbral de fatiga en las tiradas del grupo Psiónica (modificadoresDeUmbrales), sin
         // pasar de 0. No es un +1: sin penalizador por fatiga, no suma nada.
-        modificadores: [],
+        modificadores: [{ tipo: "tirada", alcance: { tipo: "tiradaId", id: "salv_sobreesfuerzo" }, valor: 3 }],
         reducePenalizador: { recurso: "fatiga", valor: 1, alcance: { tipo: "grupo", grupo: "Psiónica" } },
         motor: [
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "eleccion_jugador", estado: "construido" },
-          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_sobrecarga" }, mecanismo: "siempre_activo", estado: "construido" }, // heredado de nivel 1 (S9)
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_sobreesfuerzo" }, mecanismo: "siempre_activo", estado: "construido" }, // +1 del nivel 1 y +2 de este: +3 en total
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "poderes_psionicos" }, mecanismo: "suma_derivado", estado: "construido" }, // Canal de Alta Resonancia, heredado
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "Salvaciones" }, mecanismo: "eleccion_jugador", estado: "construido" }, // heredado de nivel 3 (S9)
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Psiónica" }, mecanismo: "siempre_activo", estado: "construido" }, // Simbiosis Sináptica Total: −1 al penalizador por fatiga

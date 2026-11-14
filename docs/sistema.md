@@ -1852,12 +1852,14 @@ al preparar su modelado:
     instaladas, la de mejor conversión.
   - Nivel 3 (Blindaje Psico-Reactivo): casilla "Contra metasensoría +1" en las tres
     salvaciones.
-  - Nivel 1 (Estabilizador Neuronal Básico) `[FIRME · cuestionario eq-27, usuario
-    2026-11-13]`: el «retroceso por el uso prolongado» es la salvación de Fortaleza de la
-    sobrecarga (5 + nivel): **+1**, como línea propia «Derivación Psiónica» en esa tirada (la
-    salvación tiene id propio, `salv_sobrecarga`; el panel enseña su desglose antes de tirar).
-    No llega al sobreesfuerzo. Acumulado en los niveles 2–4 (S9).
-  - Nivel 4: rebajar penalizadores por fatiga (S94, construido).
+  - Nivel 1 (Estabilizador Neuronal Básico) `[FIRME · docs/fuente/equipamiento.md, sync Drive
+    2026-11-14; tumba eq-27]`: **+1 a la salvación de Voluntad del sobreesfuerzo**, como línea
+    propia «Derivación Psiónica» en esa tirada (id propio, `salv_sobreesfuerzo`). Ya no toca la
+    salvación de sobrecarga. Acumulado en los niveles 2–4 (S9).
+    ~~eq-27 (2026-11-13): +1 a la salvación de Fortaleza de la sobrecarga.~~
+  - Nivel 4: rebajar penalizadores por fatiga (S94, construido) y **+2 más** a la salvación del
+    sobreesfuerzo (sync Drive 2026-11-14): con el +1 del nivel 1, **+3** en total, en una sola
+    línea (el nivel 4 declara el total, misma clave que el del 1).
   - Nivel 2 (Canal de Alta Resonancia), **construido 2026-10-24** (pregunta 33 cerrada: el
     porcentaje se queda): +10 % al alcance de los poderes en metros, a la baja y con mínimo
     de 2 m; no en alcances con otra unidad (km²) ni en los de 0 (S91).
