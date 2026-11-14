@@ -50,6 +50,7 @@ import type { PermisosDeDotes } from "./dotesEfectos";
 import {
   brazoBionico,
   casillaBrazo,
+  efectosDeBrazo,
   extremidadDeBloqueo,
   extremidadIncorporada,
   ID_BLOQUEAR_BRAZO,
@@ -1347,7 +1348,13 @@ function conBrazo(t: Accion, pieza: PiezaEquipada, brazo: BrazoBionico): Accion 
     return { ...conTextosDeFicha(t, [conBrazoTexto]), extremidad: incorporada, nota, ...(tiposDeAccionBase && { tiposDeAccionBase }) };
   }
   const casilla = casillaBrazo(brazo, ataque);
-  return casilla ? { ...t, condiciones: [...(t.condiciones ?? []), casilla] } : t;
+  if (!casilla) return t;
+  const efectos = efectosDeBrazo(brazo, ataque);
+  return {
+    ...t,
+    condiciones: [...(t.condiciones ?? []), casilla],
+    ...(efectos.length > 0 && { efectosObjetivo: [...(t.efectosObjetivo ?? []), ...efectos] }),
+  };
 }
 
 // "Bloquear con el brazo biónico" (A6a): nivel 2+ y, como todo "Bloquear con X", solo con la

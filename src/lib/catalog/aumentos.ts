@@ -1649,11 +1649,11 @@ export const IMPLANTES: Implante[] = [
         coste: 25000,
         detalle: [
           "La fuerza del brazo es un punto superior a la del usuario salvo en caso de que la fuerza del usuario sea de 5 o más, en tales circunstancias el aumento de fuerza del brazo biónico no se contabiliza y se iguala a la del usuario. Su agilidad es idéntica a la del usuario.",
-          "El brazo biónico de segundo nivel tiene un blindaje de 3 puntos y se puede utilizar como arma para bloquear. Además causa daño letal en sus ataques de pelea.",
+          "El brazo biónico de segundo nivel tiene un blindaje de 3 puntos que no se apila con armaduras ni con otros aumentos (se aplica el mayor), pero permite utilizar el brazo como arma para bloquear. Además, el brazo biónico causa daño letal en sus ataques de pelea, y aumenta en 1 el daño de sus golpes y la dificultad de aturdimiento por crítico.",
         ],
         modificadores: [],
         // A6a: Fuerza +1 (tope 5), la misma Agilidad, blindaje 3, bloquea y letal en pelea.
-        extremidad: { fuerza: { delta: 1, tope: 5 }, agilidad: { delta: 0 }, blindaje: 3, bloquea: true, peleaLetal: true },
+        extremidad: { fuerza: { delta: 1, tope: 5 }, agilidad: { delta: 0 }, blindaje: 3, bloquea: true, peleaLetal: true, pelea: { danio: 1, aturdimiento: 1 } },
         // A6a: casilla (Fuerza y Agilidad), blindaje en "Resistir daño" (casilla), letal en la
         // casilla del Puñetazo y el codazo, y la fila "Bloquear con el brazo biónico" (con la dote
         // Bloqueo).
@@ -1675,15 +1675,15 @@ export const IMPLANTES: Implante[] = [
           {
             id: "fuerte",
             label: "Modelo Fuerte",
-            detalle: ["+2 a puntuación de fuerza que se contabiliza hasta un máximo de 7, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 6 puntos."],
-            extremidad: { fuerza: { delta: 2, tope: 7 }, agilidad: { delta: 0 }, blindaje: 6, bloquea: true, peleaLetal: true },
+            detalle: ["+2 a puntuación de fuerza que se contabiliza hasta un máximo de 7, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 6 puntos, aumenta en 2 el daño de sus golpes de pelea y la dificultad de aturdimiento por crítico."],
+            extremidad: { fuerza: { delta: 2, tope: 7 }, agilidad: { delta: 0 }, blindaje: 6, bloquea: true, peleaLetal: true, pelea: { danio: 2, aturdimiento: 2 } },
           },
           // "Como el nivel 2": su Fuerza (+1, tope 5) y su blindaje (3), más la Agilidad (usuario, 2026-10-22).
           {
             id: "agil",
             label: "Modelo Ágil",
             detalle: ["Funciona como el brazo de nivel 2 pero con un aumento de +1 en la agilidad sobre la del usuario con máximo contabilizado de hasta 5."],
-            extremidad: { fuerza: { delta: 1, tope: 5 }, agilidad: { delta: 1, tope: 5 }, blindaje: 3, bloquea: true, peleaLetal: true },
+            extremidad: { fuerza: { delta: 1, tope: 5 }, agilidad: { delta: 1, tope: 5 }, blindaje: 3, bloquea: true, peleaLetal: true, pelea: { danio: 1, aturdimiento: 1 } },
           },
         ],
         modificadores: [],
@@ -1703,20 +1703,20 @@ export const IMPLANTES: Implante[] = [
           {
             id: "fuerte",
             label: "Modelo Fuerte",
-            detalle: ["+4 a puntuación de fuerza que se contabiliza hasta un máximo de 10, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 8 puntos."],
-            extremidad: { fuerza: { delta: 4, tope: 10 }, agilidad: { delta: 0 }, blindaje: 8, bloquea: true, peleaLetal: true },
+            detalle: ["+4 a puntuación de fuerza que se contabiliza hasta un máximo de 10, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 8 puntos, aumenta en 3 el daño de sus golpes pero mantiene en 2 el aumento de dificultad al crítico de aturdimiento."],
+            extremidad: { fuerza: { delta: 4, tope: 10 }, agilidad: { delta: 0 }, blindaje: 8, bloquea: true, peleaLetal: true, pelea: { danio: 3, aturdimiento: 2 } },
           },
           {
             id: "equilibrado",
             label: "Modelo Equilibrado",
-            detalle: ["+2 a puntuación de fuerza con máximo contabilizado de hasta 7, la agilidad es de +2 en la agilidad sobre el usuario con máximo contabilizado de hasta 6. El modelo equilibrado tiene un blindaje de 6 puntos."],
-            extremidad: { fuerza: { delta: 2, tope: 7 }, agilidad: { delta: 2, tope: 6 }, blindaje: 6, bloquea: true, peleaLetal: true },
+            detalle: ["+2 a puntuación de fuerza con máximo contabilizado de hasta 7, la agilidad es de +2 en la agilidad sobre el usuario con máximo contabilizado de hasta 6. El modelo equilibrado tiene un blindaje de 6 puntos, aumenta en 2 el daño de sus golpes y la dificultad de aturdimiento por crítico."],
+            extremidad: { fuerza: { delta: 2, tope: 7 }, agilidad: { delta: 2, tope: 6 }, blindaje: 6, bloquea: true, peleaLetal: true, pelea: { danio: 2, aturdimiento: 2 } },
           },
           {
             id: "agil",
             label: "Modelo Ágil",
-            detalle: ["La fuerza del brazo es +1 punto superior a la del usuario pero con máximo contabilizado de 5, aumento de +3 en la agilidad sobre el usuario con máximo contabilizado de 8. Su puntuación de blindaje es de 3 puntos."],
-            extremidad: { fuerza: { delta: 1, tope: 5 }, agilidad: { delta: 3, tope: 8 }, blindaje: 3, bloquea: true, peleaLetal: true },
+            detalle: ["La fuerza del brazo es +1 punto superior a la del usuario pero con máximo contabilizado de 5, aumento de +3 en la agilidad sobre el usuario con máximo contabilizado de 8. Su puntuación de blindaje es de 3 puntos, aumenta en 1 el daño de sus golpes y la dificultad de aturdimiento por crítico."],
+            extremidad: { fuerza: { delta: 1, tope: 5 }, agilidad: { delta: 3, tope: 8 }, blindaje: 3, bloquea: true, peleaLetal: true, pelea: { danio: 1, aturdimiento: 1 } },
           },
         ],
         modificadores: [],

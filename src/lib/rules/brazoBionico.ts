@@ -17,6 +17,7 @@ import { modificadoresDeRequisito } from "./dotes";
 import { especieDeFicha } from "./especie";
 import { ID_BRAZO_BIONICO, nivelesHasta, ultimoQueDefine, type PiezaEquipada } from "./equipo";
 import type { AtributosExtremidad, CondicionTirada } from "./condiciones";
+import type { EfectoEnTirada } from "./efectosArma";
 import type { Sheet } from "./sheet";
 import type { OrigenAporte } from "./origen";
 
@@ -30,14 +31,16 @@ export type AtributoDeExtremidad = { delta: number; tope?: number };
 
 // Lo que trae un nivel o un modelo del brazo. `blindaje`: solo protege el golpe que se bloquea
 // con el brazo (R12). `bloquea`: hay fila "Bloquear con el brazo biónico" (con la dote
-// Bloqueo). `peleaLetal`: el Puñetazo y el codazo con el brazo hacen daño letal. El nivel 1 no
-// trae ninguno de los tres.
+// Bloqueo). `peleaLetal`: el Puñetazo y el codazo con el brazo hacen daño letal. `pelea`
+// (sync Drive 2026-11-14): lo que suben esos golpes al daño y a la dificultad de la salvación
+// contra el aturdimiento de su crítico. El nivel 1 no trae ninguno.
 export type ExtremidadBionica = {
   fuerza: AtributoDeExtremidad;
   agilidad: AtributoDeExtremidad;
   blindaje?: number;
   bloquea?: true;
   peleaLetal?: true;
+  pelea?: { danio: number; aturdimiento: number };
 };
 
 export function valorDeExtremidad(base: number, a: AtributoDeExtremidad): number {
@@ -76,6 +79,8 @@ export type BrazoBionico = {
   blindaje: number | null;
   bloquea: boolean;
   peleaLetal: boolean;
+  // +N al daño de pelea y a la dificultad del aturdimiento de su crítico (0 sin ellos).
+  pelea: { danio: number; aturdimiento: number };
   // instanciaId del arma incorporada (A6b), o null.
   armaIncorporada: string | null;
 };
@@ -102,6 +107,7 @@ export function brazoBionico(sheet: Sheet): BrazoBionico | null {
     blindaje: e.extremidad.blindaje ?? null,
     bloquea: e.extremidad.bloquea === true,
     peleaLetal: e.extremidad.peleaLetal === true,
+    pelea: e.extremidad.pelea ?? { danio: 0, aturdimiento: 0 },
     armaIncorporada: e.pieza.armaIncorporada ?? null,
   };
 }
@@ -161,10 +167,13 @@ export function casillaBrazo(brazo: BrazoBionico, a: AtaqueParaBrazo): Condicion
   // con el brazo biónico" (nivel 2+; con el 1 no se bloquea). TODO(revisar): sin casilla.
   if (esPelea && a.familiaArma === "bloquear_melee") return null;
   const letal = esPelea && brazo.peleaLetal;
+  const masDanio = esPelea ? brazo.pelea.danio : 0;
   const nota = [
     `Fuerza ${brazo.fuerza} y Agilidad ${brazo.agilidad} del brazo (${brazo.fuente}) en vez de las tuyas, aunque sean menores${a.danioDeFuerza ? "; también en el daño" : ""}.`,
     a.catalogoId === CODAZO ? "Solo si es codazo, no rodillazo." : null,
     letal ? "Daño letal en vez de no letal." : null,
+    masDanio ? `+${masDanio} al daño.` : null,
+    esPelea && brazo.pelea.aturdimiento ? `+${brazo.pelea.aturdimiento} a la dificultad del aturdimiento del crítico.` : null,
   ]
     .filter(Boolean)
     .join(" ");
@@ -175,9 +184,28 @@ export function casillaBrazo(brazo: BrazoBionico, a: AtaqueParaBrazo): Condicion
     valorActivo: 0,
     nota,
     extremidad: atributosDeBrazo(brazo, a.danioDeFuerza),
-    ...(letal && { danio: { categoria: "Letal" } }),
+    ...((letal || masDanio) && { danio: { ...(letal && { categoria: "Letal" }), ...(masDanio && { ajuste: masDanio }) } }),
     origen: origenDeBrazo(brazo),
   };
+}
+
+// La dificultad del aturdimiento del crítico de un golpe de pelea con el brazo (sync Drive
+// 2026-11-14): +N a su dificultad es −N a la salvación del objetivo, solo con la casilla marcada
+// y si el golpe ya trae esa salvación (el crítico del Puñetazo y del codazo, Aturdimiento (6)).
+export function efectosDeBrazo(brazo: BrazoBionico, a: AtaqueParaBrazo): EfectoEnTirada[] {
+  if (!esPeleaDeBrazo(a.catalogoId) || a.familiaArma !== "ataque_melee" || !brazo.pelea.aturdimiento) return [];
+  return [
+    {
+      tipo: "ajusteSalvacion",
+      contra: "aturdido",
+      valor: -brazo.pelea.aturdimiento,
+      cuando: "critico",
+      soloEn: { casilla: ID_CASILLA_BRAZO },
+      nota: `+${brazo.pelea.aturdimiento} a la dificultad del aturdimiento (${brazo.fuente}).`,
+      fuente: brazo.fuente,
+      origen: origenDeBrazo(brazo),
+    },
+  ];
 }
 
 // ── Arma incorporada (A6b) ─────────────────────────────────────────────

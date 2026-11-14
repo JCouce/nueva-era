@@ -2320,6 +2320,12 @@ sobreesfuerzo.
     Potencia, con Sutil) cambia con ellas: un ajuste del daño con su fuente ("Brazo Biónico 2:
     Fuerza 5 (tuya 6)" −1). Con el nivel 2+, el Puñetazo y el codazo con la casilla son
     **letales**; las armas no cambian de categoría.
+  - **Golpes de pelea, +N** `[FIRME · AUMENTOS 2026-11-14]`: con la casilla, el Puñetazo y el
+    codazo suman +N al daño (ajuste «Con el brazo biónico») y +N a la dificultad de la salvación
+    contra el aturdimiento de su crítico, que la app pone como −N a la tirada del objetivo
+    (`ajusteSalvacion`, como Dominio Elevado). Nivel 2: +1/+1; 3 Fuerte +2/+2, Ágil +1/+1 («como
+    el nivel 2»); 4 Fuerte +3 al daño y +2 al aturdimiento, Equilibrado +2/+2, Ágil +1/+1
+    (`ExtremidadBionica.pelea`). Las armas, empuñadas o incorporadas, no.
   - **"Bloquear con el brazo biónico":** fila de Defensa con el nivel 2+, familia
     `bloquear_melee` (solo con la dote Bloqueo, sus casillas incluidas), Potencia + Combate
     Melee siempre con los atributos del brazo, sin casilla. Especialidad Pelea, sin Sutil.

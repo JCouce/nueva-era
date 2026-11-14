@@ -11,6 +11,7 @@ import type { EstadoActivo } from "./estados";
 import { lineaAntes, lineaDeGrado } from "./textosDeTirada";
 import { armaIncorporadaEntradaSchema, armasIncorporables, desequipar, fijarArmaIncorporada } from "./equipo";
 import { parseSheet } from "./sheet";
+import { efectosSobreObjetivo } from "./efectosArma";
 
 const BRAZO = "aum_brazo_bionico";
 const OSTEO = "aum_integridad_osteotendinosa"; // +1 Fuerza y +1 Agilidad permanentes
@@ -189,11 +190,15 @@ describe("Brazo Biónico: casilla «Con el brazo biónico»", () => {
     const t = fila(s, "Golpear con Puñetazo")!;
     const m = montar(s, t, true);
     assert.equal(m.aplicado.valor, 4); // ⌊(6+3)/2⌋; la tuya, ⌊(2+3)/2⌋ = 2
-    assert.deepEqual(m.danio.ajustes, [{ valor: 4, fuente: "Brazo Biónico 4 (Modelo Fuerte): Fuerza 6 (tuya 2)" }]);
+    // Sync Drive 2026-11-14 (M2.3): el Fuerte 4 suma además +3 al daño de pelea.
+    assert.deepEqual(m.danio.ajustes, [
+      { valor: 3, fuente: "Con el brazo biónico" },
+      { valor: 4, fuente: "Brazo Biónico 4 (Modelo Fuerte): Fuerza 6 (tuya 2)" },
+    ]);
     assert.equal(m.danio.categoria?.a, "Letal");
-    // Base del Puñetazo simple: Fuerza del usuario (2) + 4 del brazo = 6, letal.
+    // Base del Puñetazo simple: Fuerza del usuario (2) + 4 del brazo + 3 de pelea = 9, letal.
     const d = resolverDanio(t.ataque!.modos[0].danio!, 0, t.ataque!.modos[0].categoriaDanio, m.danio);
-    assert.equal(d.total, 6);
+    assert.equal(d.total, 9);
     assert.equal(d.categoria, "Letal");
     // Sin marcar, el de siempre.
     assert.equal(montar(s, t, false).danio.categoria, null);
@@ -216,7 +221,10 @@ describe("Brazo Biónico: casilla «Con el brazo biónico»", () => {
     assert.equal(m.aplicado.id, "reflejos");
     assert.equal(m.aplicado.valor, 1); // Agilidad del brazo 1 (igual) + Percepción 1
     // Potencia: tuya ⌊(1+1)/2⌋ = 1; del brazo ⌊(5+1)/2⌋ = 3.
-    assert.deepEqual(m.danio.ajustes, [{ valor: 2, fuente: "Brazo Biónico 4 (Modelo Fuerte): Potencia 3 (tuya 1)" }]);
+    assert.deepEqual(m.danio.ajustes, [
+      { valor: 3, fuente: "Con el brazo biónico" },
+      { valor: 2, fuente: "Brazo Biónico 4 (Modelo Fuerte): Potencia 3 (tuya 1)" },
+    ]);
   });
 
   test("fuego de una mano: Reflejos con la Agilidad del brazo, sin tocar el daño", () => {
@@ -241,6 +249,65 @@ describe("Brazo Biónico: casilla «Con el brazo biónico»", () => {
       assert.equal(conNeuro.modificador - sin.modificador, 1, `brazo ${marcada}`);
       assert.deepEqual(conNeuro.danio.ajustes, sin.danio.ajustes, `brazo ${marcada}`);
     }
+  });
+});
+
+// Sync Drive 2026-11-14 (M2.3): «aumenta en N el daño de sus golpes [de pelea] y la dificultad de
+// aturdimiento por crítico». N2 +1/+1; N3 Fuerte +2/+2, Ágil +1/+1; N4 Fuerte +3/+2, Equilibrado
+// +2/+2, Ágil +1/+1. Con la casilla marcada, en el Puñetazo y el codazo.
+describe("Brazo Biónico: golpe de pelea, +N al daño y al aturdimiento del crítico", () => {
+  const CRITICO = { exito: true, critico: true, dificultad: 7, total: 19 };
+  const golpe = (nivel: number, modelo?: string) => {
+    const s = con(conBrazo(ficha({ fuerza: 3, agilidad: 3 }), nivel, modelo), "pelea_punetazo");
+    return { s, t: fila(s, "Golpear con Puñetazo")! };
+  };
+  const masDanio = (nivel: number, modelo?: string) => {
+    const { s, t } = golpe(nivel, modelo);
+    return montar(s, t, true).danio.ajustes.find((a) => a.fuente === "Con el brazo biónico")?.valor ?? 0;
+  };
+  const aturdimiento = (nivel: number, modelo?: string, marcada = true) => {
+    const { t } = golpe(nivel, modelo);
+    const aviso = efectosSobreObjetivo(t, { [ID_CASILLA_BRAZO]: marcada }, CRITICO, () => 1).find((a) => a.estadoId === "aturdido");
+    return aviso?.salvacion?.ajustes ?? [];
+  };
+
+  test("daño por nivel y modelo", () => {
+    assert.equal(masDanio(1), 0);
+    assert.equal(masDanio(2), 1);
+    assert.equal(masDanio(3, "fuerte"), 2);
+    assert.equal(masDanio(3, "agil"), 1);
+    assert.equal(masDanio(4, "fuerte"), 3);
+    assert.equal(masDanio(4, "equilibrado"), 2);
+    assert.equal(masDanio(4, "agil"), 1);
+  });
+
+  test("el daño entra en el golpe: Puñetazo simple con el brazo 2 (Fuerza 4) = 4 + 1, letal", () => {
+    const { s, t } = golpe(2);
+    const m = montar(s, t, true);
+    const d = resolverDanio(t.ataque!.modos[0].danio!, 0, t.ataque!.modos[0].categoriaDanio, m.danio);
+    assert.equal(d.total, 5);
+    assert.equal(d.categoria, "Letal");
+    // Sin marcar, el de siempre: Fuerza 3, no letal.
+    const sin = resolverDanio(t.ataque!.modos[0].danio!, 0, t.ataque!.modos[0].categoriaDanio, montar(s, t, false).danio);
+    assert.equal(sin.total, 3);
+  });
+
+  test("aturdimiento del crítico: −N a la salvación del objetivo (la dificultad sube N)", () => {
+    assert.deepEqual(aturdimiento(1), []);
+    assert.deepEqual(aturdimiento(2), [{ valor: -1, fuente: "Brazo Biónico 2" }]);
+    assert.deepEqual(aturdimiento(3, "fuerte"), [{ valor: -2, fuente: "Brazo Biónico 3 (Modelo Fuerte)" }]);
+    assert.deepEqual(aturdimiento(4, "fuerte"), [{ valor: -2, fuente: "Brazo Biónico 4 (Modelo Fuerte)" }]);
+    assert.deepEqual(aturdimiento(4, "equilibrado"), [{ valor: -2, fuente: "Brazo Biónico 4 (Modelo Equilibrado)" }]);
+    assert.deepEqual(aturdimiento(4, "agil"), [{ valor: -1, fuente: "Brazo Biónico 4 (Modelo Ágil)" }]);
+    // Sin la casilla, no.
+    assert.deepEqual(aturdimiento(4, "fuerte", false), []);
+  });
+
+  test("un arma no es pelea: ni daño ni aturdimiento de más", () => {
+    const s = con(conBrazo(ficha({ fuerza: 3, agilidad: 3 }), 4, "fuerte"), "corta_tonfa_porra");
+    const t = fila(s, "Golpear con Tonfa o Porra")!;
+    assert.equal(montar(s, t, true).danio.ajustes.some((a) => a.fuente === "Con el brazo biónico"), false);
+    assert.ok(!(t.efectosObjetivo ?? []).some((e) => e.tipo === "ajusteSalvacion"));
   });
 });
 
