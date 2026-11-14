@@ -354,7 +354,7 @@ export const SUBSISTEMAS: Subsistema[] = [
       {
         nivel: 1,
         rareza: "Común",
-        coste: 5000,
+        coste: 4000,
         detalle: ["Absorción de 1 punto de daño físico o energético mientras esté activo."],
         // H5 (docs/sistema.md pregunta 29) construido 2026-09-27: absorcion
         // alimenta blindajeContra() (blindaje.ts), leído por "Resistir daño".
@@ -372,7 +372,7 @@ export const SUBSISTEMAS: Subsistema[] = [
       {
         nivel: 2,
         rareza: "Poco Habitual",
-        coste: 30000,
+        coste: 20000,
         detalle: ["Absorción de 2 puntos."],
         absorcion: 2,
         modificadores: [],
@@ -388,7 +388,7 @@ export const SUBSISTEMAS: Subsistema[] = [
       {
         nivel: 3,
         rareza: "Poco Habitual",
-        coste: 60000,
+        coste: 40000,
         detalle: ["Absorción de 3 puntos."],
         absorcion: 3,
         modificadores: [],
@@ -404,7 +404,7 @@ export const SUBSISTEMAS: Subsistema[] = [
       {
         nivel: 4,
         rareza: "Extraño",
-        coste: 90000,
+        coste: 80000,
         detalle: ["Absorción de 4 puntos."],
         absorcion: 4,
         modificadores: [],

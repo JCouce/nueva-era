@@ -701,6 +701,13 @@ describe("costeDePieza", () => {
     );
   });
 
+  test("Escudo Deflector (sync Drive 2026-11-14): 4 000 / 20 000 / 40 000 / 80 000", () => {
+    const costes = [1, 2, 3, 4].map((nivel) =>
+      costeDePieza({ instanciaId: "d1", catalogoId: "escudo_deflector", nivel, instaladoEnId: "armadura-1" }),
+    );
+    assert.deepEqual(costes, [4000, 20000, 40000, 80000]);
+  });
+
   test("arma melee sin coste en el catálogo (a mano vacía) cuesta 0", () => {
     assert.equal(costeDePieza({ instanciaId: "p1", catalogoId: "pelea_punetazo" }), 0);
   });
