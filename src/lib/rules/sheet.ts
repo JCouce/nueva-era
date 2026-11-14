@@ -45,7 +45,7 @@ import { CATEGORIAS_PRIORIDAD, LETRAS_PRIORIDAD, prioridadesVacias } from "./pri
 import { DISCIPLINA_IDS, type DisciplinaId } from "../catalog/psionica";
 import { normalizarOpciones } from "../catalog/especies";
 import { doteCompradaSchema, normalizarDotes, MAX_DOTES } from "./dotesCompradas";
-import { ESPECIALIDAD_IDS, esEspecialidadDe, type EspecialidadId } from "../catalog/especialidades";
+import { ESPECIALIDAD_IDS, esEspecialidadDe, etiquetaEspecialidad, type EspecialidadId } from "../catalog/especialidades";
 
 // Versión del formato de ficha. Al subirla hay que añadir su migración en
 // migraciones.ts y el test que la cubre.
@@ -78,7 +78,9 @@ import { ESPECIALIDAD_IDS, esEspecialidadDe, type EspecialidadId } from "../cata
 //   21 → se añaden las acciones favoritas (favoritas, T-006)
 //   22 → especialidades de Combate a Distancia de 5 a 9 (foto de Drive 2026-10-23)
 //   23 → desglose del daño de vida por categoría (danio: no letal, letal, grave)
-export const SCHEMA_VERSION = 23;
+//   24 → especialidades de Sigilo: Esconderse → Ocultación, Hurto → Juego de Manos
+//        (foto de Drive 2026-11-14)
+export const SCHEMA_VERSION = 24;
 
 // Tope de lo gastado de la bolsa de aumentos: muy por encima de cualquier bolsa real.
 export const MAX_BOLSA_AUMENTOS = 9_999_999;
@@ -262,6 +264,9 @@ export function parseSheet(raw: unknown): Sheet {
 
   const rHabilidades = (r.habilidades ?? {}) as Record<string, unknown>;
   const habilidades = { ...base.habilidades };
+  // Una especialidad que no es del catálogo de su habilidad no se pierde en silencio: va al
+  // aviso de la pestaña Habilidades, como lo que no casó en la v17 (S110).
+  const descartadas: string[] = [];
   for (const h of HABILIDADES) {
     const entry = (rHabilidades[h.id] ?? {}) as Record<string, unknown>;
     const valor = clampInt(
@@ -271,13 +276,12 @@ export function parseSheet(raw: unknown): Sheet {
       HABILIDAD_NO_ENTRENADA,
     );
     // Solo ids del catálogo de ESTA habilidad, sin repetir y hasta el tope.
-    const especialidades = Array.isArray(entry.especialidades)
-      ? [
-          ...new Set(
-            entry.especialidades.filter((e): e is EspecialidadId => typeof e === "string" && esEspecialidadDe(h.id, e)),
-          ),
-        ].slice(0, MAX_ESPECIALIDADES)
-      : [];
+    const crudas: unknown[] = Array.isArray(entry.especialidades) ? entry.especialidades : [];
+    for (const e of crudas)
+      if (typeof e === "string" && e.trim() && !esEspecialidadDe(h.id, e)) descartadas.push(`${h.label}: ${etiquetaEspecialidad(e.trim())}`);
+    const especialidades = [
+      ...new Set(crudas.filter((e): e is EspecialidadId => typeof e === "string" && esEspecialidadDe(h.id, e))),
+    ].slice(0, MAX_ESPECIALIDADES);
     // Sin entrenar no hay especialidad que valga.
     habilidades[h.id] =
       valor < HABILIDAD_MIN_ENTRENADA
@@ -400,12 +404,13 @@ export function parseSheet(raw: unknown): Sheet {
       municionEspecial,
       psionica,
       dotes: normalizarDotes(r.dotes),
-      avisoEspecialidades: Array.isArray(r.avisoEspecialidades)
-        ? r.avisoEspecialidades
+      avisoEspecialidades: [
+        ...new Set(
+          [...(Array.isArray(r.avisoEspecialidades) ? r.avisoEspecialidades : []), ...descartadas]
             .filter((t): t is string => typeof t === "string" && t.trim().length > 0)
-            .map((t) => t.trim().slice(0, 120))
-            .slice(0, MAX_AVISOS_ESPECIALIDADES)
-        : [],
+            .map((t) => t.trim().slice(0, 120)),
+        ),
+      ].slice(0, MAX_AVISOS_ESPECIALIDADES),
       vidaActual: clampInt(r.vidaActual, 0, 999, 999),
       fatigaActual: clampInt(r.fatigaActual, 0, 999, 999),
       danio: leerDanio(r.danio),

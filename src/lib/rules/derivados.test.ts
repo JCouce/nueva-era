@@ -273,7 +273,7 @@ describe("valor efectivo de una habilidad", () => {
   test("S39: una habilidad sin especialidades en la fuente (Interpretación) va siempre entera", () => {
     const s = ficha({ habilidades: { interpretacion: { valor: 3, especialidades: [] }, sigilo: { valor: 3, especialidades: [] } } });
     assert.equal(valorEfectivo(s, "interpretacion", false, modificadoresActivos(s)), 3);
-    // Sigilo tiene lista desde 2026-10-23 (Esconderse, Hurto): fuera de especialidad, la mitad.
+    // Sigilo tiene lista desde 2026-10-23 (hoy Ocultación, Mimetismo, Juego de Manos): fuera de especialidad, la mitad.
     assert.equal(valorEfectivo(s, "sigilo", false, modificadoresActivos(s)), 1);
   });
 

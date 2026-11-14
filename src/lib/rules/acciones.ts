@@ -577,7 +577,7 @@ export const ACCIONES: Accion[] = [
     grupo: "Acciones",
     aplicado: "reflejos",
     habilidad: "sigilo",
-    especialidadesAccion: ["esconderse"],
+    especialidadesAccion: ["ocultacion"],
     nota:
       "Esconderse es acción simple; seguir escondido donde ya estabas, gratuita. Tu total queda como «Sigilo»: la dificultad para detectarte, que el máster compara con la Alerta de quien te busca (en empate gana la alerta). Tirar otra vez lo sustituye",
     condiciones: [CONDICION_MOVIMIENTO_OCULTO, CONDICION_ESCONDERSE_OBSERVADO],
@@ -589,7 +589,7 @@ export const ACCIONES: Accion[] = [
     grupo: "Acciones",
     aplicado: "reflejos",
     habilidad: "sigilo",
-    especialidadesAccion: ["hurto"],
+    especialidadesAccion: ["juego_de_manos"],
     nota:
       "Acción simple o reacción, enfrentada a Perspicacia + Exploración del objetivo, con penalizador según lo que se quite y lo difícil que sea llegar a ello",
   },

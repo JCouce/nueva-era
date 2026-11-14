@@ -267,8 +267,8 @@ describe("especialidad de las tiradas fijas: la decide la tirada", () => {
       ["medicina", "medicina"],
       ["tecnica", "informatica"],
       ["escalar", "escalada"],
-      ["sigilo", "esconderse"],
-      ["hurto", "hurto"],
+      ["sigilo", "ocultacion"],
+      ["hurto", "juego_de_manos"],
       ["iniciativa_distraccion", "manipulacion"],
     ];
     for (const [id, esp] of casos) {

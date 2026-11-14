@@ -40,10 +40,18 @@ const RETIRADAS_V22 = [
   { id: "armas_de_fuego_largas", label: "Armas de Fuego Largas" },
 ] as const;
 
+// Especialidades de Sigilo que la v24 renombra (foto de Drive 2026-11-14): igual que las de la
+// v22, el paso 16 → 17 las sigue conociendo y el 23 → 24 las traduce.
+const RETIRADAS_V24 = [
+  { id: "esconderse", label: "Esconderse" },
+  { id: "hurto", label: "Hurto" },
+] as const;
+const RENOMBRADAS_V24: Readonly<Record<string, string>> = { esconderse: "ocultacion", hurto: "juego_de_manos" };
+
 function retiradaPorNombre(habilidad: HabilidadId, texto: string): string | undefined {
-  if (habilidad !== "combate_distancia") return undefined;
+  const retiradas = habilidad === "combate_distancia" ? RETIRADAS_V22 : habilidad === "sigilo" ? RETIRADAS_V24 : [];
   const clave = claveNombreEspecialidad(texto);
-  return RETIRADAS_V22.find((e) => claveNombreEspecialidad(e.label) === clave || claveNombreEspecialidad(e.id) === clave)?.id;
+  return retiradas.find((e) => claveNombreEspecialidad(e.label) === clave || claveNombreEspecialidad(e.id) === clave)?.id;
 }
 
 // v21 → v22: id viejo → el nuevo; Armas de Fuego Largas, la especialidad (por su tipo) del
@@ -386,6 +394,27 @@ export const MIGRACIONES: Migracion[] = [
       "de la vida perdida en no letal, letal y grave. Empieza a 0; al leer, la vida que ya se " +
       "hubiera perdido pasa a letal (normalizarDanio, el daño sin categoría es letal).",
     migrar: (ficha) => ({ ...ficha, danio: { noLetal: 0, letal: 0, grave: 0 } }),
+  },
+  {
+    desde: 23,
+    hasta: 24,
+    descripcion:
+      "Especialidades de Sigilo (foto de Drive 2026-11-14, docs/sistema.md §3, S110): Esconderse " +
+      "pasa a Ocultación y Hurto a Juego de Manos, 1:1 (mismas tiradas, mismos totales). Las " +
+      "acciones conservan su id (sigilo, hurto), así que las favoritas no se tocan. Mimetismo es " +
+      "nueva: nadie la tiene.",
+    migrar: (ficha) => {
+      const rHabilidades = (ficha.habilidades ?? {}) as Record<string, unknown>;
+      const entry = rHabilidades.sigilo;
+      const viejas = entry && typeof entry === "object" ? (entry as { especialidades?: unknown }).especialidades : undefined;
+      if (!Array.isArray(viejas)) return ficha;
+      const ids: unknown[] = [];
+      for (const v of viejas) {
+        const id = typeof v === "string" ? (RENOMBRADAS_V24[v] ?? v) : v;
+        if (!ids.includes(id)) ids.push(id);
+      }
+      return { ...ficha, habilidades: { ...rHabilidades, sigilo: { ...(entry as object), especialidades: ids } } };
+    },
   },
 ];
 

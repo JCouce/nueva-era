@@ -61,9 +61,10 @@ export const ESPECIALIDADES = [
   { id: "investigacion", label: "Investigación", habilidad: "exploracion" },
   { id: "tactica", label: "Táctica", habilidad: "exploracion" },
   { id: "supervivencia", label: "Supervivencia", habilidad: "exploracion" },
-  // Sigilo (foto de Drive 2026-10-23; antes sin lista)
-  { id: "esconderse", label: "Esconderse", habilidad: "sigilo" },
-  { id: "hurto", label: "Hurto", habilidad: "sigilo" },
+  // Sigilo (foto de Drive 2026-11-14: Esconderse pasa a Ocultación y Hurto a Juego de Manos;
+  // las fichas viejas, migración v23 → v24).
+  { id: "ocultacion", label: "Ocultación", habilidad: "sigilo" },
+  { id: "juego_de_manos", label: "Juego de Manos", habilidad: "sigilo" },
   // Tecnociencia
   { id: "astrografia", label: "Astrografía", habilidad: "tecnociencia" },
   { id: "fisica", label: "Física", habilidad: "tecnociencia" },

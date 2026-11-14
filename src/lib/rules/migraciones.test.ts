@@ -4,6 +4,10 @@ import { migrar, MIGRACIONES } from "./migraciones";
 import { parseSheet, SCHEMA_VERSION } from "./sheet";
 import { reconciliarVidaConEstados } from "./vitalidad";
 import { ARMAS } from "../catalog/armasFuego";
+import { ACCIONES } from "./acciones";
+import { resolverFicha, conExtrasDeFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { montarTirada, eleccionSinTocar } from "./montaje";
+import type { EstadoCondiciones } from "./condiciones";
 
 describe("cadena de migraciones", () => {
   test("hay un paso por cada salto de versión, sin huecos", () => {
@@ -501,5 +505,97 @@ describe("v22 → v23: daño de vida por categoría", () => {
 
   test("una ficha vieja a tope no ha perdido nada", () => {
     assert.deepEqual(parseSheet({ schemaVersion: 22 }).danio, { noLetal: 0, letal: 0, grave: 0 });
+  });
+});
+
+describe("v23 → v24: especialidades de Sigilo (foto de Drive 2026-11-14)", () => {
+  const sigilo = (ficha: Record<string, unknown>) =>
+    (ficha.habilidades as Record<string, { valor: number; especialidades: string[] }>).sigilo;
+
+  test("Esconderse → Ocultación y Hurto → Juego de Manos; el resto de la ficha, igual", () => {
+    const { ficha, aplicadas } = migrar(
+      {
+        schemaVersion: 23,
+        favoritas: ["sigilo", "hurto"],
+        habilidades: { sigilo: { valor: 3, especialidades: ["hurto", "esconderse"] }, atletismo: { valor: 1, especialidades: ["salto"] } },
+      },
+      24,
+    );
+    assert.equal(ficha.schemaVersion, 24);
+    assert.equal(aplicadas.length, 1);
+    assert.deepEqual(sigilo(ficha), { valor: 3, especialidades: ["juego_de_manos", "ocultacion"] });
+    assert.deepEqual((ficha.habilidades as Record<string, unknown>).atletismo, { valor: 1, especialidades: ["salto"] });
+    // Las acciones conservan su id: las favoritas no cambian.
+    assert.deepEqual(ficha.favoritas, ["sigilo", "hurto"]);
+  });
+
+  test("sin Sigilo, nada que tocar", () => {
+    const { ficha } = migrar({ schemaVersion: 23, habilidades: { atletismo: { valor: 1, especialidades: [] } } }, 24);
+    assert.equal(sigilo(ficha), undefined);
+  });
+
+  test("una ficha v16 con texto «Esconderse» y «Hurto» llega a las nuevas pasando por la v17", () => {
+    const s = parseSheet({ schemaVersion: 16, habilidades: { sigilo: { valor: 2, especialidades: ["Esconderse", "hurto"] } } });
+    assert.deepEqual(s.habilidades.sigilo.especialidades, ["ocultacion", "juego_de_manos"]);
+    assert.deepEqual(s.avisoEspecialidades, []);
+  });
+
+  // Test de oro: los totales calculados con el motor ANTES del cambio (commit f3b5688, con
+  // Esconderse y Hurto) se fijan como números; la ficha migrada tiene que dar lo mismo.
+  describe("test de oro: mismos totales que antes del cambio", () => {
+    const v23 = (especialidades: string[], dotes: { id: string }[] = []) => ({
+      schemaVersion: 23,
+      especieId: "humano",
+      atributos: { fuerza: 1, agilidad: 3, aguante: 1, percepcion: 2, inteligencia: 1, caracter: 1 },
+      habilidades: { sigilo: { valor: 4, especialidades } },
+      dotes,
+    });
+    const total = (raw: unknown, id: string, cambios: EstadoCondiciones = {}) => {
+      const f = resolverFicha(parseSheet(raw), { estados: [], vitalidad: VITALIDAD_DE_FICHA });
+      const t = conExtrasDeFicha(f, ACCIONES.find((a) => a.id === id)!);
+      const e = eleccionSinTocar(t);
+      return montarTirada(f, t, { ...e, estadoCondiciones: { ...e.estadoCondiciones, ...cambios } }).total;
+    };
+
+    test("con Esconderse y Hurto (y Movimiento Sigiloso): Ocultación y Juego de Manos, 6 / 4 moviéndose / 6", () => {
+      const raw = v23(["esconderse", "hurto"], [{ id: "dote_movimiento_sigiloso" }]);
+      const s = parseSheet(raw);
+      assert.equal(s.schemaVersion, SCHEMA_VERSION);
+      assert.deepEqual(s.habilidades.sigilo, { valor: 4, especialidades: ["ocultacion", "juego_de_manos"] });
+      assert.deepEqual(s.avisoEspecialidades, []);
+      assert.equal(total(raw, "sigilo"), 6);
+      assert.equal(total(raw, "sigilo", { movimiento_oculto: "total" }), 4);
+      assert.equal(total(raw, "hurto"), 6);
+    });
+
+    test("solo con Esconderse: ocultarse entera (6) y hurtar a la mitad (4); no se cruzan", () => {
+      const raw = v23(["esconderse"]);
+      assert.deepEqual(parseSheet(raw).habilidades.sigilo.especialidades, ["ocultacion"]);
+      assert.equal(total(raw, "sigilo"), 6);
+      assert.equal(total(raw, "hurto"), 4);
+    });
+  });
+});
+
+describe("parseSheet: una especialidad que no es del catálogo no se pierde en silencio", () => {
+  test("va a avisoEspecialidades con su habilidad, sin duplicar", () => {
+    const s = parseSheet({
+      schemaVersion: SCHEMA_VERSION,
+      avisoEspecialidades: ["Sigilo: trepar_tejados"],
+      habilidades: {
+        sigilo: { valor: 2, especialidades: ["ocultacion", "trepar_tejados", "trepar_tejados"] },
+        // De otra habilidad: tampoco vale aquí.
+        atletismo: { valor: 2, especialidades: ["salto", "pistolas"] },
+      },
+    });
+    assert.deepEqual(s.habilidades.sigilo.especialidades, ["ocultacion"]);
+    assert.deepEqual(s.habilidades.atletismo.especialidades, ["salto"]);
+    assert.deepEqual(s.avisoEspecialidades, ["Sigilo: trepar_tejados", "Atletismo: Pistolas"]);
+  });
+
+  test("leer dos veces no repite el aviso", () => {
+    const una = parseSheet({ schemaVersion: SCHEMA_VERSION, habilidades: { sigilo: { valor: 2, especialidades: ["xyz"] } } });
+    assert.deepEqual(parseSheet(una).avisoEspecialidades, ["Sigilo: xyz"]);
+    assert.deepEqual(parseSheet({ ...una, habilidades: { ...una.habilidades, sigilo: { valor: 2, especialidades: ["xyz"] } } }).avisoEspecialidades, ["Sigilo: xyz"]);
   });
 });
