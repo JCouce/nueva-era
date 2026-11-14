@@ -326,11 +326,14 @@ describe("A4b: Tempestad Nanobótica", () => {
     assert.ok(tiradaDe(conRecursos(con(defaultSheet(), ENJAMBRE, 4)), "aumentos_tempestad_nanobotica"));
   });
 
-  test("Reflejos + Tecnociencia, dificultad 0, 2 de fatiga al tirar y 1 grave fijo sin bono por éxitos", () => {
+  // Sync Drive 2026-11-14 (M4.5): Reflejos + Biónica (Biociencia), antes Tecnociencia.
+  test("Reflejos + Biociencia en Biónica, dificultad 0, 2 de fatiga al tirar y 1 grave fijo sin bono por éxitos", () => {
     const s = conRecursos(con(defaultSheet(), ENJAMBRE, 4));
     const t = tiradaDe(s, "aumentos_tempestad_nanobotica")!;
     assert.equal(t.aplicado, "reflejos");
-    assert.equal(t.habilidad, "tecnociencia");
+    assert.equal(t.habilidad, "biociencia");
+    assert.deepEqual(t.especialidadesAccion, ["bionica"]);
+    assert.match(t.efectos![0].texto, /de forma automática, salvo materiales especiales como el kerzul/);
     assert.equal(t.dificultadSugerida, 0);
     assert.equal(t.costeFatiga, 2);
     assert.equal(t.habilitacion, undefined);
@@ -343,6 +346,17 @@ describe("A4b: Tempestad Nanobótica", () => {
     const d = resolverDanio(1, 7, "Grave", m.danio);
     assert.equal(d.total, 1);
     assert.equal(d.bonoExitos, 0);
+  });
+
+  test("con la especialidad Biónica, Biociencia entera; sin ella, a la mitad", () => {
+    const base = conRecursos(con(defaultSheet(), ENJAMBRE, 4));
+    const con_ = (especialidades: EspecialidadId[]): Sheet => ({
+      ...base,
+      habilidades: { ...base.habilidades, biociencia: { valor: 4, especialidades } },
+    });
+    const valor = (s: Sheet) => montarTirada(resolver(s), tiradaDe(s, "aumentos_tempestad_nanobotica")!, SIN_ELECCION).habilidad?.valor;
+    assert.equal(valor(con_(["bionica"])), 4);
+    assert.equal(valor(con_([])), 2);
   });
 
   test("sin 2 de fatiga sale bloqueada", () => {

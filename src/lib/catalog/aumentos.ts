@@ -2136,8 +2136,8 @@ export const IMPLANTES: Implante[] = [
         rareza: "Muy Extraño",
         coste: 176000,
         detalle: [
-          "El cénit de la simbiosis nanotecnológica. El enjambre rompe las limitaciones biológicas previas: la regeneración pasiva del implante funciona incluso si el personaje se encuentra fatigado o exhausto, y duplica su velocidad mientras no esté fatigado (regenera un nivel de daño no letal por acción, uno letal por turno y uno grave por cada 10 turnos).",
-          "Además, introduce la capacidad de Tempestad Nanobótica: como acción estándar y gastando 2 puntos de fatiga, el usuario puede forzar al enjambre a desbordarse momentáneamente a través de la piel para atacar o sabotear el entorno inmediato. El ataque se resuelve como acción estándar, su alcance es melee y requiere de una tirada de reflejos + tecnociencia. Su daño básico es de 1 Grave, y es cuando acierta al blindaje destruye 1 punto por contacto físico. De la misma forma se puede emplear para sabotear objetos.",
+          "El cénit de la simbiosis nanotecnológica. El enjambre rompe las limitaciones biológicas previas: la regeneración pasiva del implante funciona incluso si el personaje se encuentra fatigado o exhausto, y duplica su velocidad mientras no esté fatigado (regenera dos niveles de daño no letal por turno, uno letal por turno y uno grave por cada 10 turnos).",
+          "Además, introduce la capacidad de Tempestad Nanobótica: como acción estándar y gastando 2 puntos de fatiga, el usuario puede forzar al enjambre a desbordarse momentáneamente a través de la piel para atacar o sabotear el entorno inmediato. El ataque se resuelve como acción estándar, su alcance es melee y requiere de una tirada de reflejos + biónica (biociencia). Su daño básico es de 1 Grave, pero si acierta al blindaje destruye 1 punto por contacto físico de forma automática (salvo materiales especiales como el kerzul). De la misma forma se puede emplear para sabotear objetos.",
         ],
         modificadores: [],
         salvaciones: [{ contra: ["toxinas", "venenos", "enfermedad"], bono: 4 }],
@@ -2150,12 +2150,17 @@ export const IMPLANTES: Implante[] = [
             economia: "Acción estándar, cuerpo a cuerpo",
             costeFatiga: 2,
             nota: "Daño 1 grave fijo: los éxitos no suman. También sirve para sabotear objetos (esa tirada no está definida: la decide el máster).",
+            // Sync Drive 2026-11-14: Reflejos + Biónica (Biociencia), antes Tecnociencia; la
+            // destrucción de blindaje es automática salvo materiales especiales (kerzul).
             tirada: {
               aplicado: "reflejos",
-              habilidad: "tecnociencia",
+              habilidad: "biociencia",
+              especialidad: "bionica",
               dificultad: 0,
               ataque: { danio: 1, categoria: "Grave" },
-              efectos: ["Cada acierto destruye 1 punto de blindaje del objetivo por contacto físico: que se lo reste a mano."],
+              efectos: [
+                "Si acierta, destruye 1 punto de blindaje del objetivo por contacto físico de forma automática, salvo materiales especiales como el kerzul: que se lo reste a mano.",
+              ],
             },
           },
         ],

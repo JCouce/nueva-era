@@ -2204,13 +2204,15 @@ sobreesfuerzo.
     pone el máster: el modal abre en la de siempre). Juntas y en ese orden: ampliar no tira; lo
     que se tira es la búsqueda. La búsqueda es **acción simple o reacción**, como Buscar /
     percibir (td-05, usuario 2026-11-13).
-  - **Tempestad Nanobótica** (Enjambre 4): ataque cuerpo a cuerpo de Reflejos + Tecnociencia,
+  - **Tempestad Nanobótica** (Enjambre 4): ataque cuerpo a cuerpo de Reflejos + Biociencia en
+    Biónica (sync Drive 2026-11-14; antes Tecnociencia; sin Biónica, a la mitad),
     dificultad 0 (la de un ataque por defecto), **1 grave fijo sin sumar éxitos**
     (`ataque.sinBonoExitos`) y **2 de fatiga cobrados al tirar** (`Accion.costeFatiga`, que
     `montarTirada` suma a la fatiga de las casillas; el ahorro de Mielinización también la
     rebaja, como el coste de un poder). Sin 2 de fatiga, la fila sale apagada. Solo en la
     sección "Aumentos", no en "Ataques" (no es un arma). Quitar 1 de blindaje al objetivo por
-    acierto, aviso tras el daño (se resta a mano); sabotear objetos, nota sin tirada.
+    acierto, de forma automática salvo materiales especiales como el kerzul (sync Drive
+    2026-11-14), aviso tras el daño (se resta a mano); sabotear objetos, nota sin tirada.
   - **Densificar** (Enjambre 3+): casilla en "Resistir daño", +3 de blindaje contra ese golpe.
     **Se cobra 1 de fatiga al marcarla y se devuelve al desmarcarla** sin cerrar el modal; sin
     fatiga, apagada con el motivo. Vale donde cuenta el blindaje (no contra Mental ni Fuego sin
@@ -2420,6 +2422,10 @@ sobreesfuerzo.
   - **Nivel 3, Densificar:** «red defensiva contra traumatismos»: el +3 de blindaje solo contra
     el daño Cinético (A4b, abajo). El +3 a la salvación contra el aturdimiento de ese golpe no
     cambia.
+  - **Nivel 4:** la regeneración pasiva duplicada es de **2** niveles no letales por turno
+    (antes, uno por acción): texto, la regeneración pasiva no está mecanizada (au-01). Tempestad
+    Nanobótica con **Reflejos + Biónica (Biociencia)** y la destrucción de blindaje automática
+    salvo kerzul (A4b, abajo).
 - *En la app (A7, inmunidades; usuario, 2026-10-22):* `rules/inmunidades.ts`, con los datos en el
   catálogo (`inmuneA` del nivel del implante o de la operación).
   - **Quién:** Ojo Biónico 2, 3 y 4 contra la **ceguera** (fuente "Ojo Biónico N"; el 1, nada) y
@@ -2448,8 +2454,8 @@ sobreesfuerzo.
 ### 11.2 Lo que el documento no dice `[PENDIENTE]`
 - **Tope de implantes**: pregunta 11, sigue abierta.
 - **Biociencia o Tecnociencia**: pregunta 20, sigue abierta. Hay dos datos: la extracción y
-  el Brazo usan **biónica** (especialidad de Biociencia), y Tempestad Nanobótica usa
-  **tecnociencia**.
+  el Brazo usan **biónica** (especialidad de Biociencia), y Tempestad Nanobótica usaba
+  **tecnociencia** (desde el sync Drive 2026-11-14, «reflejos + biónica (biociencia)»).
 - **Erratas** pendientes de Murillo: ver "Notas de transcripción" en `docs/aumentos.md`.
 - **Eliminar exanguinante** (Regeneración Tisular): el texto no dice qué acción cuesta. La app
   la trata como gratuita, igual que cortar la hemorragia en Angiogénesis (usuario, 2026-10-22).
