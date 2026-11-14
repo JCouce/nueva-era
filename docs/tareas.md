@@ -17,6 +17,8 @@ razas, poderes, dotes, aumentos) de prosa a motor. Este archivo manda en el esta
 
 Sin valoración de prioridad aquí a propósito — se queda obsoleta en cuanto cambia el
 foco. Frentes abiertos, cada uno con su sección en Pendiente:
+- **Sync de Drive 2026-11-14**: plan en `docs/plan-sync-2026-11-14.md` (T1 triviales →
+  T2 medianos → E1–E6 estructurales). Rama `fuente/sync-drive-2026-11-14`.
 - **Dotes**: hechas D1–D2d, las dotes de NPC, la especialidad en la tirada (2026-10-24) y
   todas las tiradas fijas de `habilidades.md`: Apuntar, Carrera, Discernir mentiras, Resistir
   distracción y, desde 2026-10-26 (`7db56f2`), Rastreo, Subsistencia, Trato
