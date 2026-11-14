@@ -1382,8 +1382,9 @@ function casillaVisualOjo(valor: number): CondicionTirada {
 // Las dos casillas de cobertura de una pieza: ataques a distancia y Buscar/percibir. Las del
 // Ojo llevan el mismo id en los niveles 2 y 4, para que el 4 sustituya al 2 (acumulaPorClave).
 // Los alcances van escritos aquí (no DISTANCIA): Foveo la llama antes de que exista.
-function casillasCobertura(prefijo: string, valor: number, cualquiera: boolean): CondicionTirada[] {
-  const etiqueta = cualquiera ? "Objetivo con cobertura (física o visual)" : "Objetivo con cobertura visual";
+// `etiqueta`: la de la pieza si no es la general (el Ojo 2, a 50 m desde el sync Drive 2026-11-14).
+function casillasCobertura(prefijo: string, valor: number, cualquiera: boolean, etiquetaPropia?: string): CondicionTirada[] {
+  const etiqueta = etiquetaPropia ?? (cualquiera ? "Objetivo con cobertura (física o visual)" : "Objetivo con cobertura visual");
   const comun = { tipo: "toggle", etiqueta, valorActivo: valor, noApila: NO_APILA_COBERTURA, nota: NOTA_COBERTURA } as const;
   return [
     { ...comun, id: `${prefijo}_cobertura_distancia`, alcance: { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" } },
@@ -1815,17 +1816,19 @@ export const IMPLANTES: Implante[] = [
       {
         nivel: 2,
         rareza: "Extraño",
-        coste: 32000,
+        coste: 28000,
         detalle: [
-          "El implante aumenta el bonificador en tiradas de percepción visual a +2 y se hace inmune a efecto de ceguera.",
-          "El ojo incluye un sistema de seguimiento predictivo que permite ignorar penalizadores menores por cobertura visual, reduciendo en 1 los niveles de cobertura visual y termo-óptica.",
+          "El implante aumenta el bonificador en tiradas de percepción visual a +2 y hace inmune a efecto de ceguera.",
+          "El ojo incluye un sistema de seguimiento predictivo que permite ignorar penalizadores menores por cobertura visual, reduciendo en 1 los niveles de cobertura visual y termo-óptica de cualquier tipo dentro de un alcance de 50 metros.",
         ],
         // El nivel 2 no sube el bono a distancia: sigue el +1 del nivel 1.
         modificadores: [
           { tipo: "derivado", id: "alerta", valor: 2, noApila: VISION_AUMENTADA },
         ],
         // A3: la cobertura visual (−1 nivel) llega en el nivel 2; el 1 no la trae.
-        condiciones: [casillaVisualOjo(2), ...casillasCobertura("aum_ojo", 1, false)],
+        // Sync Drive 2026-11-14: «cobertura visual y termo-óptica de cualquier tipo dentro de un
+        // alcance de 50 metros» (el alcance, en la etiqueta: la app no mide distancias).
+        condiciones: [casillaVisualOjo(2), ...casillasCobertura("aum_ojo", 1, false, "Objetivo con cobertura visual o termo-óptica a 50 m o menos")],
         // A7: "inmune a efecto de ceguera". Si cubre una ceguera física lo arbitra el máster con
         // "Aplicar igualmente" (pregunta a Murillo, §11.2).
         inmuneA: ["ceguera"],

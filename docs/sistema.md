@@ -2387,6 +2387,9 @@ sobreesfuerzo.
   - **Nivel 1:** +3 contra la ceguera (antes +2), en el selector «Contra…» de Fortaleza. Visión
     nocturna y termo-óptica «con las mismas características de los visores de nivel 2»: texto en
     Buscar / percibir (`TODO(revisar)`: no copia los números de los visores 2). 14 000 créditos.
+  - **Nivel 2:** −1 a la cobertura visual y termo-óptica de cualquier tipo hasta 50 m: la casilla
+    «Objetivo con cobertura visual o termo-óptica a 50 m o menos» (+1; la distancia la mira el
+    jugador). 28 000 créditos.
 - *En la app (A7, inmunidades; usuario, 2026-10-22):* `rules/inmunidades.ts`, con los datos en el
   catálogo (`inmuneA` del nivel del implante o de la operación).
   - **Quién:** Ojo Biónico 2, 3 y 4 contra la **ceguera** (fuente "Ojo Biónico N"; el 1, nada) y

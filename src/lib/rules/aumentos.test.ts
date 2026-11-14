@@ -201,10 +201,10 @@ describe("implantes: cualquier nivel directo y subir paga la diferencia", () => 
     assert.equal(plan.ok, true);
   });
 
-  test("Ojo Biónico (sync Drive 2026-11-14): nivel 1, 14.000", () => {
-    const plan = planCompraAumento(defaultSheet(), { catalogoId: OJO, nivel: 1 });
-    assert.equal(plan.ok && plan.precio, 14_000);
-    assert.equal(costeDePieza({ instanciaId: "o", catalogoId: OJO, nivel: 1 }), 14_000);
+  test("Ojo Biónico (sync Drive 2026-11-14): nivel 1, 14.000; nivel 2, 28.000", () => {
+    const precios = [1, 2].map((nivel) => planCompraAumento(defaultSheet(), { catalogoId: OJO, nivel }));
+    assert.deepEqual(precios.map((p) => p.ok && p.precio), [14_000, 28_000]);
+    assert.deepEqual([1, 2].map((nivel) => costeDePieza({ instanciaId: "o", catalogoId: OJO, nivel })), [14_000, 28_000]);
   });
 
   // Ojo 1 a 14.000 desde el sync Drive 2026-11-14 (M3.1).
@@ -280,7 +280,7 @@ describe("pago: primero la bolsa del humano, luego los créditos", () => {
   test("aprobada: costeDeRetirar no cuenta los aumentos (el resto del equipo sí)", () => {
     const s = compra(defaultSheet(), { catalogoId: OJO, nivel: 2 });
     assert.equal(costeDeRetirar(s, s.equipo[0].instanciaId), 0);
-    assert.equal(costeDePieza(s.equipo[0]), 32_000);
+    assert.equal(costeDePieza(s.equipo[0]), 28_000); // Ojo 2 a 28.000 desde el sync Drive 2026-11-14
     assert.equal(rarezaDePieza(s.equipo[0]), "Extraño");
   });
 
@@ -306,7 +306,7 @@ describe("pago: primero la bolsa del humano, luego los créditos", () => {
   test("sin bolsa todo vuelve a créditos; lo que no es aumento da null", () => {
     const s = compra(defaultSheet(), { catalogoId: OJO, nivel: 2 });
     assert.equal(s.equipo[0].pagoBolsa, undefined);
-    assert.deepEqual(devolucionAumento(s, s.equipo[0].instanciaId), { deBolsa: 0, deCreditos: 32_000 });
+    assert.deepEqual(devolucionAumento(s, s.equipo[0].instanciaId), { deBolsa: 0, deCreditos: 28_000 }); // Ojo 2, sync 2026-11-14
     assert.equal(devolucionAumento(s, "no-existe"), null);
   });
 

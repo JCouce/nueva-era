@@ -4224,7 +4224,7 @@
         {
           "nivel": 2,
           "rareza": "Extraño",
-          "coste": 32000,
+          "coste": 28000,
           "sustituye": [
             {
               "efecto": "+1 a percepción visual",

@@ -645,6 +645,13 @@ describe("A3: cobertura (casillas, sin apilar)", () => {
       const f = conFusil([[OJO, nivel]]);
       assert.equal(suma(f, disparo(f), ["aum_ojo_cobertura_distancia"]), 1, `nivel ${nivel}`);
     }
+    // Sync Drive 2026-11-14 (M3.2): visual y termo-óptica, hasta 50 m (en la etiqueta).
+    const f2 = conFusil([[OJO, 2]]);
+    assert.equal(
+      disparo(f2).condiciones!.find((c) => c.id === "aum_ojo_cobertura_distancia")!.etiqueta,
+      "Objetivo con cobertura visual o termo-óptica a 50 m o menos · Ojo Biónico 2",
+    );
+    assert.equal(suma(f2, tiradaFija(f2, "alerta_activa"), ["aum_ojo_cobertura_alerta"]), 1);
     const f4 = conFusil([[OJO, 4]]);
     const t4 = disparo(f4);
     assert.deepEqual(cobertura(t4), ["aum_ojo_cobertura_distancia"]);
