@@ -587,7 +587,8 @@ export const ACCIONES: Accion[] = [
   },
   // "expresión + mimetismo", habilidad social, "contra una alerta por empatía de posibles
   // testigos" (fuente/habilidades.md, Sigilo › Mimetismo, 2026-11-14). La app solo conoce tu
-  // tirada: el máster compara tu total con la de los testigos.
+  // tirada: el máster compara tu total con la de los testigos. No guarda estado como Ocultarse
+  // (usuario, 2026-11-14).
   {
     id: "mimetismo",
     label: "Pasar desapercibido",

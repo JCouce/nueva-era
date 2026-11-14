@@ -473,7 +473,8 @@ Exploración, el 2026-10-26):
 - **Saltar, levantarse** (Potencia + Atletismo, entera) y **Escalar** (Potencia + Atletismo
   con Escalada), filas aparte desde 2026-10-23 (§3). **Ocultarse** (Reflejos + Sigilo con
   Ocultación), **Pasar desapercibido** (Expresión + Sigilo con Mimetismo, habilidad social
-  contra la alerta por Empatía de los testigos: solo tu total, el máster compara) y **Juego de
+  contra la alerta por Empatía de los testigos: solo tu total, el máster compara; tirada normal
+  que no guarda estado, a diferencia de Ocultarse, usuario 2026-11-14) y **Juego de
   manos** (Reflejos + Sigilo con Juego de Manos, enfrentada a Perspicacia + Exploración); foto
   de Drive 2026-11-14, antes Sigilo con Esconderse y Hurto. **Hackeo**, con Informática; **Tratar heridas**, con Medicina; **Convencer /
   mentir**, con la especialidad de Actitud que se elija al tirar (S89).
