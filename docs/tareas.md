@@ -485,13 +485,15 @@ para el colchón de Malla Plasmática, la pieza aparcada en el barrido de motor
   ("buffer temporal sin nombre en capa 2 y media") se retira de los 4 niveles: el
   colchón pasa a ser estructural, igual que la célula de batería, sin entrada de
   MotorMetadata propia.
-  - **Trade-off aceptado, apuntado para más adelante**: Malla Plasmática también
+  - ~~**Trade-off aceptado, apuntado para más adelante**: Malla Plasmática también
     tiene célula de batería (10 cargas, para activarse) — `sheet.recursos` solo
     guarda un recurso por instancia equipada hoy, así que el colchón (lo pedido)
     prioriza sobre la batería, que se queda sin trackear en RECURSOS hasta que exista
-    un compuesto instancia+tipo. No es una regresión de algo que estuviera
-    deliberadamente construido antes (era un efecto colateral del chequeo genérico de
-    célula), pero sí un hueco real a tener en cuenta si algún día se necesita.
+    un compuesto instancia+tipo.~~ **Resuelto 2026-11-14 (S112)**: la batería va en una
+    segunda entrada con clave `<instanciaId>:bateria`, con su barra y recarga en Recursos;
+    «Activar Malla Plasmática» gasta 1 carga y pone «Malla activa» 10 rondas, y sin ese
+    estado no hay daño devuelto, sacrificio ni detonación; el −8 al Sigilo y la anulación
+    del Camuflaje van con el estado.
   - **Fuera de esta pasada, sin cambios**: sacrificar puntos del colchón por daño
     melee, devolver daño al atacante, -8 a sigilo al activarse, neutralizar el
     Camuflaje Trifásico, y la detonación de pulso térmico en área — todo sigue
