@@ -4,7 +4,11 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { defaultSheet, type Sheet } from "./sheet";
-import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { conExtrasDeFicha, resolverFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
+import { ACCIONES } from "./acciones";
+import { estadoInicial, type CondicionTirada, type EstadoCondiciones } from "./condiciones";
+import { montarTirada, SIN_ELECCION, type TiradaMontada } from "./montaje";
+import { ID_SELECTOR_CONTRA } from "./aumentosTiradas";
 import { accionesDeAtaque } from "./combate";
 import { permisosDeDotes } from "./dotesEfectos";
 import { resolverGolpe, type EntradaResistir } from "./resistirDanio";
@@ -33,6 +37,18 @@ const filas = (s: Sheet, estados: EstadoActivo[] = []) => {
 };
 const punetazo = (s: Sheet) => filas(con(s, "pelea_punetazo")).find((t) => t.label === "Golpear con Puñetazo")!;
 
+const tiradaFija = (f: FichaResuelta, id: string) => conExtrasDeFicha(f, ACCIONES.find((a) => a.id === id)!);
+function montar(f: FichaResuelta, id: string, cambios: EstadoCondiciones = {}): TiradaMontada {
+  const t = tiradaFija(f, id);
+  return montarTirada(f, t, { ...SIN_ELECCION, estadoCondiciones: { ...estadoInicial(t.condiciones ?? []), ...cambios } });
+}
+function selector(f: FichaResuelta, id: string): Extract<CondicionTirada, { tipo: "opcion" }> {
+  const c = tiradaFija(f, id).condiciones?.find((x) => x.id.startsWith(ID_SELECTOR_CONTRA));
+  assert.ok(c && c.tipo === "opcion", `sin selector en ${id}`);
+  return c;
+}
+const linea = (m: TiradaMontada, re: RegExp) => m.desglose.filter((l) => re.test(l.etiqueta));
+
 const GOLPE: EntradaResistir = { tipo: "cinetico", critico: false, danio: 10, reactivo: false, conBrazo: false, marcadas: [], rompeBlindaje: 0, categoria: null };
 const lineaChasis = (s: Sheet, estados: EstadoActivo[] = [], tipo: EntradaResistir["tipo"] = "cinetico") =>
   resolverGolpe(resolver(s, estados), { ...GOLPE, tipo }).desglose.filter((l) => /Chasis/.test(l.etiqueta));
@@ -58,5 +74,47 @@ describe("E5b · Chasis Osteomuscular, nivel 1", () => {
     assert.match(n1.nota ?? "", /Daño letal \(Chasis Osteomuscular 1\)/);
     const bloqueo = filas(conBloqueo(con(conChasis(1), "pelea_punetazo"))).find((t) => t.label === "Bloquear con Puñetazo");
     assert.equal(bloqueo?.sinPenalizadorDesarmado, "Chasis Osteomuscular 1");
+  });
+});
+
+describe("E5b · Chasis Osteomuscular, niveles 2-4", () => {
+  test("Fuerza +N y armadura natural N por nivel (el alto sustituye al bajo)", () => {
+    const fuerza = resolver(base()).atributos.fuerza;
+    for (const nivel of [1, 2, 3, 4]) {
+      assert.equal(resolver(conChasis(nivel)).atributos.fuerza - fuerza, nivel, `nivel ${nivel}`);
+      assert.deepEqual(lineaChasis(conChasis(nivel)).map((l) => l.valor), [nivel], `nivel ${nivel}`);
+    }
+  });
+
+  test("daño desarmado +0/+1/+2/+3 sobre la Fuerza, letal en todos", () => {
+    const sin = punetazo(base()).ataque!.modos[0].danio!;
+    for (const [nivel, extra] of [[1, 0], [2, 1], [3, 2], [4, 3]] as const) {
+      const fila = punetazo(conChasis(nivel));
+      assert.equal(fila.ataque!.modos[0].danio, sin + nivel + extra, `nivel ${nivel}`);
+      assert.equal(fila.ataque!.modos[0].categoriaDanio, "Letal");
+      assert.equal(/Daño desarmado: Chasis Osteomuscular/.test(fila.nota ?? ""), extra > 0, `nivel ${nivel}`);
+    }
+  });
+
+  test("se suma al de la armadura (Pesada +2)", () => {
+    const pesada = con(base(), "armadura_pesada");
+    const fila = punetazo(conChasis(3, pesada));
+    assert.equal(fila.ataque!.modos[0].danio, punetazo(pesada).ataque!.modos[0].danio! + 3 + 2);
+    assert.match(fila.nota ?? "", /Daño desarmado con la armadura: Armadura Pesada \+2/);
+    assert.match(fila.nota ?? "", /Daño desarmado: Chasis Osteomuscular 3 \+2/);
+  });
+
+  test("salvaciones: +N contra el derribo (casilla en Saltar, levantarse) y contra el aturdimiento; el 1, nada", () => {
+    for (const nivel of [2, 3, 4]) {
+      const f = resolver(conChasis(nivel));
+      const salto = montar(f, "atletismo", { aum_chasis_derribo: true });
+      assert.deepEqual(linea(salto, /Chasis/).map((l) => l.valor), [nivel], `derribo ${nivel}`);
+      const aturdido = montar(f, "salv_fortaleza", { [selector(f, "salv_fortaleza").id]: "aturdimiento" });
+      assert.deepEqual(linea(aturdido, /Chasis/).map((l) => l.valor), [nivel], `aturdimiento ${nivel}`);
+      const shock = montar(f, "salv_fortaleza", { [selector(f, "salv_fortaleza").id]: "shock" });
+      assert.deepEqual(linea(shock, /Chasis/), [], "solo el aturdimiento");
+    }
+    const n1 = resolver(conChasis(1));
+    assert.equal(tiradaFija(n1, "atletismo").condiciones?.some((c) => c.id === "aum_chasis_derribo") ?? false, false);
   });
 });

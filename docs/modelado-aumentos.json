@@ -6027,8 +6027,31 @@
           "variantes": null,
           "efectos": [
             {
-              "tipo": "texto",
-              "texto": "Pendiente (E5b, siguiente commit)"
+              "tipo": "atributo",
+              "id": "fuerza",
+              "valor": 2
+            },
+            {
+              "tipo": "armadura_natural",
+              "valor": 2,
+              "tipos": "todos los que para el blindaje"
+            },
+            {
+              "tipo": "desarmado",
+              "letal": true,
+              "bonoDanio": 1
+            },
+            {
+              "tipo": "bono",
+              "alcance": "atletismo",
+              "valor": 2,
+              "condicion": "¿Para evitar un derribo?"
+            },
+            {
+              "tipo": "bono",
+              "alcance": "salv_fortaleza",
+              "valor": 2,
+              "condicion": "¿Contra aturdimiento (por impactos)?"
             }
           ],
           "motor": [
@@ -6039,7 +6062,52 @@
                 "id": "todas"
               },
               "mecanismo": "suma_derivado",
-              "estado": "pendiente"
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "bloquear_danio"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "resolucion",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "ataque_melee"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "bloquear_melee"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "atletismo"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_fortaleza"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
             }
           ]
         },
@@ -6051,8 +6119,31 @@
           "variantes": null,
           "efectos": [
             {
-              "tipo": "texto",
-              "texto": "Pendiente"
+              "tipo": "atributo",
+              "id": "fuerza",
+              "valor": 3
+            },
+            {
+              "tipo": "armadura_natural",
+              "valor": 3,
+              "tipos": "todos los que para el blindaje"
+            },
+            {
+              "tipo": "desarmado",
+              "letal": true,
+              "bonoDanio": 2
+            },
+            {
+              "tipo": "bono",
+              "alcance": "atletismo",
+              "valor": 3,
+              "condicion": "¿Para evitar un derribo?"
+            },
+            {
+              "tipo": "bono",
+              "alcance": "salv_fortaleza",
+              "valor": 3,
+              "condicion": "¿Contra aturdimiento (por impactos)?"
             }
           ],
           "motor": [
@@ -6063,7 +6154,52 @@
                 "id": "todas"
               },
               "mecanismo": "suma_derivado",
-              "estado": "pendiente"
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "bloquear_danio"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "resolucion",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "ataque_melee"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "bloquear_melee"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "atletismo"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_fortaleza"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
             }
           ]
         },
@@ -6075,8 +6211,31 @@
           "variantes": null,
           "efectos": [
             {
-              "tipo": "texto",
-              "texto": "Pendiente"
+              "tipo": "atributo",
+              "id": "fuerza",
+              "valor": 4
+            },
+            {
+              "tipo": "armadura_natural",
+              "valor": 4,
+              "tipos": "todos los que para el blindaje"
+            },
+            {
+              "tipo": "desarmado",
+              "letal": true,
+              "bonoDanio": 3
+            },
+            {
+              "tipo": "bono",
+              "alcance": "atletismo",
+              "valor": 4,
+              "condicion": "¿Para evitar un derribo?"
+            },
+            {
+              "tipo": "bono",
+              "alcance": "salv_fortaleza",
+              "valor": 4,
+              "condicion": "¿Contra aturdimiento (por impactos)?"
             }
           ],
           "motor": [
@@ -6087,7 +6246,52 @@
                 "id": "todas"
               },
               "mecanismo": "suma_derivado",
-              "estado": "pendiente"
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "bloquear_danio"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "resolucion",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "ataque_melee"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "bloquear_melee"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "atletismo"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_fortaleza"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
             }
           ]
         }

@@ -1530,6 +1530,38 @@ const ARMADURA_CHASIS = (valor: number): ArmaduraNaturalAumento => ({
   tipos: TIPOS_DANIO.map((t) => t.id),
   nota: "Malla subdérmica de cerámica no newtoniana; se suma a la armadura puesta.",
 });
+// Nivel 2+: +N contra el derribo, casilla en «Saltar, levantarse» (la salvación del derribo, eq-09;
+// como Inamovibles del Arköru), y +N en el «Contra…» de Fortaleza contra el aturdimiento, solo el
+// que causa un impacto. La misma id en cada nivel: el alto sustituye al bajo.
+function casillaDerriboChasis(valor: number): CondicionTirada {
+  return {
+    id: "aum_chasis_derribo",
+    tipo: "toggle",
+    etiqueta: "¿Para evitar un derribo? (Chasis Osteomuscular)",
+    alcance: { tipo: "tiradaId", id: "atletismo" },
+    valorActivo: valor,
+  };
+}
+const SALVACION_CHASIS = (bono: number): EfectoSalvacion => ({
+  contra: ["aturdimiento"],
+  bono,
+  nota: "Solo contra el aturdimiento por impactos (físico).",
+});
+function nivelChasis(nivel: number): Pick<NivelImplante, "modificadores" | "armaduraNatural" | "desarmado" | "condiciones" | "salvaciones"> {
+  return {
+    modificadores: [{ tipo: "atributo", id: "fuerza", valor: nivel }],
+    armaduraNatural: ARMADURA_CHASIS(nivel),
+    desarmado: { bonoDanio: nivel - 1, letal: true },
+    ...(nivel >= 2 && { condiciones: [casillaDerriboChasis(nivel)], salvaciones: [SALVACION_CHASIS(nivel)] }),
+  };
+}
+const MOTOR_SALVACIONES_CHASIS: MotorMetadata[] = [
+  // Derribo: casilla en «Saltar, levantarse».
+  { tipo: "numerico", afecta: { modo: "accion_existente", id: "atletismo" }, mecanismo: "eleccion_jugador", estado: "construido" },
+  // Aturdimiento por impactos: «Contra…» de la Salvación de Fortaleza.
+  { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+];
+
 // Lo común a cada nivel: Fuerza, armadura natural y golpe desarmado.
 const MOTOR_NIVEL_CHASIS: MotorMetadata[] = [
   // Fuerza +N: Modificador "atributo" (atributos, aplicados, derivados y daño de Fuerza).
@@ -2481,9 +2513,7 @@ export const IMPLANTES: Implante[] = [
           "Primera fase de osteointegración de nanotubos y micro-actuadores básicos en las extremidades principales.",
           "El personaje adquiere un aumento efectivo de +1 en Fuerza, +1 punto de Armadura Natural (por la malla subdérmica de cerámica) y transforma el daño de sus golpes desarmados en Letal.",
         ],
-        modificadores: [{ tipo: "atributo", id: "fuerza", valor: 1 }],
-        armaduraNatural: ARMADURA_CHASIS(1),
-        desarmado: { bonoDanio: 0, letal: true },
+        ...nivelChasis(1),
         motor: MOTOR_NIVEL_CHASIS,
       },
       {
@@ -2495,8 +2525,8 @@ export const IMPLANTES: Implante[] = [
           "El aumento de Fuerza asciende a +2, la Armadura Natural sube a 2 puntos y el daño desarmado aumenta en 1 nivel adicional. Otorga un bonificador pasivo de +2 a las tiradas de salvación contra derribo y aturdimiento por impactos.",
           "Integración Táctica: Permite anclar quirúrgicamente en el cuerpo un subsistema táctico de hasta Nivel 2 como los que utilizan las armaduras. El personaje podrá elegir exclusivamente entre: el Proyector de Pulso o el Camuflaje Trifásico. Al alimentarse directamente de la bioelectricidad y el metabolismo del usuario en lugar de baterías externas, cada uso o activación consume 2 puntos de fatiga del personaje. En el caso del El camuflaje subdérmico este puede «traspasar» o sincronizarse con Traje Ultra Ligero, Ropa Inteligente o Ropa Reforzada, pero queda bloqueado por armaduras más pesadas.",
         ],
-        modificadores: [],
-        motor: [{ tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" }],
+        ...nivelChasis(2),
+        motor: [...MOTOR_NIVEL_CHASIS, ...MOTOR_SALVACIONES_CHASIS],
       },
       {
         nivel: 3,
@@ -2507,8 +2537,8 @@ export const IMPLANTES: Implante[] = [
           "Otorga +3 en Fuerza, 3 puntos de Armadura Natural y el daño desarmado aumenta en 2. El bonificador contra derribo y aturdimiento físico sube a +3. El límite para subsistemas corporales integrados asciende a nivel 3.",
           "La modificación a estos niveles suele hacerse muy evidente a simple vista alterando el aspecto físico del usuario.",
         ],
-        modificadores: [],
-        motor: [{ tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" }],
+        ...nivelChasis(3),
+        motor: [...MOTOR_NIVEL_CHASIS, ...MOTOR_SALVACIONES_CHASIS],
       },
       {
         nivel: 4,
@@ -2519,8 +2549,8 @@ export const IMPLANTES: Implante[] = [
           "Otorga un aumento efectivo de +4 en Fuerza, 4 puntos de Armadura Natural y eleva el daño desarmado en 3 niveles. El bonificador contra derribo y aturdimiento físico alcanza un imponente +4. El límite de subsistemas corporales integrados llega a nivel 4.",
           "Una vez por descanso, el usuario puede gastar 2 puntos de fatiga para duplicar durante un turno su capacidad de carga o para realizar una prueba de potencia o fortaleza que implique soportar o vencer una resistencia con ventaja: Realizar o evitar agarres y derribos, soportar impactos cinéticos extremos, resistir efectos de aturdimiento físico y llevar a cabo proezas de fuerza bruta como romper objetos.",
         ],
-        modificadores: [],
-        motor: [{ tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "pendiente" }],
+        ...nivelChasis(4),
+        motor: [...MOTOR_NIVEL_CHASIS, ...MOTOR_SALVACIONES_CHASIS],
       },
     ],
   },

@@ -157,7 +157,7 @@ describe("integridad del catálogo de aumentos", () => {
       aum_control_animico: { 1: [{ tipo: "tirada", alcance: { tipo: "habilidad", habilidad: "actitud" }, valor: 1 }], 2: [] },
       aum_control_sensorial: { 1: [{ tipo: "atributo", id: "percepcion", valor: 1 }], 2: [] },
       // E5b: Fuerza +N por nivel (el alto sustituye al bajo).
-      aum_chasis_osteomuscular: { 1: [{ tipo: "atributo", id: "fuerza", valor: 1 }], 2: [], 3: [], 4: [] },
+      aum_chasis_osteomuscular: Object.fromEntries([1, 2, 3, 4].map((n) => [n, [{ tipo: "atributo", id: "fuerza", valor: n }]])),
     };
     for (const imp of IMPLANTES) {
       for (const n of imp.niveles) {
@@ -251,6 +251,10 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_control_sensorial 2": 2,
     // E5b. Chasis Osteomuscular: Fuerza, armadura natural, desarmado letal y bloquear sin el −3.
     "aum_chasis_osteomuscular 1": 4,
+    // 2-4: lo del 1 con su N, más la casilla contra el derribo y el «Contra…» del aturdimiento.
+    "aum_chasis_osteomuscular 2": 6,
+    "aum_chasis_osteomuscular 3": 6,
+    "aum_chasis_osteomuscular 4": 6,
   };
 
   test("A1, A2a, A2b, A3, A4a, A4b, A5a, A5b, A6a, A6b y A7: solo lo construido (o lo narrativo) está marcado como construido", () => {
