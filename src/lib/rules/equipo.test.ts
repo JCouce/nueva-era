@@ -331,6 +331,21 @@ describe("movimiento", () => {
     assert.equal(s.equipo.length, 3);
   });
 
+  test("topes de las avanzadas (sync Drive 2026-11-14): ese nivel se instala, el siguiente no", () => {
+    const casos: [string, "exoesqueleto" | "movilidad_aerea", number][] = [
+      ["ultra_ligero_avanzado", "exoesqueleto", 2],
+      ["armadura_ligera_avanzada", "movilidad_aerea", 3],
+      ["armadura_intermedia_avanzada", "movilidad_aerea", 4],
+    ];
+    for (const [armadura, modulo, tope] of casos) {
+      const s = equipar(defaultSheet(), { instanciaId: "armadura-1", catalogoId: armadura });
+      assert.deepEqual(validarInstalacion(s, modulo, "armadura-1", tope), { ok: true }, `${armadura} ${tope}`);
+      const v = validarInstalacion(s, modulo, "armadura-1", tope + 1);
+      assert.equal(v.ok, false, `${armadura} ${tope + 1}`);
+      assert.match((v as { motivo: string }).motivo, new RegExp(`hasta nivel ${tope}`));
+    }
+  });
+
   test("el exoesqueleto da su +N a la Fuerza, marcado para quedar fuera de salud y salvaciones", () => {
     const s = equipar(conArmaduraPuesta(), {
       instanciaId: "e1",
