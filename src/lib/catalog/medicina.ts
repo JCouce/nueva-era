@@ -21,6 +21,7 @@
 // "Usar" y el gasto de 1 dosis al confirmar.
 import type { Herramienta, Consumible } from "./equipo";
 import type { MotorMetadata } from "../rules/motor";
+import { DESCANSO } from "./descanso";
 import type { AlcanceModificador, Modificador } from "../rules/modificadores";
 import type { CondicionTirada, OpcionCondicion } from "../rules/condiciones";
 
@@ -579,6 +580,14 @@ const MOTOR_NUTRICION: MotorMetadata[] = [
   { tipo: "narrativo", afecta: { modo: "ninguna" }, mecanismo: null, estado: "construido" },
 ];
 
+// Lo que no hace la app al comer, y quién cambia la cifra (texto de la pieza, usuario 2026-11-14).
+const NOTA_COMER =
+  `Comer se narra: la app no tiene acción de comer. Cada comida recupera ${DESCANSO.comida.fatiga} de fatiga ` +
+  `(${DESCANSO.comida.porDia} al día); ajústala a mano en Recursos y descuenta la unidad.`;
+const NOTA_DUPLICAN =
+  "Biogénesis Mitocondrial duplica la efectividad de cualquier consumible o alimento que recupere " +
+  "fatiga; Metabolismo Sintético 3 duplica la fatiga recuperada por comida.";
+
 export const NUTRICION: Consumible[] = [
   {
     familia: "consumible",
@@ -588,7 +597,7 @@ export const NUTRICION: Consumible[] = [
     descripcion:
       "Bloque alimentario deshidratado de larga conservación que aporta los nutrientes y las " +
       "calorías necesarias para aguantar la jornada. La ración es la cantidad estándar para cada comida.",
-    detalle: ["Una ración es una comida."],
+    detalle: ["Una ración es una comida.", NOTA_COMER, NOTA_DUPLICAN],
     pesoKg: null,
     rareza: "Común",
     coste: 4,
@@ -603,7 +612,7 @@ export const NUTRICION: Consumible[] = [
     descripcion:
       "Pasta hipercalórica de absorción inmediata empaquetada en un tubo exprés para chutar energía " +
       "en mitad de la acción.",
-    detalle: ["Equivale a una ración, pero se puede tomar como acción compleja."],
+    detalle: ["Equivale a una ración, pero se puede tomar como acción compleja.", NOTA_COMER, NOTA_DUPLICAN],
     pesoKg: null,
     rareza: "Común",
     coste: 15,
@@ -618,7 +627,7 @@ export const NUTRICION: Consumible[] = [
     descripcion:
       "Compuesto nutricional sintético de vanguardia enriquecido con electrolitos y moduladores " +
       "metabólicos para acelerar la recuperación física.",
-    detalle: ["Aumenta en 1 la fatiga recuperada al ingerirlos."],
+    detalle: ["Aumenta en 1 la fatiga recuperada al ingerirlos.", NOTA_COMER, NOTA_DUPLICAN],
     pesoKg: null,
     rareza: "Poco Habitual",
     coste: 50,
