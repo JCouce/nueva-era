@@ -1056,9 +1056,9 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
 (regla del usuario); solo se pregunta ante duda real.
 
 ### 9.1 Qué es una dote `[FIRME · DOTES]`
-- **126 dotes** con nombre, **coste** en puntos, **requisitos** y efecto en prosa,
+- **127 dotes** con nombre, **coste** en puntos, **requisitos** y efecto en prosa,
   ordenadas bajo la habilidad a la que pertenecen: Actitud 16 · Atletismo 22 · Biociencia 9 ·
-  Combate Melee 32 · Combate a Distancia 17 · Exploración 10 · Pilotaje 3 · Sigilo 8 ·
+  Combate Melee 32 · Combate a Distancia 18 · Exploración 10 · Pilotaje 3 · Sigilo 8 ·
   Tecnociencia 9 (8 en el subgrupo **Psiónica**). Cultura e Interpretación, sin dotes todavía. Las 3 últimas de
   Combate a Distancia (*Arquero Poderoso*, *Pistolero*, *Pistolero Infernal*) son de la foto
   del 2026-10-23; el resto de dotes nuevas de esa foto, en «Dotes atrasadas» (abajo). De la foto
@@ -1132,6 +1132,10 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
   - *Fuego de Barrera*: en un modo de fuego automático y con acierto, «El objetivo» avisa de que
     mueve a mitad de velocidad en su primera acción de movimiento hasta el final de su siguiente
     turno (ficha ajena: aviso; no hay estado para eso).
+  - *Lanzamiento Doble*: casilla «Lanzamiento doble» −2 al lanzar granadas, con el aviso de que
+    son dos a la vez como acción estándar y se gastan las dos (las granadas se descuentan a mano en
+    Recursos). `TODO(revisar)`: la fuente no dice si las dos granadas van en una sola tirada o en
+    una cada una; la app monta una tirada con el −2.
   <!-- fin dotes atrasadas -->
 - El grupo solo ordena: no es requisito (*Mata Gigantes*, en Combate Melee, pide Táctica).
 - **Pool de creación** por letra: A 18 · B 15 · C 12 · D 9 · E 6 (`HOJA3`). Lo que sobra al

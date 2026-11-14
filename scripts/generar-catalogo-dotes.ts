@@ -139,7 +139,7 @@ const SALIDA = new URL("src/lib/catalog/dotes.ts", RAIZ);
 // que no dependen de habilidades nuevas (T2.M1 del plan de sync: Ataque Coordinado…) + las que
 // dependen de Ocultación, Mimetismo, Juego de Manos y Exoarmadura (E6) + las dotes atrasadas (fotos
 // anteriores sin transcribir, plan de sync «Después del sync»).
-const TOTAL_ESPERADO = 126;
+const TOTAL_ESPERADO = 127;
 
 const CLAVES_V2 = new Set([
   "id",
@@ -741,6 +741,9 @@ const AJUSTES_ACCION: Readonly<Record<string, AjusteAccion>> = {
 // Finta de Manos (E6) pide «Combate Melee» sin número en la fuente: Combate Melee 1 (usuario,
 // 2026-11-14). Su ataque «con el arma sutil» y el sorprendido/desprevenido van como texto del
 // resultado, como la Finta.
+// TODO(revisar): Lanzamiento Doble (dote atrasada, sync 2026-11-14): la fuente no dice si las dos
+// granadas van en una sola tirada o en una cada una; el borrador pone una casilla −2 en la tirada
+// de lanzar y el aviso de que se gastan las dos.
 // TODO(revisar): Agarre Rápido (pregunta a Murillo, tareas.md; Zafarse confirmado por el
 // usuario: regla de Atrapado). La prosa da la economía pero no la tirada; el borrador supone
 // Reflejos + Atletismo (Escalada) y Potencia + Atletismo (Escapismo; docs/fuente/reglas-base.md,

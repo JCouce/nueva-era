@@ -16,8 +16,8 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **126 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 17 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 3 · Sigilo 8 ·
+> Recuento: **127 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 18 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 3 · Sigilo 8 ·
 > Tecnociencia 1 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
@@ -34,7 +34,7 @@
 >
 > **Dotes atrasadas** (estaban en Drive desde fotos anteriores y no se habían transcrito;
 > sync del 2026-11-14, `docs/plan-sync-2026-11-14.md`, «Después del sync»), con el mismo criterio:
-> *Disparo Relámpago*, *Disparo de Interdicción*, *Fuego de Saturación*, *Fuego de Supresión*, *Fuego de Barrera*.
+> *Disparo Relámpago*, *Disparo de Interdicción*, *Fuego de Saturación*, *Fuego de Supresión*, *Fuego de Barrera*, *Lanzamiento Doble*.
 
 ## Actitud
 
@@ -1125,6 +1125,16 @@ El personaje realiza un ataque a distancia con un penalizador de -2 por dificult
 
 **Efecto:**
 Con el gasto de un punto de fatiga y como acción compleja el personaje puede realizar un ataque con arco sumando su total de puntuación de **fuerza**.
+
+### Lanzamiento Doble
+
+**Coste:** 2
+
+**Requisitos:**
+- Lanzamiento 2 · especialidad (Atletismo)
+
+**Efecto:**
+El personaje lanza dos granadas de forma simultánea como acción estándar y con un penalizador de dificultad de -2.
 
 ### Pistolero
 

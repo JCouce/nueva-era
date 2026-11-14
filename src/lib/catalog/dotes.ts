@@ -6790,6 +6790,64 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_lanzamiento_doble",
+    "label": "Lanzamiento Doble",
+    "grupo": "combate_distancia",
+    "coste": 2,
+    "requisitos": [
+      {
+        "tipo": "especialidad",
+        "habilidad": "atletismo",
+        "id": "lanzamiento",
+        "min": 2
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "El personaje lanza dos granadas de forma simultánea como acción estándar y con un penalizador de dificultad de -2.",
+    "efectos": [
+      {
+        "tipo": "bono",
+        "alcance": "familia:lanzar_granada",
+        "valor": -2,
+        "condicion": "Lanzamiento doble (dos granadas a la vez)",
+        "borrador": 0
+      },
+      {
+        "tipo": "texto",
+        "lugar": "familia:lanzar_granada",
+        "texto": "Lanzas dos granadas a la vez como una acción estándar. Gastas las dos: descuéntalas en Recursos.",
+        "condicion": "Lanzamiento doble (dos granadas a la vez)",
+        "porque": "turno",
+        "borrador": 1
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "numerico",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "familia:lanzar_granada"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      },
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "familia:lanzar_granada"
+        },
+        "mecanismo": "nota_fija",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_vigilancia_tactica",
     "label": "Vigilancia Táctica",
     "grupo": "exploracion",
@@ -9391,9 +9449,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   230 efectos (220 en el borrador)
-//   construidos: 126
-//   texto: 104
+//   232 efectos (222 en el borrador)
+//   construidos: 127
+//   texto: 105
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0

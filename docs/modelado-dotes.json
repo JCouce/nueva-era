@@ -6326,6 +6326,40 @@
       "candidataUX": null
     },
     {
+      "id": "dote_lanzamiento_doble",
+      "label": "Lanzamiento Doble",
+      "grupo": "combate_distancia",
+      "coste": 2,
+      "requisitos": [
+        {
+          "tipo": "especialidad",
+          "habilidad": "atletismo",
+          "id": "lanzamiento",
+          "min": 2
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "bono",
+          "alcance": "familia:lanzar_granada",
+          "valor": -2,
+          "condicion": "Lanzamiento doble (dos granadas a la vez)"
+        },
+        {
+          "tipo": "texto",
+          "lugar": "familia:lanzar_granada",
+          "texto": "Lanzas dos granadas a la vez como una acción estándar. Gastas las dos: descuéntalas en Recursos.",
+          "condicion": "Lanzamiento doble (dos granadas a la vez)",
+          "porque": "turno"
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_vigilancia_tactica",
       "label": "Vigilancia Táctica",
       "grupo": "exploracion",

@@ -8,11 +8,13 @@ import { HABILIDADES } from "./habilidades";
 import { resolverFicha, conExtrasDeFicha, VITALIDAD_DE_FICHA, type FichaResuelta } from "./fichaResuelta";
 import { accionesDeAtaque } from "./combate";
 import { equipar } from "./equipo";
+import { ajustarGranada } from "./recursos";
 import { lineaAntes } from "./textosDeTirada";
 import { montarTirada, eleccionSinTocar } from "./montaje";
 import { efectosSobreObjetivo } from "./efectosArma";
 import { resolverDanio, type Accion } from "./acciones";
 import { DOTES } from "../catalog/dotes";
+import { MUNICION_GRANADA } from "../catalog/municion";
 import type { EspecialidadId } from "../catalog/especialidades";
 import type { DoteComprada } from "./dotesCompradas";
 
@@ -152,5 +154,25 @@ describe("Fuego de Barrera", () => {
     assert.equal(avisa(fAuto), true);
     assert.equal(avisa(fAuto, FALLA), false);
     assert.equal(avisa(t().ataque!.modos[0].id), false);
+  });
+});
+
+describe("Lanzamiento Doble", () => {
+  const f = resolver(ajustarGranada(ficha([{ id: "dote_lanzamiento_doble" }]), MUNICION_GRANADA[0].id, 2));
+  const t = () => fila(f, "lanzar_granada_");
+  const casilla = (x: Accion) =>
+    (x.condiciones ?? []).find((c): c is Toggle => c.tipo === "toggle" && c.id.startsWith("dote_lanzamiento_doble"));
+
+  test("casilla −2 al lanzar granadas, con el aviso de las dos granadas", () => {
+    const c = casilla(t())!;
+    assert.match(c.etiqueta, /^Lanzamiento doble \(dos granadas a la vez\)/);
+    assert.equal(total(f, t(), [c.id]) - total(f, t()), -2);
+    assert.match(lineaAntes(t()), /Lanzas dos granadas a la vez como una acción estándar. Gastas las dos/);
+  });
+
+  test("sin Lanzamiento 2, nada", () => {
+    const s = ficha([{ id: "dote_lanzamiento_doble" }]);
+    const sin = resolver(ajustarGranada({ ...s, habilidades: { ...s.habilidades, atletismo: { valor: 1, especialidades: ["lanzamiento"] } } }, MUNICION_GRANADA[0].id, 1));
+    assert.equal(casilla(fila(sin, "lanzar_granada_")), undefined);
   });
 });
