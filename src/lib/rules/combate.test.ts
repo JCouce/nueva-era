@@ -393,6 +393,17 @@ describe("gasto por modo (docs/prompt-gasto-recursos.md, Fase 1)", () => {
     assert.equal(fila.ataque?.modos.find((m) => m.id === "pulso")?.danio, 9);
   });
 
+  test("Pulso: subir cargas a mano («+» de Recursos) también pone el contador a 0; gastar no", () => {
+    let sheet = dispararPulso(reconciliarRecursos(conProyectorPulso(1)), "pp1");
+    sheet = ajustarRecurso(sheet, "pp1", -1);
+    assert.equal(sheet.equipo.find((p) => p.instanciaId === "pp1")!.disparosPulso, 1);
+    sheet = ajustarRecurso(sheet, "pp1", 1);
+    assert.equal(sheet.equipo.find((p) => p.instanciaId === "pp1")!.disparosPulso, undefined);
+    const antes = recursoDe(sheet, "pp1")!.actual;
+    sheet = dispararPulso(sheet, "pp1");
+    assert.equal(recursoDe(sheet, "pp1")!.actual, antes - 1);
+  });
+
   test("el contador se lee tolerante: fuera de rango se pierde, la pieza no", () => {
     const sheet = conProyectorPulso(1);
     const crudo = { ...sheet, equipo: sheet.equipo.map((p) => (p.instanciaId === "pp1" ? { ...p, disparosPulso: 7 } : p)) };

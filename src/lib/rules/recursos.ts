@@ -422,9 +422,15 @@ export function ajustarRecurso(sheet: Sheet, instanciaId: string, delta: number)
   if (!recurso || !Number.isFinite(delta)) return sheet;
   const actual = Math.max(0, Math.min(recurso.max, recurso.actual + Math.round(delta)));
   if (actual === recurso.actual) return sheet;
+  // Subir cargas del Proyector de Pulso (también con el «+» a mano) es recargar: el contador de
+  // disparos vuelve a 0 (usuario, 2026-11-14).
+  const recarga = actual > recurso.actual;
   return {
     ...sheet,
     recursos: sheet.recursos.map((r) => (r.instanciaId === instanciaId ? { ...r, actual } : r)),
+    equipo: recarga && sheet.equipo.some((p) => p.instanciaId === instanciaId && p.disparosPulso)
+      ? sheet.equipo.map((p) => (p.instanciaId === instanciaId ? sinContadorPulso(p) : p))
+      : sheet.equipo,
   };
 }
 
@@ -466,9 +472,10 @@ export function comprarRecarga(
 
 // Proyector de Pulso, modo Pulso (sync Drive 2026-11-14): «1 carga × 3 disparos». La carga se
 // gasta al primer disparo de cada tres; el contador (`disparosPulso`) vive en la pieza
-// (usuario, 2026-11-14) y la recarga lo pone a 0 (comprarRecarga).
-// TODO(revisar): los otros modos (Pulso Cargado, Barrido, Aguijón) no tocan el contador; un
-// Pulso tras ellos sigue con la carga en curso si le quedaban disparos.
+// (usuario, 2026-11-14) y cualquier recarga lo pone a 0 (comprarRecarga y el «+» de
+// ajustarRecurso).
+// TODO(revisar): los otros modos (Pulso Cargado, Barrido, Activar Aguijón) no tocan el contador;
+// un Pulso tras ellos sigue con la carga en curso si le quedaban disparos.
 export const DISPAROS_POR_CARGA_PULSO = 3;
 
 // Lo que gasta el próximo Pulso: 1 si empieza carga nueva, 0 si quedan disparos de la última.
