@@ -443,11 +443,15 @@ export const FARMACOS: Consumible[] = [
     // visible, como la de Xovromium; casillasDeFarmacos, rules/farmacos.ts): +2 en las
     // iniciativas y +1 en las tiradas con Fortaleza, Potencia o Reflejos que no son salvación.
     // La reducción de penalizadores por heridas y fatiga, su propia casilla (fa-01). El bajón al
-    // terminar y el colapso por doble dosis siguen en `detalle`, a mano.
+    // terminar (fa-03): usar la dosis pone el recordatorio «Bajo Ultra Estimulante», cuyo botón resta
+    // 2 de fatiga y pone «Bajón del Ultra» (−1 a Voluntad, Perspicacia y Expresión; catalog/estados.ts,
+    // rules/acabarEstado.ts). El colapso por doble dosis sigue en `detalle`, a mano (fa-04).
     motor: [
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "grupo:Iniciativa" }, mecanismo: "eleccion_jugador", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:fortaleza/potencia/reflejos" }, mecanismo: "eleccion_jugador", estado: "construido" },
       MOTOR_CONTRA_DOLOR, // −1 a los penalizadores por heridas y fatiga
+      // El bajón: estado «Bajón del Ultra», puesto desde el recordatorio.
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "siempre_activo", estado: "construido" },
     ],
   },
   {
@@ -552,6 +556,11 @@ export const FARMACOS: Consumible[] = [
       // la casilla "Bajo Xovromium" (FUENTES_EXTERNAS_FATIGA, catalog/psionica.ts).
       { tipo: "accion", afecta: { modo: "accion_nueva", id: "farmaco_farmaco_xovromium" }, mecanismo: "accion_equipo", estado: "construido" },
       { tipo: "numerico", afecta: { modo: "accion_existente", id: "psionica" }, mecanismo: "eleccion_jugador", estado: "construido" },
+      // fa-03: el rechazo (fallar la tirada: 1 de fatiga y «Rechazo del Xovromium», −1) y el bajón
+      // (desde el recordatorio «Bajo Xovromium»: 2 de fatiga y «Bajón del Xovromium», −2), como
+      // estados sobre Voluntad, Perspicacia y Expresión (rules/farmacos.ts, rules/acabarEstado.ts).
+      // La sobredosis sigue en `detalle`, a mano (fa-04).
+      { tipo: "numerico", afecta: { modo: "accion_existente", id: "aplicado:perspicacia|voluntad|expresion" }, mecanismo: "siempre_activo", estado: "construido" },
     ],
   },
 ];

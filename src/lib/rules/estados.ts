@@ -453,6 +453,9 @@ export type EstadoActivoDescrito = EstadoActivo & {
   quitarJugador?: string;
   // El botón con que lo alarga (ps-07, «Prolongar un turno») y la fatiga que cuesta.
   prolongar?: { etiqueta: string; coste: number };
+  // El botón de un recordatorio al acabarse (fa-03, «Se acabó: aplicar el bajón») y la fatiga que
+  // cuesta (Estado.alAcabar, rules/acabarEstado.ts).
+  acabar?: { etiqueta: string; fatiga: number };
   // Las piezas de la ficha que toca (Shock, Shock en el equipo; rules/shock.ts), para explicarlo
   // (explicacionDeEstado). Lo pone estadosParaPintar con la ficha; sin ella (NPC sin ficha), no va.
   piezas?: PiezasDeEstado;
@@ -494,6 +497,7 @@ export function describirEstadosActivos(activos: EstadoActivo[], inmunidades: re
       ...(valorTexto && { valorTexto }),
       ...(estado?.quitarJugador && { quitarJugador: estado.quitarJugador }),
       ...(estado?.prolongable && ea.valor !== undefined && { prolongar: { etiqueta: estado.prolongable.etiqueta, coste: ea.valor } }),
+      ...(estado?.alAcabar && { acabar: { etiqueta: estado.alAcabar.etiqueta, fatiga: estado.alAcabar.fatiga } }),
       ...(esEstadoDeAumento(ea.estadoId) && { duracionActivable: textoDuracionActivable(duracionDe(ea)) }),
       ...(anula && { inmune: anula.fuente }),
     };

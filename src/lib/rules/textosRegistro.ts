@@ -105,12 +105,15 @@ export function textoEntradaRegistro(
     ...(datos.npcs ?? []).map((c) => ({ ...c, quien: nombreDeObjetivo({ nombre: c.nombre, npc: true }) })),
   ];
   for (const c of cambios) {
-    const estado = datos.tipo === "estado_poner" ? c.despues : c.antes;
+    // Una entrada de poner puede traer también lo que quitó en la misma acción (fa-03: «Se acabó:
+    // aplicar el bajón» quita el recordatorio y pone el bajón): ese cambio se lee como quitar.
+    const pone = datos.tipo === "estado_poner" && (c.despues !== null || c.antes === null);
+    const estado = pone ? c.despues : c.antes;
     const clave = estado
-      ? datos.tipo === "estado_poner"
+      ? pone
         ? `${etiquetaEstado(estado)}${estado.forzado ? " forzado (inmune)" : ""} a {} · ${etiquetaDuracion(duracionDe(estado))}`
         : `Quitado ${etiquetaEstado(estado)} a {}`
-      : `${datos.tipo === "estado_poner" ? "Puesto" : "Quitado"} ${c.estadoId} a {}`;
+      : `${pone ? "Puesto" : "Quitado"} ${c.estadoId} a {}`;
     grupos.set(clave, [...(grupos.get(clave) ?? []), c.quien]);
   }
   return [...grupos].map(([plantilla, quienes]) => plantilla.replace("{}", listaLegible([...new Set(quienes)]))).join("; ");

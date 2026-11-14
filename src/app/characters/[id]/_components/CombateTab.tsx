@@ -11,7 +11,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { describirEstadosActivos, type CategoriaDanio, type DanioVida, type EstadoActivo } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
-import { ChipEstado } from "@/components/ChipEstado";
+import { AvisoChips, ChipEstado, type ChipsDeFicha } from "@/components/ChipEstado";
 import { ControlVida, nombreDanio } from "@/components/ficha/ControlVida";
 import { ajustarDanioCombatienteAction, ajustarFatigaAction } from "@/app/master/combate/actions";
 
@@ -40,6 +40,7 @@ export function CombateTab({
   combate,
   miCombatienteId,
   compacta = false,
+  chips,
 }: {
   combate: CombateView;
   // En la columna estrecha de la mesa (escritorio): botones con etiqueta corta.
@@ -48,6 +49,8 @@ export function CombateTab({
   // de autogestión (D2, 3.2) — nadie más lo ve, ni siquiera el máster desde
   // esta pantalla (él ajusta desde /master/combate, no desde aquí).
   miCombatienteId: string | null;
+  // Los botones del modal de tus chips (Prolongar, Se acabó); solo en tu fila.
+  chips?: ChipsDeFicha;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -124,7 +127,7 @@ export function CombateTab({
                   <div className="flex flex-col gap-1.5 border-t border-border pt-2">
                     {activos.map((a) => (
                       <div key={a.estadoId} className="flex flex-col items-start gap-0.5">
-                        <ChipEstado estado={a} />
+                        <ChipEstado estado={a} {...(esYo ? chips?.botones(a) : undefined)} />
                         {/* Detalle visible de verdad, no en un `title` —
                             mismo arreglo que CombateConsole.tsx. */}
                         {a.detalle.length > 0 && (
@@ -132,6 +135,7 @@ export function CombateTab({
                         )}
                       </div>
                     ))}
+                    {esYo && <AvisoChips aviso={chips?.aviso} />}
                   </div>
                 )}
 

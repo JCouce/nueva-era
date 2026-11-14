@@ -88,12 +88,13 @@ import {
   estadosParaPintar,
   consecuenciaPropia,
   salvacionPropiaDe,
+  condicionDeEstadoAlUsar,
   especialidadesDeTirada,
   seTiraSinDificultad,
   lineaAntes,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
-import { ChipEstado } from "@/components/ChipEstado";
+import { ChipEstado, type BotonesDeChip } from "@/components/ChipEstado";
 import { AccionModal } from "@/components/AccionModal";
 import { UsarModal } from "@/components/UsarModal";
 import { SacrificioRecursoModal } from "@/components/SacrificioRecursoModal";
@@ -692,6 +693,7 @@ export function AccionesTab({
   onUsarAccionAumento,
   onEstadoDePoder,
   onConsecuenciaPropia,
+  botonesDeChip,
   onGastarUsoLimitado,
   onMarcarFavorita,
   libre = false,
@@ -775,6 +777,9 @@ export function AccionesTab({
   // retroceso entrópico del Kerzul. Lo aplica el servidor (aplicarConsecuenciaPropiaAction) con la
   // ficha guardada. Sin él (NPC), el resultado lo dice y el máster lo aplica a mano.
   onConsecuenciaPropia?: (op: OperacionConsecuenciaPropia, onMensaje: (mensaje: string) => void) => void;
+  // Los botones del modal de los chips propios (Prolongar, Se acabó), los mismos en toda la ficha
+  // (CharacterSheet). Sin él (NPC), sin botones.
+  botonesDeChip?: BotonesDeChip;
   // Límites de las acciones de dote (Accion.usoLimitado): se gastan al tirar, con el aliado del
   // selector si va por aliado. Sin él (NPC), el límite es texto.
   onGastarUsoLimitado?: (uso: UsoLimitado, aliadoId: string | null) => void;
@@ -1441,7 +1446,8 @@ export function AccionesTab({
     // T4: el estado que pone según la opción elegida (Activar camuflaje), lo aplica el servidor.
     const accionId = modalDirecta.id;
     if (modalDirecta.estadoAlUsar) {
-      const opcion = estadoModal[modalDirecta.estadoAlUsar.condicion];
+      const condicion = condicionDeEstadoAlUsar(modalDirecta.estadoAlUsar);
+      const opcion = condicion ? estadoModal[condicion] : null;
       onConsecuenciaPropia?.({ tipo: "usar", accionId, opcion: typeof opcion === "string" ? opcion : null }, setAvisoPropio);
     }
     const id = Date.now();
@@ -1833,8 +1839,9 @@ export function AccionesTab({
         </PanelFieldset>
       )}
 
-      {/* Los estados que te quitas tú (T4: «Salir del sigilo»…), con su número a mano, y los que
-          alargas tú (T6b: «Prolongar un turno» del Sondeo No-Local). */}
+      {/* Los estados que te quitas tú (T4: «Salir del sigilo»…), con su número a mano, los que
+          alargas tú (T6b: «Prolongar un turno» del Sondeo No-Local) y los recordatorios de fármaco
+          que acabas tú (fa-03: «Se acabó: aplicar el bajón»). */}
       {onEstadoDePoder && propiosQuitables.length > 0 && (
         <div className="flex flex-col gap-1.5">
           <div className="flex flex-wrap gap-1.5">
@@ -1845,11 +1852,7 @@ export function AccionesTab({
                 deshabilitado={soloLectura}
                 quitarLabel={e.quitarJugador}
                 onQuitar={() => onEstadoDePoder({ tipo: "quitar", estadoId: e.estadoId }, setAvisoPropio)}
-                onProlongar={
-                  e.prolongar && onConsecuenciaPropia
-                    ? () => onConsecuenciaPropia({ tipo: "prolongar", estadoId: e.estadoId }, setAvisoPropio)
-                    : undefined
-                }
+                {...botonesDeChip?.(e, setAvisoPropio)}
               />
             ))}
           </div>

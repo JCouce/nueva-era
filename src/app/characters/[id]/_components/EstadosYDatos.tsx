@@ -9,7 +9,7 @@ import {
   type FichaResuelta,
 } from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
-import { ChipEstado } from "@/components/ChipEstado";
+import { AvisoChips, ChipEstado, type ChipsDeFicha } from "@/components/ChipEstado";
 
 // Estados y datos de la pestaña Recursos: lo que pone el máster y lo derivado que se
 // consulta en mesa (alerta, carga, movimiento). Solo lectura.
@@ -53,8 +53,9 @@ function textoDuracion(d: DuracionEstado): string {
 
 // Los estados que ha puesto el máster: solo lectura, el jugador no se los quita. Con las
 // inmunidades de los aumentos (A7) delante: un estado al que es inmune no hace nada. Delante,
-// los automáticos (Heridas, Fatiga, Inconsciencia), que salen de la vida y la fatiga.
-export function EstadosCard({ ficha }: { ficha: FichaResuelta }) {
+// los automáticos (Heridas, Fatiga, Inconsciencia), que salen de la vida y la fatiga. `chips`: los
+// botones del modal de los propios (Prolongar, Se acabó), en la ficha del jugador.
+export function EstadosCard({ ficha, chips }: { ficha: FichaResuelta; chips?: ChipsDeFicha }) {
   const activos = estadosParaPintar(ficha);
   return (
     <HudCard className="mt-2 flex flex-col gap-3 p-4">
@@ -74,7 +75,7 @@ export function EstadosCard({ ficha }: { ficha: FichaResuelta }) {
               className={`flex flex-col gap-1 border-l-2 py-1 pl-3 ${a.automatico ? "border-danger" : "border-glitch"}`}
             >
               <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                <ChipEstado estado={a} />
+                <ChipEstado estado={a} {...chips?.botones(a)} />
                 {/* Los activables (A5a) ya llevan la duración larga en el chip; los automáticos no
                     tienen duración: se van al subir la vida o la fatiga. */}
                 {a.automatico ? (
@@ -96,6 +97,7 @@ export function EstadosCard({ ficha }: { ficha: FichaResuelta }) {
           ))}
         </ul>
       )}
+      <AvisoChips aviso={chips?.aviso} />
     </HudCard>
   );
 }

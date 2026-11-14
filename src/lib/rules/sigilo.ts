@@ -129,16 +129,19 @@ export function estadoPorTirada(
 }
 
 // Una acción sin dado que pone un estado según la opción elegida (Activar camuflaje: estático o
-// dinámico, con la duración de su nivel). `turnos` null: hasta quitarlo.
-export type EstadoAlUsar = {
-  estadoId: string;
-  condicion: string;
-  opciones: Record<string, { gradoId: string; turnos: number | null }>;
-};
+// dinámico, con la duración de su nivel) o siempre el mismo, `fijo` (el recordatorio «Bajo Ultra
+// Estimulante» al usar la dosis, fa-03). `turnos` null: hasta quitarlo.
+type GradoAlUsar = { gradoId: string; turnos: number | null };
+export type EstadoAlUsar =
+  | { estadoId: string; condicion: string; opciones: Record<string, GradoAlUsar> }
+  | { estadoId: string; fijo: GradoAlUsar };
+
+// La condición del modal cuya opción elige el grado (null en uno `fijo`).
+export const condicionDeEstadoAlUsar = (e: EstadoAlUsar): string | null => ("condicion" in e ? e.condicion : null);
 
 export function estadoPorUso(a: Pick<AccionDirecta, "estadoAlUsar">, opcion: string | null): EstadoActivo | null {
   const e = a.estadoAlUsar;
-  const elegida = e && opcion ? e.opciones[opcion] : undefined;
+  const elegida = !e ? undefined : "fijo" in e ? e.fijo : opcion ? e.opciones[opcion] : undefined;
   if (!e || !elegida || !estadoPorId(e.estadoId)?.grados.some((g) => g.id === elegida.gradoId)) return null;
   return { estadoId: e.estadoId, gradoId: elegida.gradoId, rondasRestantes: elegida.turnos };
 }

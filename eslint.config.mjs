@@ -70,6 +70,8 @@ const eslintConfig = defineConfig([
                 "enEspecialidadDePoder",
                 "noFuncionaPorFatiga",
                 "prolongarEstado",
+                "finDeEstado",
+                "aplicarFinDeEstado",
               ],
               message: "Usa prepararPoder / usarPoder / efectosDelResultado (src/lib/rules/usoPoder.ts); prolongar un estado lo aplica el servidor (aplicarConsecuenciaPropiaAction).",
             },

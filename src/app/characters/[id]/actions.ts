@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { revalidarPanelMaster } from "@/lib/revalidarMaster";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
-import { cambiarEstadosDePersonajes, fotoEnJuego, guardarFichaConFotos, guardarGolpe } from "@/lib/estadosPersonaje";
+import { acabarEstadoDePersonaje, cambiarEstadosDePersonajes, fotoEnJuego, guardarFichaConFotos, guardarGolpe } from "@/lib/estadosPersonaje";
 import { escribirFicha, FichaCambiada, MENSAJE_FICHA_CAMBIADA, type FichaLeida } from "@/lib/escrituraFicha";
 import type { Prisma } from "@/generated/prisma/client";
 import { z } from "zod";
@@ -148,6 +148,10 @@ import {
   type AccesoPsionico,
   falloDeSobreesfuerzo,
   prolongarEstado,
+  finDeEstado,
+  textoFinDeEstado,
+  accionesDeFarmacos,
+  accionesDirectasDeFarmacos,
   type ConsecuenciaPropia,
   type VitalidadActual,
   estadosActivosDe,
@@ -925,7 +929,9 @@ const consecuenciaPropiaSchema = z.discriminatedUnion("tipo", [
     elecciones: z.record(z.string().max(40), z.string().max(40)),
     grado: z.enum(GRADOS),
     opcion: z.number().int().min(0).max(5),
-  }),  z.object({ tipo: z.literal("prolongar"), estadoId: z.string().min(1).max(60) }),
+  }),
+  z.object({ tipo: z.literal("prolongar"), estadoId: z.string().min(1).max(60) }),
+  z.object({ tipo: z.literal("acabar"), estadoId: z.string().min(1).max(60) }),
 ]);
 
 export async function aplicarConsecuenciaPropiaAction(characterId: string, entrada: unknown): Promise<SaveResult> {
@@ -962,6 +968,18 @@ export async function aplicarConsecuenciaPropiaAction(characterId: string, entra
     const turnos = p.estado.rondasRestantes === null ? "" : ` (quedan ${p.estado.rondasRestantes} turnos)`;
     return { ok: true, sheet, mensaje: [`${p.fuente}: un turno más por ${p.coste} de fatiga${turnos}.`, ...p.avisos].join(" ") };
   }
+  if (op.tipo === "acabar") {
+    // fa-03 (rules/acabarEstado.ts): quitar el recordatorio, la fatiga y el bajón, en una sola
+    // entrada del registro que se deshace entera.
+    const fin = finDeEstado(ctx.estados, op.estadoId);
+    if (!fin.ok) return { ok: false, error: fin.error };
+    const hecho = await acabarEstadoDePersonaje(characterId, fin, { userId: ctx.userId, motivo: `${fin.fuente}: se acabó, desde la ficha` });
+    if (!hecho) return { ok: false, error: "Personaje no encontrado" };
+    if (!hecho.aplicado) return { ok: true, sheet: ctx.sheet, mensaje: `Ya no llevas ${fin.fuente}.` };
+    const fila = await prisma.character.findUnique({ where: { id: characterId }, select: { stats: true, estados: true } });
+    const sheet = fila ? reconciliarVidaConEstados(parseSheet(fila.stats), leerEstados(fila.estados)) : ctx.sheet;
+    return { ok: true, sheet, mensaje: textoFinDeEstado(fin, hecho.aplicado) };
+  }
   if (op.tipo === "sobreesfuerzo") {
     // El umbral de fatiga que cuenta es el de ahora, ya pagado el poder: en combate, el de la foto.
     const { ficha: enJuego } = await fichaEnJuego();
@@ -990,7 +1008,10 @@ export async function aplicarConsecuenciaPropiaAction(characterId: string, entra
       return aplicar({ tipo: "quitar", estadoId: id }, tirada.label, `Con 0 o menos se te quita ${estadoPorId(id)?.label ?? id}.`);
     }
     if (op.tipo === "usar") {
-      const accion = accionesDirectasDeAtaque(ctx.sheet).find((a) => a.id === op.accionId);
+      // Fármacos también agotados: el cliente gasta la dosis antes (la última ya no estaría).
+      const accion = [...accionesDirectasDeAtaque(ctx.sheet), ...accionesDirectasDeFarmacos(ctx.sheet, [], true)].find(
+        (a) => a.id === op.accionId,
+      );
       if (!accion?.estadoAlUsar) return { ok: false, error: "Esa acción ya no está en tu ficha." };
       const estado = estadoPorUso(accion, op.opcion);
       if (!estado) return { ok: false, error: "Opción no válida" };
@@ -1002,7 +1023,11 @@ export async function aplicarConsecuenciaPropiaAction(characterId: string, entra
     if (!tras) return { ok: true, sheet: ctx.sheet };
     return aplicar(tras.op, ataque.label, tras.mensaje);
   }
-  const tiradas = op.tipo === "grado" ? ficha.accionesDotes.tiradas : accionesDeAtaque(ctx.sheet, ficha.modificadores, ficha.extrasDotes.permisos);
+  // Fármacos también agotados (el Xovromium, fa-03): el cliente gasta la dosis antes de esto.
+  const tiradas =
+    op.tipo === "grado"
+      ? [...ficha.accionesDotes.tiradas, ...accionesDeFarmacos(ctx.sheet, ficha.notasFarmacos, true)]
+      : accionesDeAtaque(ctx.sheet, ficha.modificadores, ficha.extrasDotes.permisos);
   const tirada = tiradas.find((t) => t.id === op.accionId);
   if (!tirada) return { ok: false, error: "Esa acción ya no está en tu ficha." };
   const c = consecuenciaPropia(tirada, op);
@@ -1011,7 +1036,7 @@ export async function aplicarConsecuenciaPropiaAction(characterId: string, entra
   return aplicarConsecuencia(characterId, ctx, c, { userId: ctx.userId, motivo: `${fuente}, desde la ficha` });
 }
 
-// El daño por el camino de la pestaña Vida del máster (en combate, a la foto) y los estados por el
+// El daño y la fatiga por el camino de la pestaña Vida del máster (en combate, a la foto) y los estados por el
 // de siempre, cada uno con su entrada en el registro, que el máster puede deshacer.
 async function aplicarConsecuencia(
   characterId: string,
@@ -1021,6 +1046,11 @@ async function aplicarConsecuencia(
 ): Promise<SaveResult> {
   if (c.danio) {
     const r = await ajustarVidaDePersonajes([characterId], "vida", -c.danio.valor, c.danio.categoria, autoria);
+    if (!r.ok) return { ok: false, error: r.error };
+  }
+  // La fatiga (fa-03, rechazo del Xovromium), por el mismo camino: su entrada `vida` en el registro.
+  if (c.fatiga) {
+    const r = await ajustarVidaDePersonajes([characterId], "fatiga", -c.fatiga, undefined, autoria);
     if (!r.ok) return { ok: false, error: r.error };
   }
   const inmune: string[] = [];

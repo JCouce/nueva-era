@@ -96,6 +96,11 @@ export type Estado = {
   // puesto; sin entrada, nada) y estas rondas, en la misma acción del registro
   // (operacionesDe, rules/estadosFicha.ts): el Shock del cuerpo pone la Parálisis (pl-01).
   arrastra?: { estadoId: string; grados: Partial<Record<string, string>>; rondas: number };
+  // Estado recordatorio de algo que se acaba con un coste (fa-03, usuario 2026-11-14: «Bajo Ultra
+  // Estimulante», «Bajo Xovromium»): el jugador pulsa `etiqueta` en el modal del estado cuando se
+  // acaba y la app, en una sola entrada del registro, se lo quita, le resta `fatiga` y le pone
+  // `pone` (rules/acabarEstado.ts). Quitarlo con la × no hace nada de esto.
+  alAcabar?: { etiqueta: string; fatiga: number; pone: { estadoId: string; gradoId: string }[] };
 };
 
 export const ESTADOS: Estado[] = [
@@ -1124,6 +1129,105 @@ export const ESTADOS_DE_OCULTACION: Estado[] = [
   },
 ];
 
+// Fármacos con bajón (fa-03, usuario 2026-11-14). El Ultra Estimulante y el Xovromium dejan un
+// recordatorio sin efecto mecánico («Bajo …»: sus bonos siguen en las casillas de las tiradas,
+// td-14) que se acaba con su botón: 2 de fatiga y el bajón. El Rechazo lo pone la tirada fallada
+// del Xovromium (rules/farmacos.ts). «Tiradas con atributos mentales» = las de Voluntad,
+// Perspicacia y Expresión, salvaciones incluidas. Se suman entre ellos (cada uno es su fuente).
+// La app no tiene reloj: duran hasta quitarlos y el texto dice cuánto. Los recordatorios los quita
+// también el jugador (sin bajón); los bajones y el rechazo, solo el máster (usuario, 2026-11-14).
+// No están en ESTADOS: no salen en el selector del máster (sí en su panel, para quitarlos).
+export const ESTADO_BAJO_ULTRA_ID = "bajo_ultra_estimulante";
+export const ESTADO_BAJO_XOVROMIUM_ID = "bajo_xovromium";
+export const ESTADO_BAJON_ULTRA_ID = "bajon_ultra_estimulante";
+export const ESTADO_BAJON_XOVROMIUM_ID = "bajon_xovromium";
+export const ESTADO_RECHAZO_XOVROMIUM_ID = "rechazo_xovromium";
+
+const MENTALES = ["voluntad", "perspicacia", "expresion"] as const;
+const contraMentales = (valor: number): Modificador => ({ tipo: "tirada", alcance: { tipo: "aplicado", aplicados: [...MENTALES] }, valor });
+
+export const ESTADOS_DE_FARMACO: Estado[] = [
+  {
+    id: ESTADO_BAJO_ULTRA_ID,
+    label: "Bajo Ultra Estimulante",
+    resumen:
+      "Recordatorio de la dosis: sus efectos se marcan a mano en las casillas de cada tirada («Bajo " +
+      "Ultra Estimulante» y «Ultra Estimulante contra el penalizador por heridas y fatiga»). Cuando se " +
+      "acabe, aplica el bajón.",
+    quitarJugador: "Quitar sin bajón",
+    alAcabar: { etiqueta: "Se acabó: aplicar el bajón", fatiga: 2, pone: [{ estadoId: ESTADO_BAJON_ULTRA_ID, gradoId: "activo" }] },
+    grados: [
+      {
+        id: "activo",
+        label: "Bajo Ultra Estimulante",
+        modificadores: [],
+        detalle: ["Sin efecto propio: es un recordatorio.", "Dura 30 minutos. Al acabar: 2 de fatiga y «Bajón del Ultra»."],
+        duracionTurnos: null,
+      },
+    ],
+  },
+  {
+    id: ESTADO_BAJO_XOVROMIUM_ID,
+    label: "Bajo Xovromium",
+    resumen:
+      "Recordatorio de la dosis: su efecto se marca a mano en la casilla «Bajo Xovromium» de tus poderes. " +
+      "Cuando se acabe, aplica el bajón.",
+    quitarJugador: "Quitar sin bajón",
+    alAcabar: { etiqueta: "Se acabó: aplicar el bajón", fatiga: 2, pone: [{ estadoId: ESTADO_BAJON_XOVROMIUM_ID, gradoId: "activo" }] },
+    grados: [
+      {
+        id: "activo",
+        label: "Bajo Xovromium",
+        modificadores: [],
+        detalle: ["Sin efecto propio: es un recordatorio.", "Dura 1 hora. Al acabar: 2 de fatiga y «Bajón del Xovromium»."],
+        duracionTurnos: null,
+      },
+    ],
+  },
+  {
+    id: ESTADO_BAJON_ULTRA_ID,
+    label: "Bajón del Ultra",
+    resumen: "Depresión metabólica tras el Ultra Estimulante.",
+    grados: [
+      {
+        id: "activo",
+        label: "Bajón del Ultra",
+        modificadores: [contraMentales(-1)],
+        detalle: ["−1 a las tiradas con Voluntad, Perspicacia o Expresión.", "Dura 1 hora."],
+        duracionTurnos: null,
+      },
+    ],
+  },
+  {
+    id: ESTADO_BAJON_XOVROMIUM_ID,
+    label: "Bajón del Xovromium",
+    resumen: "Retroceso sináptico tras el Xovromium.",
+    grados: [
+      {
+        id: "activo",
+        label: "Bajón del Xovromium",
+        modificadores: [contraMentales(-2)],
+        detalle: ["−2 a las tiradas con Voluntad, Perspicacia o Expresión.", "Dura 1 hora."],
+        duracionTurnos: null,
+      },
+    ],
+  },
+  {
+    id: ESTADO_RECHAZO_XOVROMIUM_ID,
+    label: "Rechazo del Xovromium",
+    resumen: "Rechazo psioneuronal: la dosis no llegó a estabilizarse.",
+    grados: [
+      {
+        id: "activo",
+        label: "Rechazo del Xovromium",
+        modificadores: [contraMentales(-1)],
+        detalle: ["−1 a las tiradas con Voluntad, Perspicacia o Expresión.", "Dura 15 minutos."],
+        duracionTurnos: null,
+      },
+    ],
+  },
+];
+
 // Los umbrales de §7 como estados (usuario, 2026-10-28): Heridas y Fatiga, un nivel por estado
 // (S14). Derivados, nunca guardados: los calcula resolverFicha con la vida y la fatiga
 // (estadosDerivados, rules/estados.ts) y se van solos al volver por encima del umbral. Fuera de
@@ -1195,7 +1299,7 @@ export const ESTADOS_DERIVADOS: Estado[] = [
 ];
 
 // Los estados que se pueden poner y guardar (los del máster, los de los activables, los propios
-// de los poderes: Contención, catalog/psionica.ts, y los de ocultación, T4). Los derivados no: ver ESTADOS_DERIVADOS.
+// de los poderes: Contención, catalog/psionica.ts, los de ocultación, T4, y los de fármaco, fa-03). Los derivados no: ver ESTADOS_DERIVADOS.
 // Los de poder, como los de aumento, no están en ESTADOS: no salen en el selector del máster.
 export function estadoPorId(id: string): Estado | null {
   return (
@@ -1203,6 +1307,7 @@ export function estadoPorId(id: string): Estado | null {
     ESTADOS_DE_AUMENTO.find((e) => e.id === id) ??
     ESTADOS_DE_PODER.find((e) => e.id === id) ??
     ESTADOS_DE_OCULTACION.find((e) => e.id === id) ??
+    ESTADOS_DE_FARMACO.find((e) => e.id === id) ??
     null
   );
 }
@@ -1227,7 +1332,8 @@ export function estadosDelPanel(puestos: readonly string[]): { estado: Estado; s
   return [...ESTADOS.map((estado) => ({ estado, soloQuitar: false })), ...aparte];
 }
 
-// Los que el propio jugador puede quitarse desde su ficha: los de poder y los de ocultación.
+// Los que el propio jugador puede quitarse desde su ficha: los de poder, los de ocultación y los
+// de fármaco (los que llevan `quitarJugador`).
 export function loQuitaElJugador(id: string): boolean {
   return esEstadoDePoder(id) || !!estadoPorId(id)?.quitarJugador;
 }

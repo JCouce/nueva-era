@@ -12,7 +12,7 @@ import {
 } from "@/lib/rules";
 import { BarraVital } from "@/components/BarraVital";
 import { ControlVida } from "@/components/ficha/ControlVida";
-import { ChipEstado } from "@/components/ChipEstado";
+import { AvisoChips, ChipEstado, type ChipsDeFicha } from "@/components/ChipEstado";
 import { EstadoFichaChip } from "@/components/EstadoFichaChip";
 
 // Columna izquierda de la cabina de escritorio: el vistazo de siempre a la ficha. Solo lee,
@@ -28,6 +28,7 @@ export function RailFicha({
   soloLectura,
   onAjustarDanio,
   onAjustarFatiga,
+  chips,
 }: {
   name: string;
   estado: EstadoFicha;
@@ -38,6 +39,8 @@ export function RailFicha({
   soloLectura: boolean;
   onAjustarDanio: (categoria: CategoriaDanio, delta: number) => void;
   onAjustarFatiga: (delta: number) => void;
+  // Los botones del modal de los chips propios (Prolongar, Se acabó).
+  chips?: ChipsDeFicha;
 }) {
   const sheet = ficha.ficha;
   const { vida, fatiga } = ficha.salud;
@@ -94,9 +97,10 @@ export function RailFicha({
         <Bloque titulo="estados">
           <div className="flex flex-wrap gap-1.5">
             {estados.map((a) => (
-              <ChipEstado key={a.estadoId} estado={a} />
+              <ChipEstado key={a.estadoId} estado={a} {...chips?.botones(a)} />
             ))}
           </div>
+          <AvisoChips aviso={chips?.aviso} />
         </Bloque>
       )}
 

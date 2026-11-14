@@ -1808,7 +1808,9 @@ describe("Activar camuflaje trifásico (acción sin dado, 1 carga)", () => {
     assert.ok(modo?.tipo === "opcion");
     assert.deepEqual(modo.opciones.map((o) => o.etiqueta), ["Estático (5 minutos)", "Dinámico (2 turnos)"]);
     assert.equal(modo.opciones[0].nota, "Cobertura visual 4 · térmica 4 · acústica 4.");
-    assert.deepEqual(a.estadoAlUsar?.opciones, { estatico: { gradoId: "estatico", turnos: 50 }, dinamico: { gradoId: "dinamico", turnos: 2 } });
+    const alUsar = a.estadoAlUsar;
+    assert.ok(alUsar && "opciones" in alUsar);
+    assert.deepEqual(alUsar.opciones, { estatico: { gradoId: "estatico", turnos: 50 }, dinamico: { gradoId: "dinamico", turnos: 2 } });
   });
 
   test("sin cargas sale bloqueada", () => {

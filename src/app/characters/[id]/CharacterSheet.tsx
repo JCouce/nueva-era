@@ -115,7 +115,7 @@ import type {
 import { PersonajeTab, PanelFieldset } from "./_components/personaje/PersonajeTab";
 import { AvisoEnRevision } from "./_components/RevisionFicha";
 import { EstadoFichaChip } from "@/components/EstadoFichaChip";
-import { ChipEstado } from "@/components/ChipEstado";
+import { AvisoChips, ChipEstado, type BotonesDeChip, type ChipsDeFicha } from "@/components/ChipEstado";
 import { AtributosTab } from "./_components/AtributosTab";
 import { HabilidadesTab } from "./_components/HabilidadesTab";
 import { DotesTab } from "./_components/DotesTab";
@@ -602,6 +602,17 @@ export function CharacterSheet({
       setSheet,
     );
   };
+  // Los botones del modal de los chips propios (ps-07 «Prolongar un turno», fa-03 «Se acabó:
+  // aplicar el bajón»): un solo sitio para toda la ficha (Acciones, Recursos, panel lateral, tira y
+  // cola del combate). Los aplica el servidor; el aviso, bajo los chips donde se pulsó (Acciones
+  // trae el suyo) o en `avisoChips`.
+  const [avisoChips, setAvisoChips] = useState<string | null>(null);
+  const botonesDeChip: BotonesDeChip = (e, onMensaje = setAvisoChips) => ({
+    deshabilitado: soloLectura,
+    ...(e.prolongar && { onProlongar: () => commitConsecuenciaPropia({ tipo: "prolongar", estadoId: e.estadoId }, onMensaje) }),
+    ...(e.acabar && { onAcabar: () => commitConsecuenciaPropia({ tipo: "acabar", estadoId: e.estadoId }, onMensaje) }),
+  });
+  const chips: ChipsDeFicha = { botones: botonesDeChip, aviso: avisoChips };
   // Límites de las acciones de dote: el uso se gasta al tirar. La ficha local se adelanta con la
   // misma regla; el servidor lo vuelve a calcular con su ficha y su mesa.
   const commitGastarUsoLimitado = (uso: UsoLimitado, aliadoId: string | null) => {
@@ -751,6 +762,7 @@ export function CharacterSheet({
           soloLectura={soloLectura}
           onAjustarDanio={commitAjustarDanio}
           onAjustarFatiga={commitAjustarFatiga}
+          chips={chips}
         />
       </aside>
 
@@ -811,7 +823,7 @@ export function CharacterSheet({
               <div className="flex flex-col gap-1.5 border-t border-border pt-1.5">
                 {misEstadosActivos.map((a) => (
                   <div key={a.estadoId} className="flex flex-col items-start gap-0.5">
-                    <ChipEstado estado={a} />
+                    <ChipEstado estado={a} {...botonesDeChip(a)} />
                     {/* Detalle visible de verdad, no en un `title` — mismo
                         arreglo que CombateConsole.tsx. */}
                     {a.detalle.length > 0 && (
@@ -821,6 +833,7 @@ export function CharacterSheet({
                     )}
                   </div>
                 ))}
+                <AvisoChips aviso={avisoChips} />
               </div>
             )}
           </div>
@@ -897,6 +910,7 @@ export function CharacterSheet({
             onUsarAccionAumento={commitUsarAccionAumento}
             onEstadoDePoder={commitEstadoDePoder}
             onConsecuenciaPropia={commitConsecuenciaPropia}
+            botonesDeChip={botonesDeChip}
             onGastarUsoLimitado={commitGastarUsoLimitado}
             onMarcarFavorita={commitMarcarFavorita}
             soloLectura={soloLectura}
@@ -969,6 +983,7 @@ export function CharacterSheet({
             {activeEfectivo === "recursos" && (
               <RecursosTab
                 ficha={ficha}
+                chips={chips}
                 creditos={creditos}
                 onAjustar={commitAjustarRecurso}
                 onRecargar={commitRecargar}
@@ -986,7 +1001,7 @@ export function CharacterSheet({
               />
             )}
             {activeEfectivo === "combate" && combate && (
-              <CombateTab combate={combate} miCombatienteId={miCombatiente?.id ?? null} />
+              <CombateTab combate={combate} miCombatienteId={miCombatiente?.id ?? null} chips={chips} />
             )}
 
             {/* Resetear es vender todo de golpe: no tiene sentido, y el servidor
@@ -1005,7 +1020,7 @@ export function CharacterSheet({
       </div>
 
       <aside aria-label="Mesa" className={`${columnaLateral} xl:border-l xl:border-border xl:pl-5`}>
-        <MesaFicha combate={combate} miCombatienteId={miCombatiente?.id ?? null} historial={accionesHistorial} />
+        <MesaFicha combate={combate} miCombatienteId={miCombatiente?.id ?? null} historial={accionesHistorial} chips={chips} />
       </aside>
     </div>
   );

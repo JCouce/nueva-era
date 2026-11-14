@@ -8,6 +8,7 @@
 //     retroceso entrópico del Kerzul (eq-18, eq-19). El resultado ofrece el botón, la app tira la
 //     salvación de la ficha y el grado decide la consecuencia.
 // El daño entra directo a la vida (en combate, a la foto del Combatiente), no por «Resistir daño».
+// La fatiga (fa-03: el rechazo del Xovromium), igual: en combate a la foto, si no a la ficha.
 import { z } from "zod";
 import type { Accion } from "./acciones";
 import type { CategoriaDanio } from "./danio";
@@ -27,6 +28,8 @@ export type EstadoPropio = z.infer<typeof estadoPropioSchema>;
 export type ConsecuenciaPropia = {
   texto: string;
   danio?: { valor: number; categoria: CategoriaDanio };
+  // Fatiga que pierdes (sin pasar de 0, como el ajuste de la pestaña Vida).
+  fatiga?: number;
   estados: EstadoPropio[];
 };
 
@@ -53,6 +56,7 @@ export function salvacionPropiaDe(t: Pick<Accion, "salvacionesPropias">, modoId:
 // `usar`, la opción elegida en una acción sin dado que pone un estado (Activar camuflaje);
 // `atacar`, un ataque estando en Sigilo, que te lo baja. T6a: `sobreesfuerzo`, el fallo de la
 // salvación de sobreesfuerzo de un poder. T6b: `prolongar`, un turno más de un estado propio.
+// T7c: `acabar`, el botón de un estado recordatorio (rules/acabarEstado.ts).
 export type OperacionConsecuenciaPropia =
   | { tipo: "grado"; accionId: string; grado: Grado }
   | { tipo: "salvacion"; accionId: string; modoId: string | null; grado: Grado }
@@ -63,14 +67,16 @@ export type OperacionConsecuenciaPropia =
   // la salvación y la opción elegida (fracaso crítico del implante 4; si no, 0).
   | { tipo: "sobreesfuerzo"; poderId: string; elecciones: Record<string, string>; grado: Grado; opcion: number }
   // T6b (rules/prolongarEstado.ts): alargar un estado propio pagando su fatiga (Sondeo No-Local).
-  | { tipo: "prolongar"; estadoId: string };
+  | { tipo: "prolongar"; estadoId: string }
+  // T7c (rules/acabarEstado.ts, fa-03): «Se acabó: aplicar el bajón» de un estado recordatorio.
+  | { tipo: "acabar"; estadoId: string };
 
 export function consecuenciaPropia(
   t: Pick<Accion, "consecuenciasPropias" | "salvacionesPropias">,
   op: { grado: Grado; tipo: "grado" | "salvacion"; modoId?: string | null },
 ): ConsecuenciaPropia | null {
   const c = op.tipo === "grado" ? t.consecuenciasPropias?.[op.grado] : salvacionPropiaDe(t, op.modoId ?? null)?.grados[op.grado];
-  return c && (c.danio || c.estados.length > 0) ? c : null;
+  return c && (c.danio || c.fatiga || c.estados.length > 0) ? c : null;
 }
 
 // Los EstadoActivo que se ponen (sin los que el catálogo ya no conoce: dato desfasado).
@@ -84,11 +90,12 @@ export function estadosActivosDe(estados: readonly EstadoPropio[]): EstadoActivo
 
 const ETIQUETA_CATEGORIA: Record<CategoriaDanio, string> = { noLetal: "no letal", letal: "letal", grave: "grave" };
 
-// «Recibes 5 de daño no letal. Te pones Entorpecido y Derribado.»
+// «Recibes 5 de daño no letal. Pierdes 1 de fatiga. Te pones Entorpecido y Derribado.»
 export function textoDeConsecuencia(c: ConsecuenciaPropia): string {
   const nombres = c.estados.map((e) => estadoPorId(e.estadoId)?.label ?? e.estadoId);
   return [
     c.danio ? `Recibes ${c.danio.valor} de daño ${ETIQUETA_CATEGORIA[c.danio.categoria]}.` : null,
+    c.fatiga ? `Pierdes ${c.fatiga} de fatiga.` : null,
     nombres.length > 0 ? `Te pones ${nombres.join(" y ")}.` : null,
   ]
     .filter(Boolean)

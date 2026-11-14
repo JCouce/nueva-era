@@ -4,6 +4,23 @@ import { useState, type KeyboardEvent, type MouseEvent } from "react";
 import { etiquetaDuracionCorta, explicacionDeEstado, type EstadoActivoDescrito } from "@/lib/rules";
 import { Modal } from "./Modal";
 
+// Los botones del modal de un chip propio («Prolongar un turno», «Se acabó: aplicar el bajón»).
+// Los construye un solo sitio (CharacterSheet, `botonesDeChip`) y los reciben todas las pantallas
+// de la ficha del jugador que pintan sus chips; `onMensaje`, dónde va lo que contesta el servidor.
+export type BotonesDeChip = (
+  estado: EstadoActivoDescrito,
+  onMensaje?: (mensaje: string) => void,
+) => { onProlongar?: () => void; onAcabar?: () => void; deshabilitado?: boolean };
+
+// Los botones y el último aviso, juntos, para las pantallas que solo pintan chips.
+export type ChipsDeFicha = { botones: BotonesDeChip; aviso: string | null };
+
+// El aviso del servidor tras pulsar uno de esos botones, bajo los chips.
+export function AvisoChips({ aviso }: { aviso: string | null | undefined }) {
+  if (!aviso) return null;
+  return <p className="border-l-2 border-info pl-2 font-sans text-[12px] leading-relaxed text-info">{aviso}</p>;
+}
+
 const FOCO =
   "outline-none focus-visible:ring-2 focus-visible:ring-info focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
@@ -17,18 +34,21 @@ const FOCO =
 // Pulsarlo abre un modal con lo que hace el estado (explicacionDeEstado, el motor: el grado
 // puesto, la duración y, en el Shock, las piezas de esta ficha que toca). Con `onQuitar`, una × de
 // 44 px de área táctil en el propio chip; con `onProlongar` (ps-07, Sondeo No-Local), el botón de
-// alargarlo va en el modal. Puede ir dentro de un botón (la tarjeta del jugador en la Mesa): el
+// alargarlo va en el modal, y con `onAcabar` (fa-03, «Se acabó: aplicar el bajón» de un recordatorio
+// de fármaco), el de acabarlo. Puede ir dentro de un botón (la tarjeta del jugador en la Mesa): el
 // chip no es un <button> y no deja subir su pulsación.
 export function ChipEstado({
   estado,
   onQuitar,
   quitarLabel,
   onProlongar,
+  onAcabar,
   deshabilitado = false,
 }: {
   estado: EstadoActivoDescrito;
   onQuitar?: () => void;
   onProlongar?: () => void;
+  onAcabar?: () => void;
   quitarLabel?: string;
   deshabilitado?: boolean;
 }) {
@@ -99,6 +119,14 @@ export function ChipEstado({
           estado={estado}
           onCerrar={() => setAbierto(false)}
           onProlongar={onProlongar && estado.prolongar ? onProlongar : undefined}
+          onAcabar={
+            onAcabar && estado.acabar
+              ? () => {
+                  setAbierto(false);
+                  onAcabar();
+                }
+              : undefined
+          }
           deshabilitado={deshabilitado}
         />
       )}
@@ -110,11 +138,13 @@ function ModalEstado({
   estado,
   onCerrar,
   onProlongar,
+  onAcabar,
   deshabilitado,
 }: {
   estado: EstadoActivoDescrito;
   onCerrar: () => void;
   onProlongar?: () => void;
+  onAcabar?: () => void;
   deshabilitado: boolean;
 }) {
   const x = explicacionDeEstado(estado);
@@ -149,6 +179,16 @@ function ModalEstado({
             className={`min-h-11 border border-accent px-3 font-display text-sm font-semibold uppercase tracking-wide text-accent active:scale-95 disabled:opacity-50 ${FOCO}`}
           >
             {estado.prolongar.etiqueta} (−{estado.prolongar.coste} fatiga)
+          </button>
+        )}
+        {onAcabar && estado.acabar && (
+          <button
+            type="button"
+            onClick={onAcabar}
+            disabled={deshabilitado}
+            className={`min-h-11 border border-accent px-3 font-display text-sm font-semibold uppercase tracking-wide text-accent active:scale-95 disabled:opacity-50 ${FOCO}`}
+          >
+            {estado.acabar.etiqueta} (−{estado.acabar.fatiga} fatiga)
           </button>
         )}
       </div>

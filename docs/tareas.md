@@ -1224,7 +1224,30 @@ Tandas, en orden:
     funciona como nivel 1. Soporte Vital: salvaciones a +1, nada contra congelación ni frío o calor
     extremos.». Catálogo: fuera los «es T7b»; las entradas `motor` bloqueadas por la pregunta 32,
     construidas. eq-29 y pregunta 32 a FIRME (`sistema.md` §7.1, S73). Sin migración.
-  - [ ] **T7c bajón de fármacos** (fa-03): después. pl-04 (avería pieza a pieza), más adelante.
+  - [x] **T7c bajón de fármacos** (fa-03; td-14 y fa-04 siguen; decisiones del usuario 2026-11-14)
+    *(2026-11-14)*. Estados nuevos (`ESTADOS_DE_FARMACO`, `catalog/estados.ts`): «Bajón del Ultra» −1,
+    «Bajón del Xovromium» −2 y «Rechazo del Xovromium» −1 a Voluntad, Perspicacia y Expresión
+    (alcance `aplicado`, se suman, línea propia en el desglose), y los recordatorios «Bajo Ultra
+    Estimulante» / «Bajo Xovromium» sin efecto; todos hasta quitarlos, con la duración en su texto.
+    Los recordatorios llevan × del jugador («Quitar sin bajón»); bajones y rechazo, solo el máster
+    (usuario 2026-11-14: sin `quitarJugador`, así que `quitarEstadoDePoderAction` lo rechaza). Usar el Ultra pone su recordatorio (`EstadoAlUsar` con `fijo`, consecuencia
+    «usar»); la tirada del Xovromium, por grado (`CON_TIRADA.consecuenciasPropias`): éxito/crítico,
+    el recordatorio; fracaso/fracaso crítico, −1 fatiga y el Rechazo (`ConsecuenciaPropia.fatiga`,
+    por `ajustarVidaDePersonajes`: en combate a la foto). Botón «Se acabó: aplicar el bajón (−2
+    fatiga)» en el modal del recordatorio (`Estado.alAcabar`, `EstadoActivoDescrito.acabar`,
+    `ChipEstado.onAcabar`), en todos los chips de la ficha del jugador (usuario 2026-11-14): Acciones,
+    Recursos (`EstadosCard`), panel lateral (`RailFicha`), tira de combate y cola (`CombateTab`, solo tu
+    fila), con «Prolongar» igual; un solo constructor de los callbacks, `botonesDeChip` en
+    `CharacterSheet` (`BotonesDeChip`/`ChipsDeFicha`, `ChipEstado.tsx`). Mesa y consola del máster,
+    sin cambios. Operación `acabar` de `aplicarConsecuenciaPropiaAction` →
+    `finDeEstado`/`aplicarFinDeEstado` (`rules/acabarEstado.ts`) y `acabarEstadoDePersonaje`
+    (`lib/estadosPersonaje.ts`): quita, cobra y pone en una transacción con una sola entrada
+    `estado_poner` (la fatiga en el `restado`; Deshacer lo devuelve todo). El texto del registro
+    lee como «Quitado» el cambio que quita dentro de una entrada de poner. El servidor busca la fila
+    del fármaco aunque ya no queden dosis (`conAgotados`). Notas sin «(a mano)» salvo la sobredosis.
+    `finDeEstado` y `aplicarFinDeEstado` vetadas en la UI (ESLint). Sin migración. fa-03 a FIRME
+    (§12), supuestos S106.
+  - pl-04 (avería pieza a pieza), más adelante.
 - [ ] **T8 Recursos**: au-01, au-02, au-03, au-07, au-08, td-12, td-19.
 - [ ] **T9 Catálogo y tienda**: td-01, td-03, td-04, di-24, eq-23, eq-34, eq-36, eq-37.
 - [ ] Auditoría por lote al terminar.

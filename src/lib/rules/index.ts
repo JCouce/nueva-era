@@ -27,6 +27,7 @@
 //   efectosArma.ts     efectos de arma sobre el objetivo (salvación, estado, grados): el aviso del resultado (T3a)
 //   consecuenciasPropias.ts  lo que una acción le hace a quien tira: por su grado o por una salvación propia (T3c)
 //   prolongarEstado.ts       alargar un estado propio pagando la fatiga que guarda (Sondeo No-Local, ps-07)
+//   acabarEstado.ts          el botón de un estado recordatorio al acabarse: quitarlo, fatiga y bajón (fa-03, T7c)
 //   sobreesfuerzo.ts   el sobreesfuerzo psiónico: fuentes, cuándo salta, tabla y lo que retocan las dotes (T6a)
 //   retrocesoEntropico.ts    retroceso entrópico del Kerzul: la salvación propia de sus golpes Estándar y Compleja (T3c)
 //   movimiento.ts      Movilidad Aérea equipada convertida en su propia tirada ("Volar")
@@ -126,6 +127,7 @@ export * from "./efectosArma";
 export * from "./consecuenciasPropias";
 export * from "./sobreesfuerzo";
 export * from "./prolongarEstado";
+export * from "./acabarEstado";
 export * from "./retrocesoEntropico";
 export * from "./sigilo";
 export * from "./textosDeTirada";

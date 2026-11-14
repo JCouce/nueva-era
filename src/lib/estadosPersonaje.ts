@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { revalidarPanelMaster } from "@/lib/revalidarMaster";
 import type { Prisma } from "@/generated/prisma/client";
 import {
+  aplicarFinDeEstado,
   aplicarOperacionEstado,
   datosParaGuardar,
   fotoEnMesa,
@@ -22,6 +23,8 @@ import {
   type CambioEstadoPersonaje,
   type DatosRegistro,
   type EstadoActivo,
+  type FinAplicado,
+  type FinDeEstado,
   type InmuneAlAplicar,
   type OperacionEstado,
   type Sheet,
@@ -192,6 +195,55 @@ async function cambiarEstadosEnTx(
     cambios.push(...propios);
   }
   return { cambios, inmunes };
+}
+
+// El botón de un estado recordatorio al acabarse (fa-03, rules/acabarEstado.ts): quitarlo, restar la
+// fatiga (con un combate en curso, a la foto que enseña la Mesa; si no, a la ficha) y poner el
+// bajón, en una transacción y con una sola entrada `estado_poner` en el registro, que Deshacer
+// devuelve entera (los estados y la fatiga, que va en el `restado` del último cambio). No comprueba
+// permisos: quien llama ya lo ha hecho. null si el personaje no existe; `aplicado` null si ya no
+// llevaba el recordatorio (no escribe nada).
+export async function acabarEstadoDePersonaje(
+  characterId: string,
+  fin: FinDeEstado,
+  autoria: Autoria,
+): Promise<{ registroId: string | null; aplicado: FinAplicado | null } | null> {
+  const hecho = await conReintentos(() =>
+    prisma.$transaction(async (tx) => {
+      const f = await tx.character.findUnique({ where: { id: characterId }, select: { id: true, stats: true, estados: true } });
+      if (!f) return null;
+      const fotos = await tx.combatiente.findMany({
+        where: { characterId, combate: COMBATE_ABIERTO },
+        select: {
+          id: true,
+          orden: true,
+          derrotado: true,
+          pgActual: true,
+          pgMax: true,
+          fatigaActual: true,
+          fatigaMax: true,
+          combate: { select: { estado: true } },
+        },
+      });
+      const enMesa = fotoEnMesa(fotos.filter((c) => c.combate.estado === "EN_CURSO"));
+      const estados = leerEstados(f.estados);
+      const leida = reconciliarVidaConEstados(parseSheet(f.stats), estados);
+      const r = aplicarFinDeEstado({ id: f.id, sheet: leida, estados }, fin, fotos, enMesa?.id ?? null);
+      if (!r) return { registroId: null, aplicado: null };
+      if (r.sheet === leida) await tx.character.update({ where: { id: f.id }, data: { estados: r.estados } });
+      else await escribirFicha(tx, f.id, { stats: f.stats }, { estados: r.estados, stats: r.sheet });
+      for (const c of r.combatientes) {
+        await tx.combatiente.update({
+          where: { id: c.id },
+          data: { pgActual: c.pgActual, pgMax: c.pgMax, fatigaActual: c.fatigaActual, fatigaMax: c.fatigaMax },
+        });
+      }
+      const registroId = await registrar(tx, autoria, { tipo: "estado_poner", cambios: r.cambios });
+      return { registroId, aplicado: r };
+    }),
+  );
+  if (hecho?.aplicado) revalidarEstados([characterId]);
+  return hecho;
 }
 
 // "Limpiar estados": quita TODOS los estados a los personajes indicados, en una

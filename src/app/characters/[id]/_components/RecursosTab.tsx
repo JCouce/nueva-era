@@ -23,6 +23,7 @@ import { BolsaAumentos } from "./BolsaAumentos";
 import { BarraVital, type TonoVital } from "@/components/BarraVital";
 import { ControlVida } from "@/components/ficha/ControlVida";
 import { EstadosCard, DatosCard } from "./EstadosYDatos";
+import type { ChipsDeFicha } from "@/components/ChipEstado";
 
 // RECURSOS (docs/tareas.md, fase 6b): una tarjeta por instancia de pieza
 // equipada que rastree un recurso (armas de fuego → balas, subsistemas con
@@ -52,6 +53,7 @@ function BotonDelta({
 
 export function RecursosTab({
   ficha,
+  chips,
   creditos,
   onAjustar,
   onRecargar,
@@ -68,6 +70,8 @@ export function RecursosTab({
   onLiberarUsoEscena,
 }: {
   ficha: FichaResuelta;
+  // Los botones del modal de los chips propios (Prolongar, Se acabó); sin él (NPC), sin botones.
+  chips?: ChipsDeFicha;
   // Ausente para un NPC: edición libre, sin cartera de créditos que cobrar
   // al recargar/comprar — mismo criterio que EquipoTab.
   creditos?: number;
@@ -192,7 +196,7 @@ export function RecursosTab({
         <UsosEscenaCard usos={ficha.usosEscena} onLiberar={onLiberarUsoEscena} onTerminarEscena={onTerminarEscena} />
       )}
 
-      <EstadosCard ficha={ficha} />
+      <EstadosCard ficha={ficha} chips={chips} />
 
       <p className="mt-2 border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
         {"//SYSTEM · materiales"}

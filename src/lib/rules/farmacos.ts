@@ -22,11 +22,22 @@ import type { HabilidadId } from "./habilidades";
 import type { CondicionTirada } from "./condiciones";
 import type { OrigenAporte } from "./origen";
 import type { RecursoUmbral } from "./modificadores";
+import type { ConsecuenciaPropia } from "./consecuenciasPropias";
+import type { Grado } from "./psionica";
+import type { EstadoAlUsar } from "./sigilo";
+import { ESTADO_BAJO_ULTRA_ID, ESTADO_BAJO_XOVROMIUM_ID, ESTADO_RECHAZO_XOVROMIUM_ID } from "../catalog/estados";
 
 // Los tres que no llevan tirada (docs/checklist-motor-vs-prosa-2026-09-24.md
 // / prompt-gasto-recursos.md): el nota explica el efecto, "Usar" solo gasta
 // la dosis, sin resolución de d12 de por medio.
 const SIN_TIRADA = new Set(["farmaco_analgesico", "farmaco_antipatogeno", "farmaco_ultra_estimulante"]);
+
+// El recordatorio que pone usar la dosis (fa-03, usuario 2026-11-14): «Bajo Ultra Estimulante», sin
+// efecto mecánico (sus bonos siguen en las casillas, td-14), con su botón para el bajón al acabarse
+// (Estado.alAcabar, rules/acabarEstado.ts). Lo aplica el servidor (consecuencia propia «usar»).
+const ESTADO_AL_USAR: Readonly<Record<string, EstadoAlUsar>> = {
+  farmaco_ultra_estimulante: { estadoId: ESTADO_BAJO_ULTRA_ID, fijo: { gradoId: "activo", turnos: null } },
+};
 
 // El resto lleva tirada fija: Perspicacia + Biociencia (especialidad
 // Medicina), dificultad ya conocida — puesta en `nota` como texto, NUNCA en
@@ -50,18 +61,36 @@ const CON_TIRADA: Record<
     sinEspecialidad?: true;
     dificultad?: number;
     condiciones?: CondicionTirada[];
+    // Lo que el grado de la tirada te hace a ti (rules/consecuenciasPropias.ts); lo aplica el servidor.
+    consecuenciasPropias?: Partial<Record<Grado, ConsecuenciaPropia>>;
   }
 > = {
   // Su efecto sobre los poderes es la casilla "Bajo Xovromium" del modal del
-  // poder (FUENTES_EXTERNAS_FATIGA, catalog/psionica.ts).
+  // poder (FUENTES_EXTERNAS_FATIGA, catalog/psionica.ts). fa-03 (usuario 2026-11-14): superarla
+  // pone el recordatorio «Bajo Xovromium» (su botón aplica el bajón al acabarse); fallarla, 1 de
+  // fatiga y «Rechazo del Xovromium». La sobredosis (segunda dosis en 4 horas) sigue a mano (fa-04).
   farmaco_xovromium: {
     nota:
-      "Voluntad + Biociencia o Actitud (la más alta), dificultad 6. Con éxito, 1 hora: marca «Bajo Xovromium» en tus poderes (+1 a la tirada y −1 de fatiga). " +
-      "Si falla, pierdes la dosis, 1 de fatiga y −1 en tiradas mentales 15 minutos. Al acabar el efecto, 2 de fatiga y −2 mentales durante la hora siguiente (a mano).",
+      "Voluntad + Biociencia o Actitud (la más alta), dificultad 6. Con éxito, 1 hora: marca «Bajo Xovromium» en tus poderes (+1 a la tirada y −1 de fatiga); " +
+      "la app te pone el recordatorio «Bajo Xovromium», y desde él aplicas el bajón al acabarse (2 de fatiga y −2 mentales una hora). " +
+      "Si falla, pierdes la dosis y la app te resta 1 de fatiga y te pone «Rechazo del Xovromium» (−1 mentales 15 minutos). " +
+      "Una segunda dosis en 4 horas: salvación de Fortaleza (dificultad 8, +2 por dosis extra), a mano.",
     aplicado: "voluntad",
     habilidades: ["biociencia", "actitud"],
     sinEspecialidad: true,
     dificultad: 6,
+    consecuenciasPropias: (() => {
+      const estabiliza: ConsecuenciaPropia = {
+        texto: "Se estabiliza: te pones «Bajo Xovromium» (recordatorio; el bajón, desde él al acabarse).",
+        estados: [{ estadoId: ESTADO_BAJO_XOVROMIUM_ID, gradoId: "activo" }],
+      };
+      const rechazo: ConsecuenciaPropia = {
+        texto: "Rechazo: pierdes la dosis, 1 de fatiga y −1 a las tiradas mentales 15 minutos.",
+        fatiga: 1,
+        estados: [{ estadoId: ESTADO_RECHAZO_XOVROMIUM_ID, gradoId: "activo" }],
+      };
+      return { critico: estabiliza, exito: estabiliza, fracaso: rechazo, fracasoCritico: rechazo };
+    })(),
   },
   // Dificultades del documento (S94, docs/fuente/equipamiento.md, Fármacos): el modal abre
   // en ellas; la hemorragia exanguinante es una opción de la propia fila (9).
@@ -117,11 +146,13 @@ function inyectarse(sheet: Sheet, f: Consumible): TipoAccionBase[] {
   return [{ accion: "inyectarse", base: [conArmaduraPuesta ? conArmadura : base] }];
 }
 
-export function accionesDeFarmacos(sheet: Sheet, notasEspecie: string[]): Accion[] {
+// `conAgotados`: también los que ya no quedan. Para el servidor al aplicar lo que la acción te hace
+// (consecuencias propias): el cliente gasta la dosis antes, y con la última ya no estaría.
+export function accionesDeFarmacos(sheet: Sheet, notasEspecie: string[], conAgotados = false): Accion[] {
   const acciones: Accion[] = [];
   for (const f of FARMACOS) {
     const cantidad = sheet.farmacos[f.id] ?? 0;
-    if (cantidad <= 0) continue;
+    if (cantidad <= 0 && !conAgotados) continue;
     const con = CON_TIRADA[f.id];
     if (!con) continue;
     const habilidad = (con.habilidades ?? ["biociencia"]).reduce((mejor, h) =>
@@ -138,6 +169,7 @@ export function accionesDeFarmacos(sheet: Sheet, notasEspecie: string[]): Accion
       ajustesFijos: con.ajustesFijos,
       ...(con.dificultad !== undefined && { dificultadSugerida: con.dificultad }),
       ...(con.condiciones && { condiciones: con.condiciones }),
+      ...(con.consecuenciasPropias && { consecuenciasPropias: con.consecuenciasPropias }),
       farmacoId: f.id,
       tiposDeAccionBase: inyectarse(sheet, f),
       origen: { tipo: "farmaco", id: f.id, label: f.label },
@@ -146,11 +178,12 @@ export function accionesDeFarmacos(sheet: Sheet, notasEspecie: string[]): Accion
   return acciones;
 }
 
-export function accionesDirectasDeFarmacos(sheet: Sheet, notasEspecie: string[]): AccionDirecta[] {
+// `conAgotados`: como en accionesDeFarmacos.
+export function accionesDirectasDeFarmacos(sheet: Sheet, notasEspecie: string[], conAgotados = false): AccionDirecta[] {
   const acciones: AccionDirecta[] = [];
   for (const f of FARMACOS) {
     const cantidad = sheet.farmacos[f.id] ?? 0;
-    if (cantidad <= 0) continue;
+    if (cantidad <= 0 && !conAgotados) continue;
     if (!SIN_TIRADA.has(f.id)) continue;
     acciones.push({
       id: `farmaco_${f.id}`,
@@ -160,6 +193,7 @@ export function accionesDirectasDeFarmacos(sheet: Sheet, notasEspecie: string[])
       confirmarLabel: "Usar",
       farmacoId: f.id,
       tiposDeAccionBase: inyectarse(sheet, f),
+      ...(ESTADO_AL_USAR[f.id] && { estadoAlUsar: ESTADO_AL_USAR[f.id] }),
       origen: { tipo: "farmaco", id: f.id, label: f.label },
     });
   }
@@ -185,18 +219,18 @@ const CON_EFECTO_ANTIPATOGENO = [
 // la has tomado, y el efecto sigue tras gastar la última dosis). Física = tirada con un aplicado
 // que lleve Fuerza o Agilidad (Fortaleza, Potencia, Reflejos), sin las salvaciones. Las dos
 // casillas no se apilan: una Iniciativa con Reflejos se queda en +2. La reducción de los
-// penalizadores por heridas y fatiga va en su propia casilla (abajo, fa-01); el bajón al terminar
-// sigue a mano.
+// penalizadores por heridas y fatiga va en su propia casilla (abajo, fa-01); el bajón al terminar,
+// desde el recordatorio «Bajo Ultra Estimulante» que pone usar la dosis (fa-03, arriba).
 export const ID_CASILLA_ULTRA_INICIATIVA = "farmaco_ultra_estimulante_iniciativa";
 export const ID_CASILLA_ULTRA_FISICAS = "farmaco_ultra_estimulante_fisicas";
 const ETIQUETA_ULTRA = "Bajo Ultra Estimulante";
 const NOTA_ULTRA =
-  "30 minutos desde la dosis. Al terminar: 2 de fatiga y −1 en tiradas mentales durante una hora (a mano).";
+  "30 minutos desde la dosis. Al terminar, el bajón (2 de fatiga y −1 en tiradas mentales durante una hora) desde el estado «Bajo Ultra Estimulante».";
 
 // Origen: un estado («estar bajo sus efectos»), no la dosis de esta ficha. La casilla sale en
 // cualquier ficha, tenga o no el fármaco, así que "te afecta" no la lista (lo general).
-// TODO(revisar): no existe un estado «Bajo Ultra Estimulante» en el catálogo de estados; el id
-// es solo el de la casilla. Opción conservadora: tipo "estado" para que no cuente como ítem.
+// El estado «Bajo Ultra Estimulante» (fa-03) es solo el recordatorio y no marca la casilla (td-14);
+// el id de aquí es el de la casilla. Tipo "estado" para que no cuente como ítem.
 const ORIGEN_ULTRA: OrigenAporte = { tipo: "estado", id: "farmaco_ultra_estimulante", label: ETIQUETA_ULTRA };
 
 const CASILLAS_ULTRA_ESTIMULANTE: CondicionTirada[] = [
