@@ -74,7 +74,7 @@ describe("Brazo Biónico: Fuerza y Agilidad por nivel y modelo", () => {
     assert.equal(valores(conBrazo(ficha({ agilidad: -1 }), 1)).agilidad, -2);
   });
 
-  test("nivel 2: Fuerza +1 con tope 5, la misma Agilidad, blindaje 3", () => {
+  test("nivel 2: Fuerza +1 con tope 5 (sin bajar de la tuya), la misma Agilidad, blindaje 3", () => {
     assert.deepEqual(valores(conBrazo(ficha({ fuerza: 2, agilidad: 3 }), 2)), {
       fuerza: 3,
       agilidad: 3,
@@ -84,8 +84,8 @@ describe("Brazo Biónico: Fuerza y Agilidad por nivel y modelo", () => {
     });
     assert.equal(valores(conBrazo(ficha({ fuerza: 4 }), 2)).fuerza, 5);
     assert.equal(valores(conBrazo(ficha({ fuerza: 5 }), 2)).fuerza, 5);
-    // La base ya pasa el tope: vale el tope ("con límite máximo"), aunque sea menos.
-    assert.equal(valores(conBrazo(ficha({ fuerza: 6 }), 2)).fuerza, 5);
+    // Sync Drive 2026-11-14 (M2.1): el tope limita el bono, nunca baja de tu atributo. Antes, 5.
+    assert.equal(valores(conBrazo(ficha({ fuerza: 6 }), 2)).fuerza, 6);
   });
 
   test("nivel 3: Fuerte (+2, tope 7; blindaje 6) y Ágil (como el 2 y Agilidad +1, tope 5)", () => {
@@ -106,7 +106,7 @@ describe("Brazo Biónico: Fuerza y Agilidad por nivel y modelo", () => {
     });
     assert.equal(valores(conBrazo(ficha({ fuerza: 5, agilidad: 5 }), 3, "agil")).fuerza, 5);
     assert.equal(valores(conBrazo(ficha({ fuerza: 5, agilidad: 5 }), 3, "agil")).agilidad, 5);
-    assert.equal(valores(conBrazo(ficha({ agilidad: 6 }), 3, "agil")).agilidad, 5);
+    assert.equal(valores(conBrazo(ficha({ agilidad: 6 }), 3, "agil")).agilidad, 6);
   });
 
   test("nivel 4: Fuerte, Equilibrado y Ágil", () => {
@@ -118,7 +118,7 @@ describe("Brazo Biónico: Fuerza y Agilidad por nivel y modelo", () => {
     assert.equal(valores(conBrazo(alta, 4, "fuerte")).fuerza, 10);
     assert.equal(valores(conBrazo(alta, 4, "equilibrado")).fuerza, 7);
     assert.equal(valores(conBrazo(alta, 4, "equilibrado")).agilidad, 6);
-    assert.equal(valores(conBrazo(alta, 4, "agil")).fuerza, 5);
+    assert.equal(valores(conBrazo(alta, 4, "agil")).fuerza, 6);
     assert.equal(valores(conBrazo(alta, 4, "agil")).agilidad, 8);
   });
 
@@ -199,11 +199,12 @@ describe("Brazo Biónico: casilla «Con el brazo biónico»", () => {
     assert.equal(montar(s, t, false).danio.categoria, null);
   });
 
-  test("el daño baja si la Fuerza del brazo es menor (tope del nivel 2)", () => {
+  // Sync Drive 2026-11-14 (M2.1): antes el tope del nivel 2 dejaba el brazo en 5 y el daño bajaba 1.
+  test("el tope no baja la Fuerza del brazo por debajo de la tuya: el daño no cambia", () => {
     const s = con(conBrazo(ficha({ fuerza: 6, agilidad: 0 }), 2), "corta_tonfa_porra");
     const t = fila(s, "Golpear con Tonfa o Porra")!;
     const m = montar(s, t, true);
-    assert.deepEqual(m.danio.ajustes, [{ valor: -1, fuente: "Brazo Biónico 2: Fuerza 5 (tuya 6)" }]);
+    assert.deepEqual(m.danio.ajustes, []);
     // Un arma, no pelea: el nivel 2 no la vuelve letal.
     assert.equal(m.danio.categoria, null);
   });

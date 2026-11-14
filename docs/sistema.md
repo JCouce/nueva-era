@@ -2302,8 +2302,9 @@ sobreesfuerzo.
   - **Atributos del brazo:** base = Fuerza y Agilidad **permanentes** del usuario (comprado +
     especie + aumentos permanentes; sin estados ni activables: la misma base que los requisitos
     de dote) más el +N a la Fuerza del Exoesqueleto, que se apila (usuario, 2026-10-24), y
-    encima el delta con su tope. Si la base ya pasa el tope, vale el tope
-    ("con límite máximo"). Nivel 1: Fuerza igual, Agilidad −1. Nivel 2: Fuerza +1 (tope 5),
+    encima el delta con su tope. **El tope limita el bono, nunca baja el brazo por debajo de tu
+    atributo** ("máximo contabilizado"; sync Drive 2026-11-14: con Fuerza 6 el nivel 2 vale 6,
+    antes 5). Nivel 1: Fuerza igual, Agilidad −1. Nivel 2: Fuerza +1 (tope 5),
     blindaje 3. Nivel 3 Fuerte: Fuerza +2 (tope 7), blindaje 6; Ágil: como el 2 y Agilidad +1
     (tope 5), blindaje 3. Nivel 4 Fuerte: Fuerza +4 (tope 10), blindaje 8; Equilibrado: Fuerza
     +2 (tope 7), Agilidad +2 (tope 6), blindaje 6; Ágil: Fuerza +1 (tope 5), Agilidad +3 (tope
@@ -2400,8 +2401,10 @@ sobreesfuerzo.
 - ~~**Neuroprótesis Simpática 4**: si "elimina por completo penalizadores por heridas o fatiga"
   quita también la media velocidad y la carga del umbral.~~ Sí; las de «reducen en 1», no
   (usuario, 2026-11-13, td-10; §14.8).
-- **Brazo Biónico, "con límite máximo"**: si tu Fuerza o Agilidad ya pasa el tope del modelo,
-  ¿el brazo vale el tope (menos que tú) o al menos lo tuyo? La app usa el tope.
+- ~~**Brazo Biónico, "con límite máximo"**: si tu Fuerza o Agilidad ya pasa el tope del modelo,
+  ¿el brazo vale el tope (menos que tú) o al menos lo tuyo? La app usa el tope.~~ **Cerrada por
+  la foto del 2026-11-14**: al menos lo tuyo («el aumento de fuerza del brazo biónico no se
+  contabiliza y se iguala a la del usuario»); el tope solo limita el bono.
 - **Brazo Biónico, arma incorporada**: ¿se puede incorporar un escudo de una mano? La app no lo
   deja (no cabe "en su interior"; usuario, 2026-10-22), pero bloquear con él sí usa el brazo.
 

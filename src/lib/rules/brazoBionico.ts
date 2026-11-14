@@ -23,7 +23,9 @@ import type { OrigenAporte } from "./origen";
 export const ID_CASILLA_BRAZO = "brazo_bionico";
 export const ID_BLOQUEAR_BRAZO = "aumentos_bloquear_brazo";
 
-// "+N sobre la del usuario con límite máximo de T": si la base ya pasa el tope, vale el tope.
+// "+N sobre la del usuario con máximo contabilizado de T": el tope limita el bono, nunca baja
+// el brazo por debajo de tu atributo (sync Drive 2026-11-14, M2.1: con Fuerza 6, el nivel 2 vale
+// 6, no 5).
 export type AtributoDeExtremidad = { delta: number; tope?: number };
 
 // Lo que trae un nivel o un modelo del brazo. `blindaje`: solo protege el golpe que se bloquea
@@ -40,7 +42,7 @@ export type ExtremidadBionica = {
 
 export function valorDeExtremidad(base: number, a: AtributoDeExtremidad): number {
   const valor = base + a.delta;
-  return a.tope === undefined ? valor : Math.min(valor, a.tope);
+  return a.tope === undefined ? valor : Math.max(base, Math.min(valor, a.tope));
 }
 
 type ExtremidadEquipada = { pieza: PiezaEquipada; nivel: number; fuente: string; extremidad: ExtremidadBionica };

@@ -1647,7 +1647,7 @@ export const IMPLANTES: Implante[] = [
         rareza: "Poco Habitual",
         coste: 25000,
         detalle: [
-          "La fuerza del brazo es un punto superior a la del usuario pero con un límite máximo de 5 en su puntuación, su agilidad es idéntica a la del usuario.",
+          "La fuerza del brazo es un punto superior a la del usuario salvo en caso de que la fuerza del usuario sea de 5 o más, en tales circunstancias el aumento de fuerza del brazo biónico no se contabiliza y se iguala a la del usuario. Su agilidad es idéntica a la del usuario.",
           "El brazo biónico de segundo nivel tiene un blindaje de 3 puntos y se puede utilizar como arma para bloquear. Además causa daño letal en sus ataques de pelea.",
         ],
         modificadores: [],
@@ -1674,14 +1674,14 @@ export const IMPLANTES: Implante[] = [
           {
             id: "fuerte",
             label: "Modelo Fuerte",
-            detalle: ["+2 a puntuación de fuerza sobre la del usuario con límite máximo de 7, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 6 puntos."],
+            detalle: ["+2 a puntuación de fuerza que se contabiliza hasta un máximo de 7, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 6 puntos."],
             extremidad: { fuerza: { delta: 2, tope: 7 }, agilidad: { delta: 0 }, blindaje: 6, bloquea: true, peleaLetal: true },
           },
           // "Como el nivel 2": su Fuerza (+1, tope 5) y su blindaje (3), más la Agilidad (usuario, 2026-10-22).
           {
             id: "agil",
             label: "Modelo Ágil",
-            detalle: ["Como el nivel 2 pero con un aumento de +1 en la agilidad sobre el usuario con límite de 5."],
+            detalle: ["Funciona como el brazo de nivel 2 pero con un aumento de +1 en la agilidad sobre la del usuario con máximo contabilizado de hasta 5."],
             extremidad: { fuerza: { delta: 1, tope: 5 }, agilidad: { delta: 1, tope: 5 }, blindaje: 3, bloquea: true, peleaLetal: true },
           },
         ],
@@ -1702,19 +1702,19 @@ export const IMPLANTES: Implante[] = [
           {
             id: "fuerte",
             label: "Modelo Fuerte",
-            detalle: ["+4 a puntuación de fuerza sobre la del usuario con límite máximo de 10, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 8 puntos."],
+            detalle: ["+4 a puntuación de fuerza que se contabiliza hasta un máximo de 10, la agilidad es idéntica a la del usuario. El modelo fuerte tiene un blindaje de 8 puntos."],
             extremidad: { fuerza: { delta: 4, tope: 10 }, agilidad: { delta: 0 }, blindaje: 8, bloquea: true, peleaLetal: true },
           },
           {
             id: "equilibrado",
             label: "Modelo Equilibrado",
-            detalle: ["+2 a puntuación de fuerza sobre la del usuario con límite de 7, la agilidad es de +2 en la agilidad sobre el usuario con límite de 6. El modelo equilibrado tiene un blindaje de 6 puntos."],
+            detalle: ["+2 a puntuación de fuerza con máximo contabilizado de hasta 7, la agilidad es de +2 en la agilidad sobre el usuario con máximo contabilizado de hasta 6. El modelo equilibrado tiene un blindaje de 6 puntos."],
             extremidad: { fuerza: { delta: 2, tope: 7 }, agilidad: { delta: 2, tope: 6 }, blindaje: 6, bloquea: true, peleaLetal: true },
           },
           {
             id: "agil",
             label: "Modelo Ágil",
-            detalle: ["La fuerza del brazo es +1 punto superior a la del usuario pero con límite de 5, aumento de +3 en la agilidad sobre el usuario con límite de 8. Su puntuación de blindaje es de 3 puntos."],
+            detalle: ["La fuerza del brazo es +1 punto superior a la del usuario pero con máximo contabilizado de 5, aumento de +3 en la agilidad sobre el usuario con máximo contabilizado de 8. Su puntuación de blindaje es de 3 puntos."],
             extremidad: { fuerza: { delta: 1, tope: 5 }, agilidad: { delta: 3, tope: 8 }, blindaje: 3, bloquea: true, peleaLetal: true },
           },
         ],
