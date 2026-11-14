@@ -19,6 +19,9 @@ import { CATEGORIAS_DANIO, type CategoriaDanio } from "./danio";
 import type { UmbralFatiga } from "./estados";
 import type { ConsecuenciaPropia } from "./consecuenciasPropias";
 import { estadoPorId } from "../catalog/estados";
+import { TIPOS_DANIO } from "../catalog/tiposDanio";
+
+const TIPOS_DANIO_IDS = TIPOS_DANIO.map((t) => t.id) as [(typeof TIPOS_DANIO)[number]["id"], ...(typeof TIPOS_DANIO)[number]["id"][]];
 
 // «Exhausto» empeora la tabla (ps-02); fatigado o normal usan la base.
 export const UMBRALES_SOBREESFUERZO = ["base", "exhausto"] as const;
@@ -35,9 +38,13 @@ const estadoSobreesfuerzoSchema = z.strictObject({
 });
 
 // Lo que te pasa en una casilla de la tabla. `muerte`: muerte cerebral automática (fracaso
-// crítico del implante 1 y 2 estando exhausto); la app no la aplica, la avisa.
+// crítico del implante 1 y 2 estando exhausto); la app no la aplica, la avisa. `danio.tipo`: el
+// tipo de daño, si la fuente lo dice (Resonancia Métrica: mental, sync Drive 2026-11-14). No
+// cambia cómo se aplica: el sobreesfuerzo ya entra sin blindaje.
 export const resultadoSobreesfuerzoSchema = z.strictObject({
-  danio: z.strictObject({ valor: z.number().int().min(1), categoria: z.enum(CATEGORIAS_DANIO) }).optional(),
+  danio: z
+    .strictObject({ valor: z.number().int().min(1), categoria: z.enum(CATEGORIAS_DANIO), tipo: z.enum(TIPOS_DANIO_IDS).optional() })
+    .optional(),
   estados: z.array(estadoSobreesfuerzoSchema),
   muerte: z.literal(true).optional(),
 });
@@ -173,13 +180,15 @@ export function libraPorMoneda(d2: number): boolean {
 
 const ETIQUETA_CATEGORIA: Record<CategoriaDanio, string> = { noLetal: "no letal", letal: "letal", grave: "grave" };
 
+const etiquetaTipo = (tipo: string) => TIPOS_DANIO.find((t) => t.id === tipo)?.label.toLowerCase() ?? tipo;
+
 const turnosDe = (e: EstadoSobreesfuerzo, nivel: number) => (e.turnos === "nivelPoder" ? nivel : e.turnos);
 
 // «1 letal y Aturdido 1 turno», para la tabla del panel y las opciones a elegir.
 export function textoResultadoSobreesfuerzo(r: ResultadoSobreesfuerzo, nivel: number): string {
   if (r.muerte) return "Muerte cerebral automática";
   const partes = [
-    ...(r.danio ? [`${r.danio.valor} de daño ${ETIQUETA_CATEGORIA[r.danio.categoria]}`] : []),
+    ...(r.danio ? [`${r.danio.valor} de daño ${ETIQUETA_CATEGORIA[r.danio.categoria]}${r.danio.tipo ? ` (${etiquetaTipo(r.danio.tipo)})` : ""}`] : []),
     ...r.estados.map((e) => {
       const t = turnosDe(e, nivel);
       return `${estadoPorId(e.estadoId)?.label ?? e.estadoId} ${t} ${t === 1 ? "turno" : "turnos"}`;
@@ -193,7 +202,7 @@ export function textoResultadoSobreesfuerzo(r: ResultadoSobreesfuerzo, nivel: nu
 export function consecuenciaDeSobreesfuerzo(r: ResultadoSobreesfuerzo, nivel: number, fuente: string): ConsecuenciaPropia {
   return {
     texto: r.muerte ? `Sobreesfuerzo (${fuente}): muerte cerebral automática. Avisa al máster.` : `Sobreesfuerzo (${fuente})`,
-    ...(r.danio && { danio: r.danio }),
+    ...(r.danio && { danio: { valor: r.danio.valor, categoria: r.danio.categoria } }),
     estados: r.estados.map((e) => ({ estadoId: e.estadoId, gradoId: e.gradoId, turnos: turnosDe(e, nivel) })),
   };
 }

@@ -211,6 +211,35 @@ describe("usar un poder (ps-01)", () => {
   });
 });
 
+// Sync Drive 2026-11-14: el daño del sobreesfuerzo del implante es mental.
+describe("Resonancia Métrica: el daño del sobreesfuerzo es mental", () => {
+  test("el fallo del implante lleva el tipo mental, en el resultado y en su texto; el Maolher no", () => {
+    for (const nivel of [1, 2, 3, 4]) {
+      const f = resolver(ficha({ especieId: "humano", ...irm(nivel) }));
+      for (const umbral of ["fatigado", "exhausto"] as const) {
+        const uso = sobreesfuerzoDeUso(f.sobreesfuerzo, 5, umbral)!;
+        for (const grado of ["fracaso", "fracasoCritico"] as const) {
+          for (const r of uso.fallos[grado].casilla.filter((x) => x.danio)) {
+            assert.equal(r.danio?.tipo, "mental", `nivel ${nivel} ${umbral} ${grado}`);
+            assert.match(textoResultadoSobreesfuerzo(r, 5), /de daño (no letal|letal|grave) \(mental\)/);
+          }
+        }
+      }
+    }
+    // A través del motor: la tirada del sobreesfuerzo fallada da opciones con daño mental.
+    const f1 = resolver(ficha({ especieId: "humano", ...irm(1) }));
+    const t = tirarSobreesfuerzo(f1, sobreesfuerzoDeUso(f1.sobreesfuerzo, 3, "normal")!, 1);
+    assert.ok(t.grado === "fracaso" || t.grado === "fracasoCritico");
+    assert.equal(t.opciones[0].danio?.tipo, "mental");
+    // Lo que aplica el servidor no cambia de forma: valor y categoría.
+    const d = t.opciones[0].danio!;
+    assert.deepEqual(consecuenciaDeSobreesfuerzo(t.opciones[0], 3, "IRM").danio, { valor: d.valor, categoria: d.categoria });
+    const maolher = resolver(ficha(MAOLHER));
+    const usoM = sobreesfuerzoDeUso(maolher.sobreesfuerzo, 2, "normal")!;
+    assert.equal(usoM.fallos.fracaso.casilla[0].danio?.tipo, undefined);
+  });
+});
+
 describe("la salvación y el fallo", () => {
   const f = resolver(ficha(MAOLHER));
   const uso = sobreesfuerzoDeUso(f.sobreesfuerzo, 2, "normal")!;

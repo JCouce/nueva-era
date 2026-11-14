@@ -57,6 +57,10 @@ export const SOBREESFUERZO_ARIANYI: SobreesfuerzoDeclarado = {
   tabla: TABLA_ARIANYI,
 };
 
+// Implante de Resonancia Métrica: su daño es mental (sync Drive 2026-11-14: «daño letal
+// (mental)», «el daño mental se mitiga»), en todas las casillas.
+const mental = (valor: number, categoria: CategoriaDanio) => ({ ...danio(valor, categoria), tipo: "mental" as const });
+
 // Implante de Resonancia Métrica. Dificultad 6 + nivel en los niveles 1–3 (au-05: solo el 4 la
 // «baja» a 4 + nivel). TODO(revisar): el aturdimiento sin duración, 1 turno; el fracaso crítico
 // exhausto del nivel 3 «escala a daño grave» y conserva el aturdido.
@@ -66,8 +70,8 @@ export const SOBREESFUERZO_IRM: Record<1 | 2 | 3 | 4, SobreesfuerzoDeclarado> = 
     desdeNivel: 3,
     inmuneHastaNivel: 0,
     tabla: {
-      base: { fracaso: [r(danio(1, "letal"))], fracasoCritico: [r(danio(1, "grave"), ATURDIDO_1)] },
-      exhausto: { fracaso: [r(danio(1, "grave"))], fracasoCritico: [MUERTE] },
+      base: { fracaso: [r(mental(1, "letal"))], fracasoCritico: [r(mental(1, "grave"), ATURDIDO_1)] },
+      exhausto: { fracaso: [r(mental(1, "grave"))], fracasoCritico: [MUERTE] },
     },
   },
   2: {
@@ -75,8 +79,8 @@ export const SOBREESFUERZO_IRM: Record<1 | 2 | 3 | 4, SobreesfuerzoDeclarado> = 
     desdeNivel: 4,
     inmuneHastaNivel: 0,
     tabla: {
-      base: { fracaso: [r(danio(1, "noLetal"))], fracasoCritico: [r(danio(1, "grave"), ATURDIDO_1)] },
-      exhausto: { fracaso: [r(danio(1, "letal"))], fracasoCritico: [MUERTE] },
+      base: { fracaso: [r(mental(1, "noLetal"))], fracasoCritico: [r(mental(1, "grave"), ATURDIDO_1)] },
+      exhausto: { fracaso: [r(mental(1, "letal"))], fracasoCritico: [MUERTE] },
     },
   },
   3: {
@@ -84,8 +88,8 @@ export const SOBREESFUERZO_IRM: Record<1 | 2 | 3 | 4, SobreesfuerzoDeclarado> = 
     desdeNivel: 5,
     inmuneHastaNivel: 1,
     tabla: {
-      base: { fracaso: [r(danio(1, "noLetal"))], fracasoCritico: [r(danio(1, "letal"), ATURDIDO_1)] },
-      exhausto: { fracaso: [r(danio(1, "letal"))], fracasoCritico: [r(danio(1, "grave"), ATURDIDO_1)] },
+      base: { fracaso: [r(mental(1, "noLetal"))], fracasoCritico: [r(mental(1, "letal"), ATURDIDO_1)] },
+      exhausto: { fracaso: [r(mental(1, "letal"))], fracasoCritico: [r(mental(1, "grave"), ATURDIDO_1)] },
     },
   },
   // «Si el personaje no está en fatiga ningún nivel genera sobreesfuerzo. Durante fatiga se
@@ -95,8 +99,8 @@ export const SOBREESFUERZO_IRM: Record<1 | 2 | 3 | 4, SobreesfuerzoDeclarado> = 
     desdeNivel: null,
     inmuneHastaNivel: 2,
     tabla: {
-      base: { fracaso: [r(danio(1, "noLetal"))], fracasoCritico: [r(null, ATURDIDO_1), r(danio(1, "letal"))] },
-      exhausto: { fracaso: [r(danio(1, "letal"))], fracasoCritico: [r(danio(1, "grave"), ATURDIDO_1)] },
+      base: { fracaso: [r(mental(1, "noLetal"))], fracasoCritico: [r(null, ATURDIDO_1), r(mental(1, "letal"))] },
+      exhausto: { fracaso: [r(mental(1, "letal"))], fracasoCritico: [r(mental(1, "grave"), ATURDIDO_1)] },
     },
   },
 };

@@ -1927,6 +1927,11 @@ sobreesfuerzo.
   | Implante 3 | 5+ | 1 | 6 + nivel (au-05) |
   | Implante 4 | nunca sin fatiga | 2 o menos | 4 + nivel |
 
+  El daño del sobreesfuerzo del **Implante de Resonancia Métrica** es **mental** `[FIRME ·
+  docs/fuente/aumentos.md, sync Drive 2026-11-14]`, en todas sus casillas: el resultado lo
+  lleva como tipo (`danio.tipo`) y el texto lo dice («1 de daño letal (mental)»). No cambia
+  cómo se aplica (el sobreesfuerzo ya entra sin blindaje). Maolher y Arianyi, sin tipo.
+
   *Potencia, Maestría y Gran Maestría Psiónica*: los poderes de nivel 1, 2 o menos, 3 o menos
   no lo generan «en ningún contexto» (tampoco fatigado); vale la más alta.
 - **Tabla al fallar** (1 nivel de daño = 1; Aturdido con el grado «fracaso» y Confusión con
