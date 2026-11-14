@@ -1195,7 +1195,7 @@ Al encontrarse en combate dentro de su bioma predilecto, el personaje gana venta
 - Perspicacia 1 · atributo aplicado
 
 **Efecto:**
-*(Sin efecto en la fuente: la dote termina en la línea de requisito.)*
+Una vez por sesión de juego, cuando el personaje analice una pista o escena y obtenga un resultado de **éxito**, puede aplicar su perspicacia deductiva para elevarlo de manera automática a un **éxito crítico**.
 
 ### Interrogador Perspicaz
 
@@ -1411,7 +1411,8 @@ Para canalizar la energía sin lesionarse, el personaje deberá realizar de form
   *Saber es Poder* (Psiónica) no pide ninguna disciplina. Se respeta el grupo de la fuente.
 
 **Dotes incompletas**
-- **Olfato de Investigador**: coste y requisitos, pero **sin efecto**.
+- **Olfato de Investigador**: coste y requisitos, pero **sin efecto** hasta la foto del
+  2026-11-14, que lo trae.
 - Ninguna dote sin coste ni sin requisito.
 - **Movimiento Sigiloso Constante**: el efecto acaba sin punto final.
 

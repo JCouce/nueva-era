@@ -6,7 +6,8 @@ import { setPrioridad } from "./creacion";
 import { elegirEspecie } from "./especie";
 import { snapshotFromSheet, parseSnapshot } from "./aprobacion";
 import { faltaParaEnviar } from "./revision";
-import { resolverFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { resolverFicha, conExtrasDeFicha, VITALIDAD_DE_FICHA } from "./fichaResuelta";
+import { ACCIONES } from "./acciones";
 import { PUNTOS_DOTES_POR_LETRA } from "./prioridad";
 import {
   comprarDote,
@@ -66,25 +67,24 @@ describe("catálogo generado", () => {
     assert.equal(new Set(DOTES.map((d) => d.id)).size, 113);
   });
 
-  test("Olfato de Investigador no aparece en las secciones y no se compra", () => {
-    assert.equal(dotePorId("dote_olfato_de_investigador")!.visible, false);
-    assert.ok(!SECCIONES_DOTES.some((s) => s.dotes.some((d) => d.id === "dote_olfato_de_investigador")));
-    assert.equal(SECCIONES_DOTES.reduce((t, s) => t + s.dotes.length, 0), 112);
+  // di-24 superado (sync Drive 2026-11-14): la foto nueva trae su efecto, así que ya se ve y se
+  // compra (antes, oculta). Hoy todas las dotes del catálogo son visibles.
+  test("Olfato de Investigador aparece en las secciones y se compra", () => {
+    assert.equal(dotePorId("dote_olfato_de_investigador")!.visible, true);
+    assert.ok(SECCIONES_DOTES.some((s) => s.dotes.some((d) => d.id === "dote_olfato_de_investigador")));
+    assert.equal(SECCIONES_DOTES.reduce((t, s) => t + s.dotes.length, 0), 113);
     let s = conHabilidad(ficha(), "exploracion", 4, ["investigacion"]);
     s = conAtributos(s, { inteligencia: 2, percepcion: 2 });
-    assert.match(motivoNoComprable(s, { id: "dote_olfato_de_investigador" }, creacion(s)) ?? "", /no tiene efecto/);
+    assert.equal(motivoNoComprable(s, { id: "dote_olfato_de_investigador" }, creacion(s)), null);
   });
 
-  // di-24 (usuario 2026-11-14: «Nada todavía: no se puede comprar hasta que tenga efecto»). Una
-  // ficha que ya la tuviera (comprada antes de ocultarla) no rompe: se lee y no hace nada.
-  test("Olfato de Investigador ya comprada: la ficha se lee, cuenta su coste y no aporta nada", () => {
+  test("Olfato de Investigador ya comprada: la ficha se lee, cuenta su coste y pone su casilla", () => {
     let s = conHabilidad(ficha(), "exploracion", 4, ["investigacion"]);
     s = conAtributos(s, { inteligencia: 2, percepcion: 2 });
-    const sinElla = resolverFicha(s, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
     const con = { ...s, dotes: normalizarDotes([{ id: "dote_olfato_de_investigador" }]) };
     const f = resolverFicha(con, { estados: [], vitalidad: VITALIDAD_DE_FICHA });
-    assert.deepEqual(f.modificadores, sinElla.modificadores);
-    assert.deepEqual(f.textosTirada, sinElla.textosTirada);
+    const investigacion = conExtrasDeFicha(f, ACCIONES.find((a) => a.id === "investigacion")!);
+    assert.ok(investigacion.condiciones?.some((c) => c.tipo === "toggle" && c.margenCriticoExito === 0));
     assert.equal(puntosDotesGastados(con), 2);
     assert.equal(parseSheet(JSON.parse(JSON.stringify(con))).dotes.length, 1);
   });
@@ -453,8 +453,8 @@ describe("modo libre (NPC del máster, §9.4)", () => {
     assert.deepEqual(poner(s, "dote_contraataque_rapido").dotes, [{ id: "dote_contraataque_rapido" }]);
   });
 
-  test("Olfato de Investigador tampoco se pone", () => {
-    assert.match(motivoNoComprable(npc(), { id: "dote_olfato_de_investigador" }, CONTEXTO_LIBRE) ?? "", /no se puede comprar/);
+  test("Olfato de Investigador se pone (con efecto desde 2026-11-14); una inventada, no", () => {
+    assert.equal(motivoNoComprable(npc(), { id: "dote_olfato_de_investigador" }, CONTEXTO_LIBRE), null);
     assert.equal(motivoNoComprable(npc(), { id: "dote_inventada" }, CONTEXTO_LIBRE), "Dote desconocida");
   });
 

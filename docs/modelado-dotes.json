@@ -6682,8 +6682,16 @@
       "eleccion": null,
       "repetible": false,
       "sustituye": null,
-      "visible": false,
-      "efectos": [],
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "sube_grado",
+          "alcance": "analizar_pista",
+          "de": "exito",
+          "a": "critico",
+          "condicion": "Analizando una pista o escena (una vez por sesión)"
+        }
+      ],
       "candidataUX": null,
       "motor": []
     },

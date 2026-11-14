@@ -456,9 +456,15 @@ export function efectosDeDotes(
         return;
       }
       if (e.tipo === "sube_grado") {
-        // Solo fracaso → éxito (el generador no construye otro).
-        const c = e.de === "fracaso" && e.a === "exito" ? casillaPara(e, i) : null;
-        if (c) c.subeGrado = true;
+        // Fracaso → éxito (Balanceo) o éxito → crítico, que es margen 0 (Olfato de Investigador,
+        // como Gran Puntería sin casilla). El generador no construye otro.
+        if (e.de === "fracaso" && e.a === "exito") {
+          const c = casillaPara(e, i);
+          if (c) c.subeGrado = true;
+        } else if (e.de === "exito" && e.a === "critico") {
+          const c = casillaPara(e, i);
+          if (c) c.margenCriticoExito = 0;
+        }
         return;
       }
       if (e.tipo === "categoria_danio") {

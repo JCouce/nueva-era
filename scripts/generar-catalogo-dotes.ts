@@ -1177,6 +1177,8 @@ function clasificar(id: string, e: Efecto): MotorMetadata | null {
         (e.tipo === "ventaja" ||
           e.tipo === "coste" ||
           (e.tipo === "sube_grado" && e.de === "fracaso" && e.a === "exito") ||
+          // Éxito → crítico con casilla (Olfato de Investigador, sync 2026-11-14): margen 0.
+          (e.tipo === "sube_grado" && e.de === "exito" && e.a === "critico") ||
           (e.tipo === "margen_critico" && familiaDestino === null) ||
           (e.tipo === "cambia_par" &&
             familiaDestino === null &&

@@ -204,6 +204,32 @@ describe("D2d: crítico más fácil con casilla", () => {
     assert.equal(tirarCon(m, 0).critico, true);
   });
 
+  // Sync Drive 2026-11-14 (T2.M1.6): éxito → crítico con casilla al analizar una pista.
+  test("Olfato de Investigador: marcada en Investigación, el éxito sube a crítico; sin marcar, no", () => {
+    const f = resolver(ficha([{ id: "dote_olfato_de_investigador" }]));
+    const t = fija(f, "investigacion");
+    const c = casilla(t, (x) => x.margenCriticoExito !== undefined)!;
+    assert.match(c.etiqueta, /^Analizando una pista o escena \(una vez por sesión\) \(Olfato de Investigador\)$/);
+    assert.equal(c.margenCriticoExito, 0);
+    const sin = tirarCon(montar(f, t), 1);
+    assert.equal(sin.exito, true);
+    assert.equal(sin.critico, false);
+    const con = tirarCon(montar(f, t, [c.id]), 1);
+    assert.equal(con.exito, true);
+    assert.equal(con.critico, true);
+    assert.equal(tirarCon(montar(f, t, [c.id]), -1).critico, false);
+  });
+
+  test("Olfato de Investigador: también en «Interrogar» de Interrogador Perspicaz; no en otras tiradas", () => {
+    const f = resolver(ficha([{ id: "dote_olfato_de_investigador" }, { id: "dote_interrogador_perspicaz" }]));
+    const interrogar = conExtrasDeFicha(f, f.accionesDotes.tiradas.find((t) => t.id === "dotes_interrogador_perspicaz")!);
+    const c = casilla(interrogar, (x) => x.margenCriticoExito === 0)!;
+    assert.ok(c);
+    assert.equal(tirarCon(montar(f, interrogar, [c.id]), 1).critico, true);
+    assert.equal(casilla(fija(f, "social"), (x) => x.margenCriticoExito !== undefined), undefined);
+    assert.equal(casilla(fija(f, "subsistencia"), (x) => x.margenCriticoExito !== undefined), undefined);
+  });
+
   test("Especialidad Médica: la casilla de cada pareja lleva el +1 y el crítico con 5", () => {
     const f = resolver(
       ficha([

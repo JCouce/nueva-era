@@ -369,7 +369,7 @@ export function opcionesDeEleccion(
 }
 
 // Secciones de la pestaña: grupo (habilidad) y subgrupo, en el orden de la fuente.
-// Sin las no visibles (Olfato de Investigador, §9.3).
+// Sin las no visibles (hoy ninguna; Olfato de Investigador lo fue hasta la foto del 2026-11-14).
 export type SeccionDotes = { clave: string; label: string; dotes: DoteCatalogo[] };
 
 export const SECCIONES_DOTES: readonly SeccionDotes[] = (() => {

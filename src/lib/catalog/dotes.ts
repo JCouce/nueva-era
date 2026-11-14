@@ -7103,12 +7103,31 @@ export const DOTES: readonly DoteCatalogo[] = [
     "eleccion": null,
     "repetible": false,
     "sustituye": null,
-    "visible": false,
-    "texto": "*(Sin efecto en la fuente: la dote termina en la línea de requisito.)*",
-    "efectos": [],
+    "visible": true,
+    "texto": "Una vez por sesión de juego, cuando el personaje analice una pista o escena y obtenga un resultado de **éxito**, puede aplicar su perspicacia deductiva para elevarlo de manera automática a un **éxito crítico**.",
+    "efectos": [
+      {
+        "tipo": "sube_grado",
+        "alcance": "analizar_pista",
+        "de": "exito",
+        "a": "critico",
+        "condicion": "Analizando una pista o escena (una vez por sesión)",
+        "borrador": 0
+      }
+    ],
     "limite": null,
     "candidataUX": null,
-    "motor": []
+    "motor": [
+      {
+        "tipo": "resolucion",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "analizar_pista"
+        },
+        "mecanismo": "eleccion_jugador",
+        "estado": "construido"
+      }
+    ]
   },
   {
     "id": "dote_interrogador_perspicaz",
@@ -8554,8 +8573,8 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   208 efectos (198 en el borrador)
-//   construidos: 116
+//   209 efectos (199 en el borrador)
+//   construidos: 117
 //   texto: 92
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0

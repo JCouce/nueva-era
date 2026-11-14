@@ -95,6 +95,14 @@ export const DESTINOS_DOTES: Readonly<Record<string, DestinoDote>> = {
   // Descartar Teoría a Investigación; Rastreo al Paso y Bioma Predilecto a Rastreo (bonos por
   // opción de «Marcha», SELECTORES_DE_TIRADA); la ventaja de Bioma Predilecto, a Subsistencia.
   "especialidad:investigacion": tirada("investigacion"),
+  // Olfato de Investigador (sync Drive 2026-11-14): al analizar una pista, en Investigación y en
+  // «Interrogar» de Interrogador Perspicaz («puede aplicar su uso en estos interrogatorios»):
+  // las tiradas que nombran Investigación.
+  analizar_pista: {
+    tipo: "tirada",
+    alcance: { tipo: "especialidad", especialidades: ["investigacion"] },
+    textos: ["investigacion"],
+  },
   rastreo: tirada("rastreo"),
   subsistencia: tirada("subsistencia"),
 

@@ -1078,8 +1078,12 @@ aplicar o recalcular se aplica en la ficha; lo demás queda como texto.**
   (nivel empleado, fatiga, efectos por resultado).
 - **Dotes de áreas sin construir** (aumentos genéticos, biónica): se pueden comprar ya; su
   efecto es texto hasta que exista el área.
-- ***Olfato de Investigador*** no tiene efecto en la fuente: no aparece ni se puede comprar hasta
-  que Murillo lo escriba `[FIRME · cuestionario de cierre di-24, usuario 2026-11-14]`.
+- ***Olfato de Investigador*** `[FIRME · DOTES 2026-11-14]` (antes sin efecto y oculta, di-24): la
+  foto del 2026-11-14 trae su efecto y se puede comprar. Casilla «Analizando una pista o escena
+  (una vez por sesión)» en las tiradas que nombran Investigación (Investigación e «Interrogar»
+  de *Interrogador Perspicaz*): marcada, el éxito sube a crítico (margen 0, como *Gran
+  Puntería* en Apuntar pero con casilla). El «una vez por sesión» es texto: la app no mide
+  sesiones.
 - **Sobreesfuerzo** (*Potencia/Maestría/Gran Maestría Psiónica*, *Saber es Poder*)
   `[FIRME · cuestionario de cierre ps-01, ps-03, ps-04, usuario 2026-11-13]`: construidas en T6a
   (§10.7). Su efecto es general (todos los poderes del nivel indicado), no de una disciplina.
@@ -1262,8 +1266,8 @@ arriba; 0 pendientes de D2d.
 *En la app (2026-10-15, tarea "Dotes para los NPC"):* pestaña Dotes del editor de NPC,
 modo libre (`CONTEXTO_LIBRE`, `rules/dotes.ts`). Se ven los requisitos (✓/✗) pero no
 bloquean, no hay pool, XP ni marca de requisito roto, y se quita siempre (también una que
-es requisito de otra). Sí se mantiene lo que no es requisito: Olfato de Investigador
-oculta, elección obligatoria y repetibles. *Crítico Mejorado*: las especialidades de arma
+es requisito de otra). Sí se mantiene lo que no es requisito: dotes ocultas (`visible: false`;
+hoy ninguna, Olfato de Investigador lo fue hasta 2026-11-14), elección obligatoria y repetibles. *Crítico Mejorado*: las especialidades de arma
 que tenga el NPC, en cualquier habilidad (S65).
 
 ### 9.5 Lecturas de la prosa `[FIRME · usuario 2026-10-15, Preguntas de Dotes]`
@@ -1322,7 +1326,7 @@ o eran texto. Decidido:
   `coste` y `fuerza_entera` con la condición «Disparo poderoso» y filtro de arma `mediaFuerza`.
 
 ### 9.6 Pendiente de Murillo
-Efecto de *Olfato de Investigador*; mejoradas sin la
+Mejoradas sin la
 básica (lo pregunta el usuario). No se siembran en `/preguntas` por ahora.
 
 ## 10. Psiónica y arquitectura cuántica `[PARCIAL · CONV-1 + CONV-2 + EQUIP + HOJA2]`
@@ -2717,7 +2721,8 @@ transcribir — Medicina y Farmacia, Herramientas y Accesorios, y Otras Armas a 
 > - **td-04 Mangual y Cadena Armada son contundentes**: *Golpe Fatigante* vale con ellas (S67).
 > - **di-24 Olfato de Investigador**: sin efecto, **no se puede comprar hasta que lo tenga** (como
 >   ya estaba: `visible: false` en el catálogo de dotes). Una ficha que la tuviera de antes se lee
->   igual, cuenta su coste y no aporta nada.
+>   igual, cuenta su coste y no aporta nada. *Superado (sync Drive 2026-11-14): la foto nueva trae
+>   el efecto; ver §9.3.*
 > - **eq-23 Proyector de Pulso, modos adicionales.** Se eligen libremente al tirar (Murillo):
 >   selector **«Modo adicional»** en el disparo (las dos filas) y en el Aguijón, con «Ninguno» y los
 >   que abre el nivel instalado (`NivelModulo.modoAdicional`): **Flux Radiactivo** (2), el crítico es
