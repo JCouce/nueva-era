@@ -39,6 +39,8 @@ export default async function CharacterPage({
     include: {
       combatientes: {
         orderBy: { orden: "asc" },
+        // Las tiradas de la cola son para la consola del máster: ni hacen falta aquí ni las ve el jugador.
+        omit: { tiradas: true },
         include: { character: { select: { estados: true } } },
       },
     },

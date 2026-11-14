@@ -8,9 +8,10 @@
 // consola interactiva, no formularios sueltos, y ahí conviene poder
 // mostrarle al máster por qué falló una acción.
 import { refresh, revalidatePath } from "next/cache";
+import type { Prisma } from "@/generated/prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireUser, canAdjustCombatiente } from "@/lib/auth-helpers";
+import { requireUser, canAdjustCombatiente, canEditCharacter } from "@/lib/auth-helpers";
 import {
   ajustarDanioVital,
   danioDeFoto,
@@ -34,6 +35,12 @@ import {
   estadosPropiosDeUso,
   modificadoresActivos,
   nivelesDePsionica,
+  anadirTirada,
+  anotarDanioTirada,
+  danioTiradaSchema,
+  leerTiradasCombate,
+  tiradaNuevaSchema,
+  type TiradaCombate,
   type CategoriaDanio,
   type DuracionEstado,
   type InmuneAlAplicar,
@@ -667,4 +674,109 @@ export async function estadoDePoderNpcAction(
     inmune.length > 0 ? `Es inmune a ${inmune.join(" y ")}: no se le pone.` : null,
   ];
   return { ok: true, mensaje: partes.filter(Boolean).join(" ") };
+}
+
+// --- Tiradas de cada combatiente, para la consola (rules/tiradasCombate.ts) ---
+//
+// Las manda la pestaña Acciones al tirar, en segundo plano: si algo falla aquí, la tirada en el
+// móvil sigue igual. Solo se guarda con un combate EN_CURSO en el que esté el combatiente; si no
+// lo hay, no se hace nada y no es un error. La ronda la pone el servidor, nunca el cliente.
+// Jugador: por su characterId (canEditCharacter), dentro del combate en curso. NPC: solo el
+// máster, por la id de su fila.
+const destinoTiradaSchema = z.discriminatedUnion("tipo", [
+  z.object({ tipo: z.literal("jugador"), characterId: z.string().min(1).max(60) }),
+  z.object({ tipo: z.literal("npc"), combatienteId: z.string().min(1).max(60) }),
+]);
+export type DestinoTirada = z.infer<typeof destinoTiradaSchema>;
+
+type FilaDeTiradas = { id: string; tiradas: Prisma.JsonValue; combate: { ronda: number } };
+
+async function filaDeTiradas(destino: DestinoTirada): Promise<FilaDeTiradas | null> {
+  const user = await requireUser();
+  const select = { id: true, tiradas: true, combate: { select: { ronda: true } } } as const;
+  if (destino.tipo === "npc") {
+    if (user.role !== "MASTER") return null;
+    return prisma.combatiente.findFirst({
+      where: { id: destino.combatienteId, characterId: null, combate: { estado: "EN_CURSO" } },
+      select,
+    });
+  }
+  const character = await prisma.character.findUnique({
+    where: { id: destino.characterId },
+    select: { ownerId: true, deletedAt: true },
+  });
+  if (!character || !canEditCharacter(user, character)) return null;
+  // Una fila derrotada puede convivir con la nueva si se le volvió a meter: la activa primero.
+  return prisma.combatiente.findFirst({
+    where: { characterId: destino.characterId, combate: { estado: "EN_CURSO" } },
+    orderBy: [{ derrotado: "asc" }, { createdAt: "desc" }],
+    select,
+  });
+}
+
+class TiradasCambiadas extends Error {}
+
+// Leer, cambiar y escribir condicionado a que el Json siga siendo el leído (como escribirFicha):
+// dos tiradas seguidas del mismo combatiente no se pisan. Se reintenta con lo nuevo.
+async function cambiarTiradas(
+  destino: DestinoTirada,
+  cambio: (lista: TiradaCombate[], ronda: number) => TiradaCombate[],
+): Promise<string | null> {
+  for (let intento = 1; ; intento++) {
+    const fila = await filaDeTiradas(destino);
+    if (!fila) return null;
+    const antes = leerTiradasCombate(fila.tiradas);
+    const despues = cambio(antes, fila.combate.ronda);
+    if (despues === antes) return fila.id;
+    const r = await prisma.combatiente.updateMany({
+      where: { id: fila.id, tiradas: { equals: fila.tiradas as Prisma.InputJsonValue } },
+      data: { tiradas: despues },
+    });
+    if (r.count > 0) return fila.id;
+    if (intento >= 3) throw new TiradasCambiadas();
+  }
+}
+
+export async function registrarTiradaAction(destino: unknown, tirada: unknown): Promise<CombateResult> {
+  const d = destinoTiradaSchema.safeParse(destino);
+  const t = tiradaNuevaSchema.safeParse(tirada);
+  if (!d.success || !t.success) return { ok: false, error: "Datos no válidos" };
+  try {
+    await cambiarTiradas(d.data, (lista, ronda) => anadirTirada(lista, t.data, ronda, Date.now()));
+  } catch (e) {
+    if (e instanceof TiradasCambiadas) return { ok: false, error: "No se pudo apuntar la tirada." };
+    throw e;
+  }
+  // La consola del máster la recoge con su polling; si la tira el máster (NPC), ya.
+  if (d.data.tipo === "npc") refresh();
+  return { ok: true };
+}
+
+export async function anotarDanioTiradaAction(destino: unknown, id: unknown, danio: unknown): Promise<CombateResult> {
+  const d = destinoTiradaSchema.safeParse(destino);
+  const i = z.string().min(1).max(64).safeParse(id);
+  const x = danioTiradaSchema.safeParse(danio);
+  if (!d.success || !i.success || !x.success) return { ok: false, error: "Datos no válidos" };
+  try {
+    await cambiarTiradas(d.data, (lista) => anotarDanioTirada(lista, i.data, x.data));
+  } catch (e) {
+    if (e instanceof TiradasCambiadas) return { ok: false, error: "No se pudo apuntar el daño." };
+    throw e;
+  }
+  if (d.data.tipo === "npc") refresh();
+  return { ok: true };
+}
+
+// «Ver más» de la consola: todas las tiradas guardadas de esa fila en este combate. Bajo
+// demanda, para no mandar el historial entero en cada refresco del polling.
+export async function historialTiradasAction(
+  combatienteId: unknown,
+): Promise<{ ok: true; tiradas: TiradaCombate[] } | { ok: false; error: string }> {
+  const user = await requireMaster();
+  if (!user) return { ok: false, error: "Solo el máster puede ver el historial de tiradas." };
+  const id = z.string().min(1).max(60).safeParse(combatienteId);
+  if (!id.success) return { ok: false, error: "Datos no válidos" };
+  const fila = await prisma.combatiente.findUnique({ where: { id: id.data }, select: { tiradas: true } });
+  if (!fila) return { ok: false, error: "Ese combatiente ya no está en la cola." };
+  return { ok: true, tiradas: leerTiradasCombate(fila.tiradas) };
 }

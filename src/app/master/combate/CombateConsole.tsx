@@ -28,6 +28,7 @@ import {
   type Sheet,
   type DanioVida,
   type AjusteUmbrales,
+  type RondaDeTiradas,
 } from "@/lib/rules";
 import { ChipEstado } from "@/components/ChipEstado";
 import { Aviso } from "@/components/mando/Aviso";
@@ -40,6 +41,7 @@ import { useAvisosMando } from "@/components/mando/useAvisosMando";
 import type { AccionesMando, ObjetivoMando } from "@/components/mando/tipos";
 import { darCreditosAction, darXpAction, deshacerRegistroAction, limpiarEstadosAction } from "../actions";
 import { NpcAccionesPanel } from "./NpcAccionesPanel";
+import { BloquesTiradas, HistorialTiradasModal } from "./TiradasCombatiente";
 import { enlaceDeCombatiente } from "@/lib/navegacionCombate";
 import { ContadorRondas, type EnCola } from "./ContadorRondas";
 import {
@@ -85,6 +87,9 @@ type CombatienteView = {
   // Combatiente-jugador siempre lo trae `null`, lee su Sheet en vivo desde
   // su propia ficha. Es lo que habilita el botón "Acciones" de la 5.5.
   sheet: Sheet | null;
+  // Sus tiradas de la ronda actual (acciones y esquivas); el historial se pide al abrir «Ver más».
+  tiradasRonda: RondaDeTiradas;
+  hayTiradasAnteriores: boolean;
 };
 
 type CombateView = {
@@ -149,6 +154,8 @@ export function CombateConsole({
   const [error, setError] = useState<string | null>(null);
   // 5.5: un panel a la vez, no un AccionesTab montado por fila.
   const [tiradasDe, setTiradasDe] = useState<CombatienteView | null>(null);
+  // «Ver más»: el historial de tiradas de una fila, por ronda.
+  const [historialDe, setHistorialDe] = useState<string | null>(null);
   const [seleccion, setSeleccion] = useState<string[]>([]);
   const [pestana, setPestana] = useState<PestanaMando>("estados");
   const [recursoVida, setRecursoVida] = useState<RecursoVital>("vida");
@@ -179,7 +186,7 @@ export function CombateConsole({
 
   const alPulsarTecla = useEffectEvent((e: KeyboardEvent) => {
     if (e.code !== "Space" || e.repeat || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-    if (focoUsaEspacio(document.activeElement) || hoja || tiradasDe) return;
+    if (focoUsaEspacio(document.activeElement) || hoja || tiradasDe || historialDe) return;
     if (!enCurso) return;
     e.preventDefault();
     siguienteTurno();
@@ -225,6 +232,7 @@ export function CombateConsole({
 
   // La fila viva (tras el polling o un ajuste de PG), no la que se abrió.
   const npcAbierto = tiradasDe ? (cola.find((c) => c.id === tiradasDe.id) ?? tiradasDe) : null;
+  const historialAbierto = historialDe ? (cola.find((c) => c.id === historialDe) ?? null) : null;
 
   const objetivos: ObjetivoMando[] = cola
     .filter((c) => seleccion.includes(c.id))
@@ -377,6 +385,7 @@ export function CombateConsole({
                 onAjustarVida={(r) => abrirVida(c, r)}
                 ejecutar={ejecutar}
                 onAbrirTiradas={setTiradasDe}
+                onVerHistorial={() => setHistorialDe(c.id)}
               />
             ))}
             {cola.length === 0 && (
@@ -495,6 +504,16 @@ export function CombateConsole({
         onDeshacer={deshacer}
         altura={enCurso ? "bottom-[calc(15.5rem+env(safe-area-inset-bottom))]" : "bottom-24"}
       />
+
+      {historialAbierto && (
+        <HistorialTiradasModal
+          combatienteId={historialAbierto.id}
+          nombre={historialAbierto.nombre}
+          rondaActual={combate.ronda}
+          actual={historialAbierto.tiradasRonda}
+          onCerrar={() => setHistorialDe(null)}
+        />
+      )}
 
       {npcAbierto && npcAbierto.sheet && (
         <NpcAccionesPanel
@@ -680,6 +699,7 @@ function FilaCola({
   onAjustarVida,
   ejecutar,
   onAbrirTiradas,
+  onVerHistorial,
 }: {
   c: CombatienteView;
   elegido: boolean;
@@ -693,6 +713,7 @@ function FilaCola({
   onAjustarVida: (recurso: RecursoVital) => void;
   ejecutar: (accion: () => Promise<CombateResult>) => void;
   onAbrirTiradas: (c: CombatienteView) => void;
+  onVerHistorial: () => void;
 }) {
   const tipo = tipoDe(c);
   const borde = esTurno
@@ -771,6 +792,8 @@ function FilaCola({
           ))}
         </div>
       )}
+
+      <BloquesTiradas ronda={c.tiradasRonda} hayAnteriores={c.hayTiradasAnteriores} onVerMas={onVerHistorial} />
 
       {conControles && (
         <div className="flex flex-wrap items-center gap-1.5 border-t border-border px-2.5 py-2">

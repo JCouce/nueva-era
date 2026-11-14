@@ -157,6 +157,9 @@ model Combatiente {
   // Sale de la cola de turnos sin borrar la fila (guarda su sitio en el
   // historial de la fase 6.5).
   derrotado     Boolean      @default(false)
+  // Las tiradas que hace en este combate (rules/tiradasCombate.ts), con la ronda en que se
+  // hicieron: la consola enseña las de la ronda actual y, bajo demanda, el historial.
+  tiradas       Json         @default("[]")
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 

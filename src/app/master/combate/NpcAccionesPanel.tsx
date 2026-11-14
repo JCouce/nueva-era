@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { vidaTrasAjuste, type Sheet, type EstadoActivo, type GolpeRecibido, type OperacionEstadoDePoder, type VitalidadActual } from "@/lib/rules";
+import { vidaTrasAjuste, type DanioTirada, type Sheet, type TiradaNueva, type EstadoActivo, type GolpeRecibido, type OperacionEstadoDePoder, type VitalidadActual } from "@/lib/rules";
 import { Modal } from "@/components/Modal";
 import { AccionesTab } from "@/app/characters/[id]/_components/AccionesTab";
 import { useFichaResuelta } from "@/hooks/useFichaResuelta";
 import type { Lanzamiento } from "@/components/ResultadoTirada";
 import type { ResultadoRecibir } from "@/app/characters/[id]/_components/ResistirDanioModal";
 import { deshacerRegistroAction } from "../actions";
-import { ajustarVidaEnCombateAction, estadoDePoderNpcAction } from "./actions";
+import { ajustarVidaEnCombateAction, anotarDanioTiradaAction, estadoDePoderNpcAction, registrarTiradaAction } from "./actions";
 
 // Fase 6b, subtarea 5.5 (el motivo original de todo el rediseño del bloque
 // 5): mismo AccionesTab.tsx que ya usa el jugador, alimentado por el `sheet`
@@ -90,6 +90,12 @@ export function NpcAccionesPanel({
       },
     };
   };
+  // Sus tiradas, a su fila de la consola (por ronda). En segundo plano: si no llegan, la tirada
+  // aquí sigue igual.
+  const destino = { tipo: "npc" as const, combatienteId };
+  const tiradaHecha = (tirada: TiradaNueva) => void registrarTiradaAction(destino, tirada).catch(() => undefined);
+  const danioTirado = (id: string, danio: DanioTirada) =>
+    void anotarDanioTiradaAction(destino, id, danio).catch(() => undefined);
   const [memoria, setMemoria] = useState<
     Record<string, { dificultad: number | null; circunstancial: number }>
   >({});
@@ -118,6 +124,8 @@ export function NpcAccionesPanel({
           setMemoria={setMemoria}
           onEstadoDePoder={estadoDePoder}
           onRecibirDanio={recibirDanio}
+          onTiradaHecha={tiradaHecha}
+          onDanioTirado={danioTirado}
         />
       </div>
     </Modal>

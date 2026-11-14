@@ -1497,6 +1497,8 @@ Pausada aquí a propósito — lo que queda (clonar NPC en instancias numeradas,
 de encuentro, y el bloque 6 de brillo: niebla, selección múltiple, log, aviso de turno,
 historial) es todo azúcar sobre un MVP que ya sirve, y el bloque 6 en concreto está
 pensado para después de probarlo en mesa real, no antes.
+Hecho después (2026-11-15): las tiradas de cada combatiente, por ronda, en la consola
+(`docs/fase-6b.md` 6.6).
 
 Resumen de la forma que tomó el diseño: instancias de `Combate` con `Combatiente`s
 (jugador o NPC de catálogo — el NPC ad-hoc suelto se probó y se quitó, ver

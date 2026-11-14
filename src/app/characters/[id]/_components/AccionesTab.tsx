@@ -11,6 +11,7 @@ import {
   SIN_ELECCION,
   eleccionSinTocar,
   resolverDanio,
+  resumenDeTirada,
   resolverVuelo,
   gastoTotal,
   gastoDeDirecta,
@@ -50,6 +51,8 @@ import {
   type SeleccionPoder,
   type EfectosDeUso,
   type OperacionEstadoDePoder,
+  type TiradaNueva,
+  type DanioTirada,
   type UsoLimitado,
   type Grado,
   type SobreesfuerzoDeUso,
@@ -155,6 +158,12 @@ function grupoDeAumento(a: { id: string; efecto: { tipo: string } | null }): Gru
   if (t === "estado" || t === "vida" || /sanar|hemorragia|exanguinante|miedo|terror/.test(a.id)) return "Curación y fármacos";
   if (/combinada/.test(a.id)) return "Combate";
   return "Sensores y comunicación";
+}
+
+// crypto.randomUUID solo existe en contexto seguro: abriendo la app por la IP de la red local
+// (http) no está, y la tirada no puede romperse por eso.
+function idDeTiradaCombate(): string {
+  return globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function signo(n: number) {
@@ -699,6 +708,8 @@ export function AccionesTab({
   botonesDeChip,
   onGastarUsoLimitado,
   onMarcarFavorita,
+  onTiradaHecha,
+  onDanioTirado,
   libre = false,
   soloLectura = false,
   cabina = false,
@@ -792,6 +803,11 @@ export function AccionesTab({
   // Acciones favoritas (T-006), guardadas en sheet.favoritas. Solo lo pasa CharacterSheet: sin
   // él (NPC, combate del máster) no hay estrellas ni pestaña Favoritas.
   onMarcarFavorita?: (id: string, marcada: boolean) => void;
+  // Cada tirada hecha y su daño, para la consola del máster (rules/tiradasCombate.ts): los pasan
+  // CharacterSheet (con combate en curso) y NpcAccionesPanel. En segundo plano: si fallan, la
+  // tirada sigue igual aquí. El daño va a la misma entrada, por la id que lleva el Lanzamiento.
+  onTiradaHecha?: (tirada: TiradaNueva) => void;
+  onDanioTirado?: (tiradaId: string, danio: DanioTirada) => void;
   // NpcEditor.tsx (edición libre de máster): la tirada de Fabricar no aplica
   // — FabricarSeccion la salta y llama a onFabricar directo con éxito fijo,
   // mismo criterio que AtributosTab/HabilidadesTab con este mismo prop.
@@ -1386,6 +1402,13 @@ export function AccionesTab({
       onConsecuenciaPropia?.({ tipo: "atacar", accionId: tirada.id }, (m) => anotarPropio(tirada.id, m));
     }
     const salvacionPropia = salvacionPropiaDe(tirada, modoId);
+    // La tirada libre, con el par elegido: "Tirada libre (Reflejos + Sigilo)".
+    const label = tirada.libre ? etiquetaTiradaLibre(montada.aplicado.id, montada.habilidad?.id ?? null) : tirada.label;
+    // A la consola del máster solo van las tiradas de este modal (y su daño). TODO(revisar): las
+    // salvaciones de sobrecarga y sobreesfuerzo, la salvación propia (retroceso), Resistir daño y
+    // las acciones sin dado (Levantar escudo, grupo Defensa) no se registran.
+    const tiradaCombateId = onTiradaHecha ? idDeTiradaCombate() : undefined;
+    if (onTiradaHecha && tiradaCombateId) onTiradaHecha(resumenDeTirada(tiradaCombateId, tirada, label, r));
     setHistorial((h) =>
       [
         {
@@ -1393,8 +1416,8 @@ export function AccionesTab({
           id,
           accionId: tirada.id,
           ...(salvacionPropia && { salvacionPropia }),
-          // La tirada libre, con el par elegido: "Tirada libre (Reflejos + Sigilo)".
-          label: tirada.libre ? etiquetaTiradaLibre(montada.aplicado.id, montada.habilidad?.id ?? null) : tirada.label,
+          ...(tiradaCombateId && { tiradaCombateId }),
+          label,
           dados,
           danioInfo,
           // Lo que le pasa al objetivo si el golpe acierta (T3a): la app tira la duración de una
@@ -1427,12 +1450,14 @@ export function AccionesTab({
   };
 
   const tirarDanio = () => {
-    setHistorial((h) => {
-      const [ultimo, ...resto] = h;
-      if (!ultimo?.danioInfo || ultimo.danioInfo.base === null || ultimo.margen === null) return h;
-      const danioResuelto = resolverDanio(ultimo.danioInfo.base, ultimo.margen, ultimo.danioInfo.categoriaDanio, ultimo.danioInfo.ajuste);
-      return [{ ...ultimo, danioResuelto }, ...resto];
-    });
+    // Se resuelve con el historial a la vista (no dentro del updater) para avisar a la consola una
+    // sola vez: un updater puede correr dos veces.
+    const ultimo = historial[0];
+    if (!ultimo?.danioInfo || ultimo.danioInfo.base === null || ultimo.margen === null) return;
+    const danioResuelto = resolverDanio(ultimo.danioInfo.base, ultimo.margen, ultimo.danioInfo.categoriaDanio, ultimo.danioInfo.ajuste);
+    setHistorial((h) => h.map((x) => (x.id === ultimo.id ? { ...x, danioResuelto } : x)));
+    if (ultimo.tiradaCombateId)
+      onDanioTirado?.(ultimo.tiradaCombateId, { total: Math.max(0, Math.round(danioResuelto.total)), categoria: danioResuelto.categoria });
   };
 
   // Deja rastro en "Acciones recientes" al confirmar una AccionDirecta —

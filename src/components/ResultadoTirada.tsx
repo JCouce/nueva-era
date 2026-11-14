@@ -133,6 +133,9 @@ export type Lanzamiento = Resultado & {
   // 0/null solo para que el tipo cierre (nunca se leen: FilaHistorial los
   // ignora en cuanto ve este flag, ver AccionesTab.tsx).
   sinDado?: boolean;
+  // Id de su entrada en las tiradas del combate (rules/tiradasCombate.ts), para anotar ahí el
+  // daño cuando se tire después. Solo si la pestaña Acciones las manda a la consola.
+  tiradaCombateId?: string;
 };
 
 // Contenido de un resultado de tirada — dado, total, veredicto, daño. Lo

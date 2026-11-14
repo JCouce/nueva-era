@@ -772,3 +772,13 @@ enemigo ataque de verdad, solo llevar la cuenta de su PG a ojo. Con encuentros d
   Vibration API) o notificación push si para entonces hay PWA instalable — la pieza que
   le daría sentido de verdad a esa tarea pendiente.
 - [ ] **6.5 — Historial de combates archivados**, consultable, no se borran al terminar.
+- [x] **6.6 — Tiradas de cada combatiente en la consola** (usuario, 2026-11-15). Cada fila
+  enseña las tiradas de esa persona en la ronda actual, en dos bloques: «Tiradas» (acciones)
+  y «Esquivas» (grupo `Defensa`: la esquiva y los bloqueos). «Ver más» abre su historial en
+  este combate por ronda (R3, R2, R1…). Se guardan en `Combatiente.tiradas` (Json, las
+  últimas 150) con la ronda que pone el servidor; solo con combate EN_CURSO. Las manda la
+  pestaña Acciones al tirar (y el daño, a la misma entrada) desde la ficha del jugador y el
+  panel del NPC, en segundo plano. Motor: `rules/tiradasCombate.ts`; acciones:
+  `registrarTiradaAction`, `anotarDanioTiradaAction`, `historialTiradasAction`
+  (`master/combate/actions.ts`). La consola solo recibe la ronda actual; el historial se pide
+  al abrir «Ver más».

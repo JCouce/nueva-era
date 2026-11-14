@@ -53,6 +53,7 @@ import {
   marcarFavoritaAction,
   type SaveResult,
 } from "./actions";
+import { anotarDanioTiradaAction, registrarTiradaAction } from "@/app/master/combate/actions";
 import {
   setAtributoValue,
   setHabilidadValue,
@@ -108,12 +109,14 @@ import {
   type EstadoActivo,
 } from "@/lib/rules";
 import type {
+  DanioTirada,
   ExtraAccionAumento,
   GolpeRecibido,
   MesaDeFicha,
   OperacionConsecuenciaPropia,
   OperacionEstadoDePoder,
   Sheet,
+  TiradaNueva,
   UsoLimitado,
 } from "@/lib/rules";
 import { PersonajeTab, PanelFieldset } from "./_components/personaje/PersonajeTab";
@@ -724,6 +727,16 @@ export function CharacterSheet({
   // (page.tsx) — esto solo busca cuál de las filas es la mía para resaltar
   // turno/estados en la tira compacta.
   const miCombatiente = combate?.combatientes.find((c) => c.characterId === characterId) ?? null;
+  // Mis tiradas, a la consola del máster (por ronda), solo con combate en curso y yo en la cola.
+  // En segundo plano y sin aviso: si no llegan, la tirada aquí sigue igual. El servidor vuelve a
+  // comprobar que hay combate en curso y que la ficha es mía.
+  const onTiradaHecha = miCombatiente
+    ? (tirada: TiradaNueva) => void registrarTiradaAction({ tipo: "jugador", characterId }, tirada).catch(() => undefined)
+    : undefined;
+  const onDanioTirado = miCombatiente
+    ? (id: string, danio: DanioTirada) =>
+        void anotarDanioTiradaAction({ tipo: "jugador", characterId }, id, danio).catch(() => undefined)
+    : undefined;
   // La ficha resuelta una vez (propuesta-especies §3.1) y la misma para todas las
   // pestañas: con los estados dentro, Personaje y Acciones ven los mismos números. Los
   // estados, siempre los de la ficha: en combate no se suman los de mi fila
@@ -930,6 +943,8 @@ export function CharacterSheet({
             botonesDeChip={botonesDeChip}
             onGastarUsoLimitado={commitGastarUsoLimitado}
             onMarcarFavorita={commitMarcarFavorita}
+            onTiradaHecha={onTiradaHecha}
+            onDanioTirado={onDanioTirado}
             soloLectura={soloLectura}
             cabina={cabina}
           />
