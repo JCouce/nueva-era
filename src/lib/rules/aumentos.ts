@@ -337,11 +337,23 @@ export function devolucionAumento(sheet: Sheet, instanciaId: string): RepartoPag
 // "el aumento es parte del cuerpo, como la especie"), y no tienen techo (R7, S7): el 4
 // de creación y el 6 miran solo lo comprado. Los activables (Neuroprótesis, A5) no
 // pasan por aquí: llegarán como estado propio y no cuentan para requisitos (R3).
-// Implantes: sus niveles se acumulan como los del equipo (acumulaPorClave). Hoy ningún
-// nivel de implante trae modificadores permanentes.
+// Implantes: sus niveles se acumulan como los del equipo (acumulaPorClave).
 // Una operación con el requisito roto no da efectos (operacionesActivas).
+// `atributosNoApilanConGeneticos` (E5a, Control Sensorial: «no apilable con aumentos genéticos»):
+// el +N del implante a un atributo solo suma lo que pase de lo que ya dan las operaciones que
+// funcionan a ese atributo; si no pasa, su línea queda a 0 diciendo con qué no se suma.
 export function modificadoresDeAumentos(sheet: Pick<Sheet, "equipo">): ModificadorConFuente[] {
   const activas = operacionesActivas(sheet);
+  const deOperaciones = new Map<AtributoId, { valor: number; fuentes: string[] }>();
+  for (const pieza of sheet.equipo) {
+    const cat = aumentoPorId(pieza.catalogoId);
+    if (cat?.familia !== "operacionGenetica" || !activas.has(cat.id)) continue;
+    for (const m of cat.modificadores) {
+      if (m.tipo !== "atributo") continue;
+      const previo = deOperaciones.get(m.id) ?? { valor: 0, fuentes: [] };
+      deOperaciones.set(m.id, { valor: previo.valor + m.valor, fuentes: [...previo.fuentes, cat.label] });
+    }
+  }
   return sheet.equipo.flatMap((pieza): ModificadorConFuente[] => {
     const cat = aumentoPorId(pieza.catalogoId);
     if (!cat) return [];
@@ -354,7 +366,19 @@ export function modificadoresDeAumentos(sheet: Pick<Sheet, "equipo">): Modificad
       nivelesHasta(cat.niveles, pieza.nivel).map((n) => n.modificadores),
       claveModificador,
     );
-    return mods.map((m) => ({ ...m, origen: "aumento" as const, fuente: `${cat.label} ${pieza.nivel}`, item: origenDePieza("aumento", cat, pieza.instanciaId) }));
+    const fuente = `${cat.label} ${pieza.nivel}`;
+    const item = origenDePieza("aumento", cat, pieza.instanciaId);
+    return mods.map((m): ModificadorConFuente => {
+      const genetico = m.tipo === "atributo" && cat.atributosNoApilanConGeneticos ? deOperaciones.get(m.id) : undefined;
+      if (m.tipo !== "atributo" || !genetico) return { ...m, origen: "aumento", fuente, item };
+      return {
+        ...m,
+        valor: Math.max(0, m.valor - genetico.valor),
+        origen: "aumento",
+        fuente: `${fuente} (no se apila con ${genetico.fuentes.join(" y ")})`,
+        item,
+      };
+    });
   });
 }
 

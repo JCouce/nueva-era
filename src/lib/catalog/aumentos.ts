@@ -1,6 +1,7 @@
-// Catálogo de aumentos (docs/sistema.md §11): 26 operaciones genéticas y los 6
-// implantes cerrados. Los 5 implantes "en proceso" de docs/aumentos.md no entran
-// hasta que Murillo los cierre.
+// Catálogo de aumentos (docs/sistema.md §11): 26 operaciones genéticas y 9 implantes (los 6
+// primeros y, desde E5a del sync Drive 2026-11-14, Metabolismo Sintético, Control Anímico y Control
+// Sensorial). Chasis Osteomuscular y Módulo de Respaldo siguen "en proceso" en docs/aumentos.md
+// (después de la partida, usuario 2026-11-14).
 //
 // Escrito a mano a partir de docs/modelado-aumentos.json (ids, rareza, coste,
 // requisitos, niveles, variantes, elección y MotorMetadata) y de la prosa literal de
@@ -194,6 +195,9 @@ export type Implante = {
   // E4 (sync Drive 2026-11-14): ids de aumentos que no pueden convivir con este. Se declara en un
   // solo lado y se lee en los dos (incompatiblesCon, rules/aumentos.ts).
   incompatibleCon?: string[];
+  // E5a (Control Sensorial: «no apilable con aumentos genéticos»): sus +N a atributos no se suman
+  // a los de las operaciones genéticas que funcionan (modificadoresDeAumentos).
+  atributosNoApilanConGeneticos?: true;
   niveles: NivelImplante[];
 };
 
@@ -1501,6 +1505,12 @@ const CASILLA_INTELIGENCIA_CONTROL_ANIMICO: CondicionTirada = {
   nota: "Solo contra un efecto sugestivo. La salvación se tira con Perspicacia (Inteligencia + Percepción) en vez de con Voluntad.",
 };
 
+const MOTOR_SENSORIAL: MotorMetadata[] = [
+  { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "eleccion_jugador", estado: "construido" },
+  // −N a los penalizadores por heridas y fatiga (ajuste de umbrales).
+  { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
+];
+
 export const IMPLANTES: Implante[] = [
   {
     familia: "implante",
@@ -2362,6 +2372,60 @@ export const IMPLANTES: Implante[] = [
           { tipo: "coste", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "eleccion_jugador", estado: "construido" },
           { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_activar_control_animico" }, mecanismo: "accion_equipo", estado: "construido" },
           { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:miedo" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "construido" },
+        ],
+      },
+    ],
+  },
+  {
+    familia: "implante",
+    id: "aum_control_sensorial",
+    label: "Control Sensorial",
+    resumen: "+1 Percepción (no se apila con los genéticos), bonos contra aturdimiento, shock y sordera y menos penalizadores por heridas y fatiga.",
+    descripcion: "La fuente no trae descripción.",
+    // La fuente no lo dice: regla general de los implantes (casi todos son susceptibles de sabotaje).
+    sabotaje: true,
+    shock: "cuerpo",
+    extraible: null,
+    atributosNoApilanConGeneticos: true,
+    niveles: [
+      {
+        nivel: 1,
+        rareza: "Poco Habitual",
+        coste: 15000,
+        detalle: [
+          "El personaje adquiere un aumento de 1 en la Percepción (no apilable con aumentos genéticos) y un bonificador de +1 tiradas de salvación contra efectos de aturdimiento, shock y sordera.",
+          "Además, disminuye en 1 los penalizadores obtenidos por heridas y fatiga.",
+        ],
+        modificadores: [{ tipo: "atributo", id: "percepcion", valor: 1 }],
+        salvaciones: [{ contra: ["aturdimiento", "shock", "sordera"], bono: 1 }],
+        reduceUmbrales: [
+          { de: "heridas", valor: 1 },
+          { de: "fatiga", valor: 1 },
+        ],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
+          ...MOTOR_SENSORIAL,
+        ],
+      },
+      {
+        nivel: 2,
+        rareza: "Extraño",
+        coste: 42000,
+        detalle: [
+          "El personaje dobla el bonificador en tiradas de salvación y la disminución del penalizador por daño y fatiga, además el primer nivel ambos efectos que divide su movimiento básico dejará de hacerlo.",
+        ],
+        modificadores: [],
+        salvaciones: [{ contra: ["aturdimiento", "shock", "sordera"], bono: 2 }],
+        reduceUmbrales: [
+          { de: "heridas", valor: 2 },
+          { de: "fatiga", valor: 2 },
+        ],
+        // TODO(revisar) (S109): «además el primer nivel ambos efectos que divide su movimiento básico
+        // dejará de hacerlo» está rota en la fuente; no se interpreta (la media velocidad de los
+        // umbrales sigue igual). Solo en el detalle.
+        motor: [
+          ...MOTOR_SENSORIAL,
+          { tipo: "texto", afecta: { modo: "ninguna" }, mecanismo: null, estado: "ad_hoc" },
         ],
       },
     ],

@@ -5814,6 +5814,138 @@
           ]
         }
       ]
+    },
+    {
+      "familia": "implante",
+      "id": "aum_control_sensorial",
+      "label": "Control Sensorial",
+      "descripcion": "La fuente no trae descripción.",
+      "sabotaje": true,
+      "extraible": null,
+      "electronico": true,
+      "niveles": [
+        {
+          "nivel": 1,
+          "rareza": "Poco Habitual",
+          "coste": 15000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "atributo",
+              "id": "percepcion",
+              "valor": 1,
+              "noApila": "aumentos genéticos"
+            },
+            {
+              "tipo": "bono",
+              "alcance": "salv_fortaleza",
+              "valor": 1,
+              "condicion": "¿Contra aturdimiento, shock o sordera?"
+            },
+            {
+              "tipo": "reduce_penalizador",
+              "de": [
+                "heridas",
+                "fatiga"
+              ],
+              "valor": 1
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "todas"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_fortaleza"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "todas"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            }
+          ]
+        },
+        {
+          "nivel": 2,
+          "rareza": "Extraño",
+          "coste": 42000,
+          "sustituye": [
+            {
+              "efecto": "salvaciones +1 y reducción 1",
+              "por": "salvaciones +2 y reducción 2"
+            }
+          ],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "bono",
+              "alcance": "salv_fortaleza",
+              "valor": 2,
+              "condicion": "¿Contra aturdimiento, shock o sordera?"
+            },
+            {
+              "tipo": "reduce_penalizador",
+              "de": [
+                "heridas",
+                "fatiga"
+              ],
+              "valor": 2
+            },
+            {
+              "tipo": "texto",
+              "lugar": "ficha",
+              "texto": "«además el primer nivel ambos efectos que divide su movimiento básico dejará de hacerlo» (frase rota, sin interpretar)",
+              "condicion": null,
+              "porque": "TODO revisar"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_fortaleza"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "todas"
+              },
+              "mecanismo": "suma_derivado",
+              "estado": "construido"
+            },
+            {
+              "tipo": "texto",
+              "afecta": {
+                "modo": "ninguna"
+              },
+              "mecanismo": null,
+              "estado": "ad_hoc"
+            }
+          ]
+        }
+      ]
     }
   ],
   "extraccion": {

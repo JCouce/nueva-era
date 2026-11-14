@@ -179,3 +179,44 @@ describe("E5a · Control Anímico", () => {
     assert.match(opcion(resolver(s, [inmune]), "salv_voluntad", "miedo")?.etiqueta ?? "", /inmune/);
   });
 });
+
+const CONTROL_SENSORIAL = "aum_control_sensorial";
+const FOVEO = "aum_optimizacion_foveo_sensorial";
+
+describe("E5a · Control Sensorial", () => {
+  const conCS = (nivel: number, base = defaultSheet()) => conRecursos(con(base, CONTROL_SENSORIAL, nivel));
+
+  test("+1 a la Percepción, que no se apila con la de una operación genética", () => {
+    const base = resolver(defaultSheet()).atributos.percepcion;
+    assert.equal(resolver(conCS(1)).atributos.percepcion - base, 1);
+    assert.equal(resolver(conCS(2)).atributos.percepcion - base, 1, "el 2 no la dobla");
+    const conFoveo = con(defaultSheet(), FOVEO);
+    const f = resolver(conCS(1, conFoveo));
+    assert.equal(f.atributos.percepcion, resolver(conFoveo).atributos.percepcion);
+    const linea0 = f.modificadores.find((m) => m.tipo === "atributo" && m.fuente.startsWith("Control Sensorial"));
+    assert.equal(linea0?.valor, 0);
+    assert.match(linea0?.fuente ?? "", /no se apila con Optimización Foveo-Sensorial/);
+  });
+
+  test("salvaciones contra aturdimiento, shock y sordera: +1 en el 1, +2 en el 2", () => {
+    for (const nivel of [1, 2]) {
+      const f = resolver(conCS(nivel));
+      for (const amenaza of ["aturdimiento", "shock", "sordera"]) {
+        const m = montar(f, "salv_fortaleza", { [selector(f, "salv_fortaleza").id]: amenaza });
+        assert.deepEqual(linea(m, /Control Sensorial/).map((l) => l.valor), [nivel], `${amenaza} ${nivel}`);
+      }
+    }
+  });
+
+  test("penalizadores por heridas y fatiga: −1 en el 1, −2 en el 2, sin pasar de 0", () => {
+    const sin = montar(resolver(defaultSheet(), [], HERIDO_Y_FATIGADO), "atletismo");
+    assert.deepEqual(linea(sin, /^(Malherido|Fatigado)/).map((l) => l.valor), [-3, -1]);
+    const n1 = montar(resolver(conCS(1), [], HERIDO_Y_FATIGADO), "atletismo");
+    assert.deepEqual(linea(n1, /^Malherido/).map((l) => l.valor), [-2]);
+    assert.deepEqual(linea(n1, /^Fatigado/), []);
+    const n2 = montar(resolver(conCS(2), [], HERIDO_Y_FATIGADO), "atletismo");
+    assert.deepEqual(linea(n2, /^Malherido/).map((l) => l.valor), [-1]);
+    // La frase rota del 2 (movimiento) no se interpreta: la media velocidad sigue.
+    assert.deepEqual(resolver(conCS(2), [], HERIDO_Y_FATIGADO).umbrales.movimiento.mediaVelocidad, ["Malherido"]);
+  });
+});
