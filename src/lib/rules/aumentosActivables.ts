@@ -9,11 +9,9 @@
 //                     (sync Drive 2026-11-14; antes, +N a atributos básicos).
 //   mejora            el "en lugar de" del nivel 2: el aplicado elegido al activar (el grado del
 //                     estado) recibe este valor en vez del de `pruebas`.
-//   reducePenalizadores  −N a cada penalizador por separado, sin pasar de 0: heridas y fatiga por
-//                     el ajuste de umbrales (se suma a especie y Estabilización, A3; solo el −N de
-//                     las tiradas, td-10) y cada modificador negativo de tirada o de atributo de
-//                     cada estado (td-11), con su línea (modificadoresDeEstados). No toca lo que
-//                     pone el propio activable.
+//   reducePenalizadores  −N a los penalizadores por heridas y fatiga, sin pasar de 0, por el
+//                     ajuste de umbrales (se suma a especie y Estabilización, A3; solo el −N de las
+//                     tiradas, td-10). Los de los estados, no (sync Drive 2026-11-14; td-11 cae).
 //   salvaciones       al selector "Contra…" (aumentosTiradas.ts), como cualquier aumento.
 //   anulaPenalizadores Modificador "anulaPenalizadores" (lo resuelve montarTirada).
 //   textos            textos en tiradas mientras dura (A5b: la segunda reacción de la
@@ -52,13 +50,11 @@ export type ActivoAumento = {
 // Más que cualquier tramo de §7 (el peor es −5): el ajuste lo deja en 0 y no da línea.
 const ELIMINA_UMBRAL = 99;
 
-export type ReduccionDeEstados = { valor: number; fuente: string };
+type ReduccionDeUmbrales = { valor: number; fuente: string };
 
 export type EfectosActivables = {
   modificadores: ModificadorConFuente[];
   ajusteUmbrales: AjusteUmbrales;
-  // Para modificadoresDeEstados: −valor a cada penalizador de tirada de cada estado.
-  reduceEstados: ReduccionDeEstados | null;
   salvaciones: { fuente: string; efectos: EfectoSalvacion[]; origen: OrigenAporte }[];
   textos: TextoEnTirada[];
 };
@@ -66,7 +62,6 @@ export type EfectosActivables = {
 export const SIN_EFECTOS_ACTIVABLES: EfectosActivables = {
   modificadores: [],
   ajusteUmbrales: SIN_AJUSTE_UMBRALES,
-  reduceEstados: null,
   salvaciones: [],
   textos: [],
 };
@@ -105,7 +100,7 @@ export function efectosDeActivables(sheet: Pick<Sheet, "equipo">, estados: reado
   const modificadores: ModificadorConFuente[] = [];
   const salvaciones: EfectosActivables["salvaciones"] = [];
   const textos: TextoEnTirada[] = [];
-  let reduccion: ReduccionDeEstados | null = null;
+  let reduccion: ReduccionDeUmbrales | null = null;
   let elimina: string | null = null;
   const sustituidos = new Set(encendidos.flatMap(({ activo }) => (activo.sustituyePruebasDe ? [activo.sustituyePruebasDe] : [])));
   for (const { fuente, activo, grado, origen } of encendidos) {
@@ -130,5 +125,5 @@ export function efectosDeActivables(sheet: Pick<Sheet, "equipo">, estados: reado
   }
   const umbral = elimina ? { valor: ELIMINA_UMBRAL, fuente: elimina, elimina: true as const } : reduccion;
   const ajusteUmbrales: AjusteUmbrales = umbral ? { salud: { ...umbral }, fatiga: { ...umbral } } : SIN_AJUSTE_UMBRALES;
-  return { modificadores, ajusteUmbrales, reduceEstados: reduccion, salvaciones, textos };
+  return { modificadores, ajusteUmbrales, salvaciones, textos };
 }

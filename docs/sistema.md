@@ -2219,12 +2219,11 @@ sobreesfuerzo.
     Potencia, Reflejos y Perspicacia**, la Salvación de Reflejos incluida `[FIRME · sync Drive
     2026-11-14 + usuario, 2026-11-14]` (Modificador de tirada con alcance «aplicado», origen
     "estado"): sube la tirada, no el atributo; no toca vida, fatiga, carga, movimiento, Alerta
-    ni requisitos de dote. **−1 a cada
-    penalizador por separado, sin pasar de 0:** heridas y fatiga por el ajuste de umbrales (se
-    suma a especie y Estabilización: "Malherido (Neuroprótesis Simpática 1)" −2); cada
-    modificador negativo **de tirada** de cada estado, con su línea ("Neuroprótesis Simpática 1
-    (Aturdido)" +1). **También cada −N a un atributo de un estado** (Enfermedad, Parálisis: −2
-    a Agilidad → −1), con su línea de atributo `[FIRME · usuario 2026-11-13, td-11]`.
+    ni requisitos de dote. **−1 a los penalizadores por heridas y fatiga, sin pasar de 0**, por
+    el ajuste de umbrales (se suma a especie y Estabilización: "Malherido (Neuroprótesis
+    Simpática 1)" −2) `[FIRME · docs/fuente/aumentos.md, sync Drive 2026-11-14]`.
+    ~~También cada penalizador de tirada y cada −N a un atributo de cada estado (td-11,
+    usuario 2026-11-13).~~ Tumbado por la fuente nueva: los estados quedan enteros.
     **−1 a las salvaciones de Fortaleza
     contra enfermedad, radiación, toxinas y venenos** por el selector "Contra…", solo mientras
     está activa; ese −1 no se reduce (no es un estado).
@@ -2256,8 +2255,8 @@ sobreesfuerzo.
     al +1/+2 de la activa** (sync Drive 2026-11-14; antes, a Fuerza, Agilidad y Percepción) (no se suman; también sin la activa), con origen "estado" (fuera de los requisitos
     de dote), y **sin penalizadores por heridas ni fatiga** (el ajuste de umbrales los deja a 0
     y, como «elimina por completo», quita también la media velocidad y el recorte de carga del
-    umbral: `[FIRME · usuario 2026-11-13, td-10]`, §14.8). Los −1 de la activa a los
-    estados y el −1 de Fortaleza siguen. "No se puede volver a usar hasta un descanso", texto en
+    umbral: `[FIRME · usuario 2026-11-13, td-10]`, §14.8). El −1 de Fortaleza de la activa
+    sigue (los estados quedan enteros desde el sync Drive 2026-11-14). "No se puede volver a usar hasta un descanso", texto en
     la nota.
   - ~~**Vida al caerse un activable** y **tope de la vida con un activable puesto** (usuario,
     2026-10-22): recorte al máximo nuevo al caerse, `topesPosibles` en `parseSheet`, recorte al
@@ -2371,6 +2370,8 @@ sobreesfuerzo.
   aplica, porque no es un arma (usuario, 2026-10-22).
 - ~~**Neuroprótesis Simpática 1**: si "reducir penalizadores por estado en 1" alcanza también a
   los −N a atributos (Enfermedad, Parálisis).~~ Sí (usuario, 2026-11-13, td-11; §11.3).
+  *Tumbado por el sync Drive 2026-11-14: la Neuroprótesis ya no rebaja los estados, solo
+  heridas y fatiga.*
 - **Ojo Biónico 2 frente a 4**: el 2 es "inmune a efecto de ceguera" y el 4 "completamente
   inmune a la ceguera". ¿Cubre el 2 una ceguera física (tapar o arrancar el ojo)? La app bloquea
   la ceguera desde el 2 y el máster puede "Aplicar igualmente" (usuario, 2026-10-22).
@@ -2497,9 +2498,8 @@ sobreesfuerzo.
     esté activado. Nivel 4: es el segundo uso del nivel 3, y el +2 sustituye al +1/+2.
     **Sync Drive 2026-11-14**: costes 18 000 / 36 000 / 72 000 / 144 000; la segunda reacción del
     nivel 3 no se apila con la de otros aumentos (texto); la fuente pasa a decir «−1 a los
-    penalizadores por heridas y fatiga» (antes, «por estado»), aún `TODO(revisar)` en
-    `catalog/aumentos.ts`; y el bono, a las **tiradas** de potencia, reflejos y perspicacia
-    (construido, ver A5a).
+    penalizadores por heridas y fatiga» (antes, «por estado») y el bono, a las **tiradas** de
+    potencia, reflejos y perspicacia; los dos, construidos (ver A5a).
   - **Regulación Límbico-Prefrontal**: cualquier tirada para resistir la intimidación; +1
     aunque el efecto sea miedo y coerción a la vez. Con Matriz de Red (+2) se suma: +3.
     **Sync Drive 2026-11-14** `[FIRME · docs/fuente/aumentos.md + usuario, 2026-11-14]`: +1 a

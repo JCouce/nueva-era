@@ -361,15 +361,12 @@ export function estadoActivoCon(estadoId: string, gradoId: string, duracion: Dur
 // (lib/rules/equipo.ts): un estadoId o gradoId que ya no exista en el
 // catálogo (dato viejo, typo) se ignora sin reventar el resto del cálculo,
 // igual que equipoPorId con un catalogoId huérfano.
-// `reduccion` (Neuroprótesis activa, A5a): −valor a cada penalizador de tirada de cada estado,
-// por separado y sin pasar de 0, como una compensación con el mismo alcance detrás de él
-// ("Neuroprótesis Simpática 1 (Aturdido)"). También a cada −N a un atributo (Enfermedad,
-// Parálisis: −2 a Agilidad → −1; td-11, usuario 2026-11-13), con su línea de atributo.
-// `estabilizado` (Estabilización, P1 de psiónica): solo los de tirada, en los estados que tenía
-// al ponérselo (`cubre`), y detrás de la reducción de arriba: entre las dos no pasan de 0.
+// `estabilizado` (Estabilización, P1 de psiónica): −N a cada penalizador de tirada, en los
+// estados que tenía al ponérselo (`cubre`), como una compensación con el mismo alcance detrás de
+// él, sin pasar de 0. (La Neuroprótesis ya no rebaja los de los estados: solo heridas y fatiga,
+// sync Drive 2026-11-14; td-11 cae.)
 export function modificadoresDeEstados(
   activos: EstadoActivo[],
-  reduccion: { valor: number; fuente: string } | null = null,
   estabilizado: Estabilizacion | null = null,
 ): ModificadorConFuente[] {
   return activos.flatMap((activo): ModificadorConFuente[] => {
@@ -380,10 +377,6 @@ export function modificadoresDeEstados(
     const cubierto = estabilizado?.cubre.includes(activo.estadoId) ?? false;
     return grado.modificadores.flatMap((m): ModificadorConFuente[] => {
       const propio: ModificadorConFuente = { ...m, origen: "estado", fuente: estado.label };
-      if (m.tipo === "atributo" && m.valor < 0 && reduccion) {
-        const v = Math.min(reduccion.valor, -m.valor);
-        return [propio, { tipo: "atributo", id: m.id, valor: v, origen: "estado", fuente: `${reduccion.fuente} (${estado.label})` }];
-      }
       if (m.tipo !== "tirada" || m.valor >= 0) return [propio];
       const lineas: ModificadorConFuente[] = [propio];
       let queda = -m.valor;
@@ -393,7 +386,6 @@ export function modificadoresDeEstados(
         queda -= v;
         lineas.push({ tipo: "tirada", alcance: m.alcance, valor: v, origen: "estado", fuente: `${fuente} (${estado.label})` });
       };
-      if (reduccion) compensa(reduccion.valor, reduccion.fuente);
       if (estabilizado && cubierto) compensa(estabilizado.porEstado, estabilizado.fuente);
       return lineas;
     });

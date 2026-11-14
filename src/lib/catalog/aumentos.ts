@@ -188,9 +188,7 @@ export type Aumento = OperacionGenetica | Implante;
 const ACTIVO_NEUROPROTESIS: ActivoAumento = {
   estadoId: "aum_neuroprotesis",
   pruebas: { potencia: 1, reflejos: 1, perspicacia: 1 },
-  // TODO(revisar): la fuente nueva (sync Drive 2026-11-14) dice «reducir penalizadores por heridas
-  // y fatiga en 1»; antes, «por estado». `reducePenalizadores` sigue rebajando también los −N de
-  // los estados (td-10, td-11): decidir si eso se cae.
+  // −1 a heridas y fatiga; ya no a los estados (sync Drive 2026-11-14, td-11 cae).
   reducePenalizadores: 1,
   salvaciones: [{ contra: ["enfermedad", "radiacion", "toxinas", "venenos"], bono: -1 }],
 };
@@ -205,7 +203,7 @@ function activarNeuroprotesis(conEleccion: boolean, segundaReaccion = false): Ac
       (conEleccion
         ? "+2 a las tiradas de Potencia, Reflejos o Perspicacia (eliges al activar) y +1 a las de los otros dos"
         : "+1 a las tiradas de Potencia, Reflejos y Perspicacia") +
-      " (sube la tirada, no el atributo), −1 a cada penalizador por estado, heridas y fatiga (sin pasar de 0) y −1 a las salvaciones de Fortaleza contra enfermedad, radiación, toxinas y venenos. Dura 3 rondas, que solo corren en combate: fuera de él, desactívala a mano." +
+      " (sube la tirada, no el atributo), −1 a los penalizadores por heridas y fatiga (sin pasar de 0) y −1 a las salvaciones de Fortaleza contra enfermedad, radiación, toxinas y venenos. Dura 3 rondas, que solo corren en combate: fuera de él, desactívala a mano." +
       (segundaReaccion ? " Mientras dura, segunda reacción por ronda (nivel 3; no se apila con la de otros aumentos)." : ""),
     efecto: {
       tipo: "activar",
@@ -1855,7 +1853,7 @@ export const IMPLANTES: Implante[] = [
         rareza: "Poco Habitual",
         coste: 18000,
         detalle: [
-          "Como acción gratuita durante su turno o reacción en cualquier momento del turno, el personaje puede emplear 2 puntos de fatiga y de forma temporal adquirir un bonificador de +1 en pruebas de potencia, reflejos y perspicacia así como reducir penalizadores por estado en 1, en contrapartida mientras dure este efecto recibe un penalizador de -1 a tiradas de salvación de fortaleza contra enfermedades, radiación, toxinas y venenos. El efecto dura tres turnos.",
+          "Como acción gratuita durante su turno o reacción en cualquier momento del turno, el personaje puede emplear 2 puntos de fatiga y de forma temporal adquirir un bonificador de +1 en pruebas de potencia, reflejos y perspicacia así como reducir penalizadores por heridas y fatiga en 1, en contrapartida mientras dure este efecto recibe un penalizador de -1 a tiradas de salvación de fortaleza contra enfermedades, radiación, toxinas y venenos. El efecto dura tres turnos.",
         ],
         modificadores: [],
         // A5a: "tres turnos" = 3 rondas (R2). Las rondas solo corren en combate.

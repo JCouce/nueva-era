@@ -206,30 +206,16 @@ describe("Neuroprótesis: −1 a cada penalizador sin pasar de 0", () => {
     }
   });
 
-  test("estados: cada penalizador de tirada, con su línea; sin pasar de 0", () => {
-    // Aturdido (Fracaso crítico): −2 a la Defensa. Aturdido (Éxito): −1 a todo.
-    const aturdido = (grado: string): EstadoActivo => ({ estadoId: "aturdido", gradoId: grado, rondasRestantes: 1 });
-    const fc = montar(resolver(conNeuro(), [aturdido("fracaso_critico"), neuro()]), "defensa");
-    assert.deepEqual(linea(fc, /Aturdido/), [
-      { etiqueta: "Aturdido", valor: -2 },
-      { etiqueta: "Neuroprótesis Simpática 1 (Aturdido)", valor: 1 },
-    ]);
-    const ex = montar(resolver(conNeuro(), [aturdido("exito"), neuro()]), "atletismo");
-    assert.equal(linea(ex, /Aturdido/).reduce((t, l) => t + l.valor, 0), 0);
-  });
-
-  test("td-11: también los −N a atributos de un estado, cada uno con su línea (Parálisis −4 → −3, −1 → 0)", () => {
-    const paralisis = (grado: string): EstadoActivo => ({ estadoId: "paralisis", gradoId: grado, rondasRestantes: 1 });
+  // Sync Drive 2026-11-14: los penalizadores de los estados ya no se rebajan (td-11 cae).
+  test("los estados, enteros: ni su −N de tirada ni el de atributo", () => {
+    const aturdido: EstadoActivo = { estadoId: "aturdido", gradoId: "fracaso_critico", rondasRestantes: 1 };
+    const fc = montar(resolver(conNeuro(), [aturdido, neuro()]), "defensa");
+    assert.deepEqual(linea(fc, /Aturdido/), [{ etiqueta: "Aturdido", valor: -2 }]);
+    const paralisis: EstadoActivo = { estadoId: "paralisis", gradoId: "fracaso", rondasRestantes: 1 };
     const s = conNeuro();
-    const soloNeuro = resolver(s, [neuro()]).atributos;
-    const fracaso = resolver(s, [paralisis("fracaso"), neuro()]);
-    assert.equal(fracaso.atributos.agilidad - soloNeuro.agilidad, -3);
-    assert.equal(fracaso.atributos.fuerza - soloNeuro.fuerza, -3);
-    assert.ok(fracaso.modificadores.some((m) => m.tipo === "atributo" && m.id === "agilidad" && m.valor === 1 && m.fuente === "Neuroprótesis Simpática 1 (Parálisis)"));
-    const exito = resolver(s, [paralisis("exito"), neuro()]).atributos;
-    assert.equal(exito.agilidad, soloNeuro.agilidad);
-    // Sin la Neuroprótesis, el −4 entero.
-    assert.equal(resolver(s, [paralisis("fracaso")]).atributos.agilidad - resolver(s, []).atributos.agilidad, -4);
+    const f = resolver(s, [paralisis, neuro()]);
+    assert.equal(f.atributos.agilidad - resolver(s, [neuro()]).atributos.agilidad, -4);
+    assert.ok(!f.modificadores.some((m) => m.fuente.startsWith("Neuroprótesis Simpática 1 (")));
   });
 
   test("td-10: la reducción de 1 no quita la media velocidad ni el recorte de carga", () => {
@@ -380,7 +366,7 @@ describe("A5b: Neuroprótesis 4", () => {
     assert.deepEqual(resolver(s, [neuro("potencia"), neuro4]).atributos, resolver(s, []).atributos, "los atributos, quietos");
   });
 
-  test("heridas y fatiga a 0 mientras dura; los estados siguen con su −1 de la activa", () => {
+  test("heridas y fatiga a 0 mientras dura; los estados, enteros", () => {
     const s = conNeuro(4);
     const m = montar(resolver(s, [neuro("potencia"), neuro4], HERIDO_Y_FATIGADO), "atletismo");
     assert.deepEqual(linea(m, /^(Malherido|Fatigado)/), []);
@@ -388,7 +374,7 @@ describe("A5b: Neuroprótesis 4", () => {
     assert.deepEqual(linea(sin, /^Malherido/).map((l) => l.valor), [-2]);
     const aturdido: EstadoActivo = { estadoId: "aturdido", gradoId: "fracaso_critico", rondasRestantes: 1 };
     const conEstado = montar(resolver(s, [aturdido, neuro("potencia"), neuro4]), "defensa");
-    assert.equal(linea(conEstado, /Aturdido/).reduce((t, l) => t + l.valor, 0), -1);
+    assert.equal(linea(conEstado, /Aturdido/).reduce((t, l) => t + l.valor, 0), -2);
   });
 
   test("td-10: «elimina por completo» quita también la media velocidad y el recorte de carga", () => {

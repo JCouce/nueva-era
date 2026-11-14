@@ -985,7 +985,7 @@ function gradoNeuroprotesis2(id: string, elegido: string, otros: string) {
     label: `+2 ${elegido}`,
     modificadores: [],
     detalle: [
-      `+2 a las tiradas de ${elegido} y +1 a las de ${otros}. −1 a cada penalizador por estado, ` +
+      `+2 a las tiradas de ${elegido} y +1 a las de ${otros}. −1 a los penalizadores por ` +
         "heridas y fatiga, sin pasar de 0. −1 a las salvaciones de Fortaleza contra enfermedad, " +
         "radiación, toxinas y venenos.",
     ],
@@ -1004,8 +1004,8 @@ export const ESTADOS_DE_AUMENTO: Estado[] = [
         label: "Nivel 1",
         modificadores: [],
         detalle: [
-          "+1 a las tiradas de Potencia, Reflejos y Perspicacia. −1 a cada " +
-            "penalizador por estado, heridas y fatiga, sin pasar de 0. −1 a las salvaciones de " +
+          "+1 a las tiradas de Potencia, Reflejos y Perspicacia. −1 a los " +
+            "penalizadores por heridas y fatiga, sin pasar de 0. −1 a las salvaciones de " +
             "Fortaleza contra enfermedad, radiación, toxinas y venenos.",
         ],
         duracionTurnos: 3,

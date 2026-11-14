@@ -65,7 +65,7 @@ export function modificadoresDeBase(base: BaseDeFicha, dotes: readonly Modificad
       ...dotes,
       ...modificadoresDeEquipo(enUso),
       ...modificadoresDeAumentos(enUso),
-      ...modificadoresDeEstados(conEfecto, activables.reduceEstados, estabilizado),
+      ...modificadoresDeEstados(conEfecto, estabilizado),
       ...activables.modificadores,
     ],
     afectacion.penalizadas,
