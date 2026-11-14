@@ -40,7 +40,7 @@ export type BaseDeFicha = {
 export function baseDeFicha(sheet: Sheet, estados: EstadoActivo[]): BaseDeFicha {
   const afectacion = afectacionDePiezas(sheet, estados);
   const enUso = piezasEnUso(sheet, afectacion);
-  const inmunidades = inmunidadesDe(enUso);
+  const inmunidades = inmunidadesDe(enUso, estados);
   const conEfecto = estadosConEfecto(estados, inmunidades);
   return {
     especie: especieDeFicha(sheet),

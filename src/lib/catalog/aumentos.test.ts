@@ -33,14 +33,14 @@ const MODELADO = (
 ).aumentos;
 
 describe("catálogo de aumentos contra docs/modelado-aumentos.json", () => {
-  // E5a (sync Drive 2026-11-14): + Metabolismo Sintético.
-  test("mismas 33 piezas, mismos ids y en el mismo orden (26 operaciones y 7 implantes)", () => {
+  // E5a (sync Drive 2026-11-14): + Metabolismo Sintético y Control Anímico.
+  test("mismas 34 piezas, mismos ids y en el mismo orden (26 operaciones y 8 implantes)", () => {
     assert.deepEqual(
       AUMENTOS.map((a) => a.id),
       MODELADO.map((a) => a.id),
     );
     assert.equal(OPERACIONES_GENETICAS.length, 26);
-    assert.equal(IMPLANTES.length, 7);
+    assert.equal(IMPLANTES.length, 8);
   });
 
   test("operaciones: label, rareza, coste, requisitos, elección y repetible", () => {
@@ -134,7 +134,7 @@ describe("integridad del catálogo de aumentos", () => {
     }
   });
 
-  test("A2a y E5a: modificadores de los implantes (Ojo: distancia y Alerta pasiva, sin apilarse con miras; Metabolismo)", () => {
+  test("A2a y E5a: modificadores de los implantes (Ojo: distancia y Alerta pasiva, sin apilarse con miras; Metabolismo y Control Anímico)", () => {
     const distancia = (valor: number) => ({
       tipo: "tirada",
       alcance: { tipo: "grupoHabilidad", grupo: "Ataques", habilidad: "combate_distancia" },
@@ -153,6 +153,7 @@ describe("integridad del catálogo de aumentos", () => {
       aum_ojo_bionico: ojo,
       // E5a: la fatiga máxima sube 1 por nivel (usuario, 2026-11-14).
       aum_metabolismo_sintetico: { 1: [fatiga(1)], 2: [fatiga(2)], 3: [fatiga(3)], 4: [fatiga(4)] },
+      aum_control_animico: { 1: [{ tipo: "tirada", alcance: { tipo: "habilidad", habilidad: "actitud" }, valor: 1 }], 2: [] },
     };
     for (const imp of IMPLANTES) {
       for (const n of imp.niveles) {
@@ -237,6 +238,10 @@ describe("integridad del catálogo de aumentos", () => {
     "aum_metabolismo_sintetico 2": 4,
     "aum_metabolismo_sintetico 3": 3,
     "aum_metabolismo_sintetico 4": 7,
+    // Control Anímico: +1 en Actitud y en «Contra…»; casilla de Inteligencia (Resolución y Coste),
+    // activar y la inmunidad al miedo.
+    "aum_control_animico 1": 2,
+    "aum_control_animico 2": 4,
   };
 
   test("A1, A2a, A2b, A3, A4a, A4b, A5a, A5b, A6a, A6b y A7: solo lo construido (o lo narrativo) está marcado como construido", () => {

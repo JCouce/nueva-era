@@ -114,7 +114,7 @@ type Toque = { estadoId: string; estadoLabel: string; grado: string; piezas: Non
 
 // Las mejoras que su arma no admite (td-03) no funcionan: el Shock no tiene nada que tocarles.
 function toques(sheet: Pick<Sheet, "equipo">, estados: readonly EstadoActivo[]): Toque[] {
-  const conEfecto = estadosConEfecto([...estados], inmunidadesDe(sheet));
+  const conEfecto = estadosConEfecto([...estados], inmunidadesDe(sheet, estados));
   const util = sinMejorasNoAdmitidas(sheet);
   return conEfecto.flatMap((e) => {
     const estado = estadoPorId(e.estadoId);

@@ -78,12 +78,15 @@ export const AMENAZAS = [
   // Las tres de Matriz de Red cuentan también como manipulación mental, para que
   // Regulación (+1) y Matriz (+2) se sumen (+3) (§11.3; usuario, 2026-10-22).
   { id: "dominacion_mental", label: "Dominación mental", salvacion: "salv_voluntad", incluye: ["manipulacion_mental"] },
-  { id: "sugestion_coercitiva", label: "Sugestión coercitiva", salvacion: "salv_voluntad", incluye: ["manipulacion_mental"] },
+  // La sugestión coercitiva es también un efecto sugestivo (Control Anímico, E5a: supuesto S109).
+  { id: "sugestion_coercitiva", label: "Sugestión coercitiva", salvacion: "salv_voluntad", incluye: ["manipulacion_mental", "sugestion"] },
   { id: "alteracion_voluntad", label: "Alteración de la voluntad", salvacion: "salv_voluntad", incluye: ["manipulacion_mental"] },
   // «Efectos emocionales de cualquier tipo» (Regulación, sync Drive 2026-11-14): lista abierta
   // (usuario, 2026-11-14). Miedo, coerción, intimidación y manipulación mental tienen opción
   // propia; esta es para cualquier otro que el máster diga que es emocional.
   { id: "emocional", label: "Otro efecto emocional", salvacion: "salv_voluntad" },
+  // «Efectos sugestivos» (Control Anímico, E5a): cualquier otro que el máster diga que lo es.
+  { id: "sugestion", label: "Efecto sugestivo", salvacion: "salv_voluntad" },
 ] as const satisfies readonly { id: string; label: string; salvacion: SalvacionConSelector; incluye?: readonly string[] }[];
 
 export type AmenazaId = (typeof AMENAZAS)[number]["id"];
@@ -304,17 +307,20 @@ function aportesDeSalvaciones(sheet: Pick<Sheet, "equipo">, deActivables: Salvac
   ];
 }
 
+// `inmunidades`: las de la ficha con sus estados (resolverFicha: también las de un activable
+// encendido, E5a); sin ellas, las permanentes.
 export function casillasDeAumentos(
   sheet: Pick<Sheet, "equipo">,
   deActivables: SalvacionesConFuente = [],
   deEquipo: SalvacionesConFuente = [],
   afectacion: ShockEnSalvaciones = {},
+  inmunidades: Inmunidad[] = inmunidadesDe(sheet),
 ): CondicionTirada[] {
   const aportes = aportesDeSalvaciones(sheet, deActivables, deEquipo);
   const casillas = aportes.flatMap((a) =>
     (a.efectos.casillas ?? []).map((c): CondicionTirada => ({ ...c, etiqueta: `${c.etiqueta} · ${a.fuente}`, ...(a.origen && { origen: a.origen }) })),
   );
-  return [...casillas, ...selectoresContra(aportes, inmunidadesDe(sheet), afectacion)];
+  return [...casillas, ...selectoresContra(aportes, inmunidades, afectacion)];
 }
 
 // A qué salvaciones llega cada pieza con un bono «Contra…» (sin las de pieza: especie), para que

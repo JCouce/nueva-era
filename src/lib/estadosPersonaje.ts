@@ -151,7 +151,7 @@ async function cambiarEstadosEnTx(
     const estados = leerEstados(f.estados);
     // Con el recorte exacto de los estados (td-12): parseSheet topa en reposo.
     const leida = reconciliarVidaConEstados(parseSheet(f.stats), estados);
-    const primera = operacionConInmunidad(leida, ops[0], forzar);
+    const primera = operacionConInmunidad(leida, ops[0], forzar, estados);
     if (primera.tipo === "inmune") {
       // Sin estado no hay cobro (`preparar`): hoy solo lo usan los estados propios de los
       // aumentos, que no tienen inmunidad.
@@ -165,7 +165,7 @@ async function cambiarEstadosEnTx(
     let fotosActuales: FotoCobro[] = cobradas;
     const propios: CambioEstadoPersonaje[] = [];
     for (const [i, o] of ops.entries()) {
-      const tras = i === 0 ? primera : operacionConInmunidad(leida, o, forzar);
+      const tras = i === 0 ? primera : operacionConInmunidad(leida, o, forzar, estados);
       if (tras.tipo === "inmune") {
         inmunes.push({ id: f.id, nombre: f.name, ...tras.inmunidad });
         continue;
@@ -344,7 +344,8 @@ async function cambiarEstadosDeNpcsEnTx(
     let estados: EstadoActivo[] | null = null;
     const propios: CambioEstadoNpc[] = [];
     for (const [i, o] of ops.entries()) {
-      const tras = operacionConInmunidad(sheet, o, forzar);
+      // Con los estados que ya tiene (un activable encendido puede dar inmunidad, E5a).
+      const tras = operacionConInmunidad(sheet, o, forzar, leerEstados(estados ?? f.estados));
       if (tras.tipo === "inmune") {
         inmunes.push({ id: f.id, nombre: f.nombre, ...tras.inmunidad });
         if (i === 0) break;

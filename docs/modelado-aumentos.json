@@ -5686,6 +5686,134 @@
           ]
         }
       ]
+    },
+    {
+      "familia": "implante",
+      "id": "aum_control_animico",
+      "label": "Control Anímico",
+      "descripcion": "La fuente no trae descripción.",
+      "sabotaje": true,
+      "extraible": null,
+      "electronico": true,
+      "niveles": [
+        {
+          "nivel": 1,
+          "rareza": "Poco Habitual",
+          "coste": 12000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "bono",
+              "alcance": "habilidad:actitud",
+              "valor": 1,
+              "condicion": null,
+              "resuelto": "habilidades sociales = Actitud (TODO revisar, S109)"
+            },
+            {
+              "tipo": "bono",
+              "alcance": "salv_voluntad",
+              "valor": 1,
+              "condicion": "¿Contra un efecto sugestivo o miedo?"
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "habilidad:actitud"
+              },
+              "mecanismo": "siempre_activo",
+              "estado": "construido"
+            },
+            {
+              "tipo": "numerico",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_voluntad"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            }
+          ]
+        },
+        {
+          "nivel": 2,
+          "rareza": "Extraño",
+          "coste": 36000,
+          "sustituye": [],
+          "variantes": null,
+          "efectos": [
+            {
+              "tipo": "aplicado_alternativo",
+              "alcance": "salv_voluntad",
+              "aplicado": "perspicacia",
+              "coste": {
+                "fatiga": 2
+              },
+              "condicion": "¿Contra un efecto sugestivo?",
+              "resuelto": "Inteligencia en lugar de Voluntad = Perspicacia (TODO revisar, S109)"
+            },
+            {
+              "tipo": "activable",
+              "coste": {
+                "fatiga": 1
+              },
+              "economia": [],
+              "duracion": {
+                "rondas": 10
+              },
+              "limite": null,
+              "efectos": [
+                {
+                  "tipo": "inmunidad",
+                  "estado": "miedo"
+                }
+              ]
+            }
+          ],
+          "motor": [
+            {
+              "tipo": "resolucion",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_voluntad"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "coste",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "salv_voluntad"
+              },
+              "mecanismo": "eleccion_jugador",
+              "estado": "construido"
+            },
+            {
+              "tipo": "accion",
+              "afecta": {
+                "modo": "accion_nueva",
+                "id": "aumentos_activar_control_animico"
+              },
+              "mecanismo": "accion_equipo",
+              "estado": "construido"
+            },
+            {
+              "tipo": "habilitador",
+              "afecta": {
+                "modo": "accion_existente",
+                "id": "estado:miedo"
+              },
+              "mecanismo": "gate_instalacion",
+              "estado": "construido",
+              "arbitraje": "blando"
+            }
+          ]
+        }
+      ]
     }
   ],
   "extraccion": {

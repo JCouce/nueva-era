@@ -529,7 +529,10 @@ export function resolverFicha(
     indiceCondiciones: indiceDeCondiciones(enUso, [
       ...casillasDeEspecie(especie),
       ...dotes.casillas,
-      ...conUsosEscena(casillasDeAumentos(enUso, activables.salvaciones, [...salvacionesDeEspecie(especie), ...salvacionesDeEquipo(enUso)], afectacion), sheet.usosEscena),
+      ...conUsosEscena(
+        casillasDeAumentos(enUso, activables.salvaciones, [...salvacionesDeEspecie(especie), ...salvacionesDeEquipo(enUso)], afectacion, inmunidades),
+        sheet.usosEscena,
+      ),
       ...casillasDeFarmacos(sheet, penalizadoresDeUmbral(umbrales.salud, umbrales.fatiga, ajusteUmbrales)),
       ...casillasDePsionica(psionica.paraEfectos),
     ]),

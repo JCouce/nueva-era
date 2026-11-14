@@ -1485,6 +1485,22 @@ const ACTIVO_METABOLISMO: ActivoAumento = {
   ventajasFijas: [{ alcance: { tipo: "tiradaId", id: "salv_fortaleza" } }],
 };
 
+// Control Anímico 2 (E5a): «utilizar su bonificador de Inteligencia en lugar de Voluntad en una tirada
+// de salvación contra un efecto sugestivo», por 2 de fatiga. Inteligencia es un atributo básico y la
+// salvación se tira con un aplicado: la casilla la cambia a Perspicacia (Inteligencia + Percepción),
+// el aplicado que no lleva nada de Voluntad. TODO(revisar): lectura nuestra (S109); podría ser
+// Expresión (Carácter + Inteligencia) o el atributo solo.
+const CASILLA_INTELIGENCIA_CONTROL_ANIMICO: CondicionTirada = {
+  id: "aum_control_animico_inteligencia",
+  tipo: "toggle",
+  etiqueta: "Inteligencia en lugar de Voluntad (Perspicacia, 2 de fatiga)",
+  alcance: { tipo: "tiradaId", id: "salv_voluntad" },
+  valorActivo: 0,
+  aplicado: "perspicacia",
+  costeFatiga: 2,
+  nota: "Solo contra un efecto sugestivo. La salvación se tira con Perspicacia (Inteligencia + Percepción) en vez de con Voluntad.",
+};
+
 export const IMPLANTES: Implante[] = [
   {
     familia: "implante",
@@ -2288,6 +2304,64 @@ export const IMPLANTES: Implante[] = [
           // Sin penalizadores por fatiga (ajuste de umbrales) y ventaja en la Salvación de Fortaleza.
           { tipo: "numerico", afecta: { modo: "accion_existente", id: "todas" }, mecanismo: "suma_derivado", estado: "construido" },
           { tipo: "resolucion", afecta: { modo: "accion_existente", id: "salv_fortaleza" }, mecanismo: "siempre_activo", estado: "construido" },
+        ],
+      },
+    ],
+  },
+  {
+    familia: "implante",
+    id: "aum_control_animico",
+    label: "Control Anímico",
+    resumen: "+1 en Actitud y contra efectos sugestivos y miedo; Inteligencia en lugar de Voluntad e inmunidad al miedo pagando fatiga.",
+    descripcion: "La fuente no trae descripción.",
+    // La fuente no lo dice: regla general de los implantes (casi todos son susceptibles de sabotaje).
+    sabotaje: true,
+    shock: "cuerpo",
+    extraible: null,
+    niveles: [
+      {
+        nivel: 1,
+        rareza: "Poco Habitual",
+        coste: 12000,
+        detalle: [
+          "El personaje gana un bonus de +1 en tiradas de habilidades sociales, incluso aunque no las tenga entrenadas. Además, también obtiene un bonus de +1 en tiradas de salvación de voluntad contra efectos sugestivos y miedo.",
+        ],
+        // «Habilidades sociales» = Actitud, la que la app ya trata como social (Proyección). TODO(revisar)
+        // (S109): sistema.md no define qué habilidades son sociales; se toma la lectura más estrecha.
+        modificadores: [{ tipo: "tirada", alcance: { tipo: "habilidad", habilidad: "actitud" }, valor: 1 }],
+        salvaciones: [{ contra: ["sugestion", "miedo"], bono: 1 }],
+        motor: [
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "habilidad:actitud" }, mecanismo: "siempre_activo", estado: "construido" },
+          { tipo: "numerico", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "eleccion_jugador", estado: "construido" },
+        ],
+      },
+      {
+        nivel: 2,
+        rareza: "Extraño",
+        coste: 36000,
+        detalle: [
+          "El personaje puede emplear dos puntos de fatiga para utilizar su bonificador de Inteligencia en lugar de Voluntad en una tirada de salvación contra un efecto sugestivo. También, por el gasto de un punto de fatiga adquiere inmunidad al efecto de miedo durante 10 turnos.",
+        ],
+        modificadores: [],
+        condiciones: [CASILLA_INTELIGENCIA_CONTROL_ANIMICO],
+        // «10 turnos» = 10 rondas, que corren en combate (patrón Neuroprótesis; usuario, 2026-11-14).
+        acciones: [
+          {
+            id: "aumentos_activar_control_animico",
+            label: "Inmunidad al miedo",
+            // La fuente no dice qué acción es.
+            economia: "",
+            costeFatiga: 1,
+            nota: "Inmune al miedo: si el máster te lo pone, no se te aplica. Dura 10 rondas, que solo corren en combate: fuera de él, desactívala a mano.",
+            efecto: { tipo: "activar", estadoId: "aum_control_animico", duracion: { tipo: "rondas", rondas: 10 } },
+          },
+        ],
+        activo: { estadoId: "aum_control_animico", inmuneA: ["miedo"] },
+        motor: [
+          { tipo: "resolucion", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "coste", afecta: { modo: "accion_existente", id: "salv_voluntad" }, mecanismo: "eleccion_jugador", estado: "construido" },
+          { tipo: "accion", afecta: { modo: "accion_nueva", id: "aumentos_activar_control_animico" }, mecanismo: "accion_equipo", estado: "construido" },
+          { tipo: "habilitador", afecta: { modo: "accion_existente", id: "estado:miedo" }, mecanismo: "gate_instalacion", arbitraje: "blando", estado: "construido" },
         ],
       },
     ],

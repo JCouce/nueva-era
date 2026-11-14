@@ -1055,6 +1055,21 @@ export const ESTADOS_DE_AUMENTO: Estado[] = [
       },
     ],
   },
+  // E5a: Control Anímico 2, inmune al miedo 10 rondas.
+  {
+    id: "aum_control_animico",
+    label: "Control Anímico",
+    resumen: "Inmune al miedo.",
+    grados: [
+      {
+        id: "activo",
+        label: "Activo",
+        modificadores: [],
+        detalle: ["Inmune al miedo: si te lo ponen, no se te aplica."],
+        duracionTurnos: 10,
+      },
+    ],
+  },
   {
     id: "aum_proyeccion",
     label: "Proyección Neuro-Expresiva",

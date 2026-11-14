@@ -26,6 +26,8 @@
 //   ventajasFijas     (E5a) ventaja sin casilla en las tiradas de ese alcance mientras dura
 //                     (Metabolismo Sintético 4: las salvaciones de Fortaleza); como las de
 //                     Red Frontoparietal (ventajasFijasDeAumentos).
+//   inmuneA           (E5a) estados del catálogo a los que es inmune mientras dura (Control
+//                     Anímico 2: el miedo); los lee inmunidadesDe con los estados puestos.
 // Sin la pieza (o con el requisito roto), el estado sigue en la lista hasta que caduque o se
 // desactive, pero no hace nada.
 import type { AplicadoId } from "./atributos";
@@ -50,6 +52,7 @@ export type ActivoAumento = {
   sustituyePruebasDe?: string;
   eliminaPenalizadoresUmbrales?: true | "fatiga";
   ventajasFijas?: { alcance: AlcanceModificador }[];
+  inmuneA?: string[];
 };
 
 // Más que cualquier tramo de §7 (el peor es −5): el ajuste lo deja en 0 y no da línea.
@@ -103,6 +106,12 @@ function encendidosDe(sheet: Pick<Sheet, "equipo">, estados: readonly EstadoActi
     const estado = estados.find((e) => e.estadoId === activo.estadoId);
     return estado ? [{ fuente, activo, grado: estado.gradoId, origen }] : [];
   });
+}
+
+// Inmunidades de los activables encendidos (E5a: Control Anímico 2 contra el miedo), con la fuente
+// de la pieza. Las junta inmunidadesDe (inmunidades.ts) con las permanentes.
+export function inmunidadesDeActivables(sheet: Pick<Sheet, "equipo">, estados: readonly EstadoActivo[]): { estadoId: string; fuente: string }[] {
+  return encendidosDe(sheet, estados).flatMap(({ fuente, activo }) => (activo.inmuneA ?? []).map((estadoId) => ({ estadoId, fuente })));
 }
 
 export function efectosDeActivables(sheet: Pick<Sheet, "equipo">, estados: readonly EstadoActivo[]): EfectosActivables {

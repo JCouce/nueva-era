@@ -11,6 +11,7 @@ import { montarTirada, SIN_ELECCION, type TiradaMontada } from "./montaje";
 import { ID_SELECTOR_CONTRA } from "./aumentosTiradas";
 import { usoDeAccionAumento } from "./aumentosAcciones";
 import { planCompraAumento } from "./aumentos";
+import { operacionConInmunidad } from "./inmunidades";
 import type { EstadoActivo } from "./estados";
 
 let n = 0;
@@ -112,5 +113,69 @@ describe("E5a · Metabolismo Sintético", () => {
       assert.equal(planCompraAumento(con(defaultSheet(), METABOLISMO, 1), { catalogoId: op }).ok, false, `${op} tras Metabolismo`);
     }
     assert.equal(planCompraAumento(defaultSheet(), { catalogoId: METABOLISMO, nivel: 1 }).ok, true);
+  });
+});
+
+const CONTROL_ANIMICO = "aum_control_animico";
+
+describe("E5a · Control Anímico", () => {
+  const conCA = (nivel: number) => conRecursos(con(defaultSheet(), CONTROL_ANIMICO, nivel));
+  const inmune: EstadoActivo = { estadoId: "aum_control_animico", gradoId: "activo", rondasRestantes: 10 };
+  const asustado: EstadoActivo = { estadoId: "miedo", gradoId: "asustado", rondasRestantes: null };
+
+  test("nivel 1: +1 en las tiradas de Actitud, aunque no esté entrenada", () => {
+    const sinNada = montar(resolver(defaultSheet()), "discernir_mentiras");
+    const m = montar(resolver(conCA(1)), "discernir_mentiras");
+    assert.deepEqual(linea(m, /Control Anímico/).map((l) => l.valor), [1]);
+    assert.equal(m.total - sinNada.total, 1);
+    assert.deepEqual(linea(montar(resolver(conCA(1)), "atletismo"), /Control Anímico/), []);
+  });
+
+  test("nivel 1: +1 en la Salvación de Voluntad contra efectos sugestivos (también la sugestión coercitiva) y miedo", () => {
+    const f = resolver(conCA(2));
+    const sel = selector(f, "salv_voluntad");
+    for (const amenaza of ["sugestion", "miedo"]) {
+      const m = montar(f, "salv_voluntad", { [sel.id]: amenaza });
+      assert.deepEqual(linea(m, /^Contra….*Control Anímico/).map((l) => l.valor), [1], amenaza);
+    }
+    assert.equal(opcion(f, "salv_voluntad", "coercion"), undefined);
+    // La opción «Sugestión coercitiva» la trae Matriz de Red; el +1 de Control Anímico entra en ella.
+    const conMatriz = ["aum_regulacion_limbico_prefrontal", "aum_proyeccion_neuro_expresiva", "aum_matriz_de_red_predeterminada"].reduce((x, id) => con(x, id), conCA(1));
+    const coercitiva = opcion(resolver(conMatriz), "salv_voluntad", "sugestion_coercitiva");
+    assert.ok(coercitiva?.partes?.some((p) => p.fuente === "Control Anímico 1" && p.valor === 1));
+  });
+
+  test("nivel 2: casilla de Inteligencia en lugar de Voluntad: tira con Perspicacia y cobra 2 de fatiga", () => {
+    const f = resolver(conCA(2));
+    const t = tiradaFija(f, "salv_voluntad");
+    assert.ok(t.condiciones?.some((c) => c.id === "aum_control_animico_inteligencia"));
+    const sin = montar(f, "salv_voluntad");
+    assert.equal(sin.aplicado.id, "voluntad");
+    assert.equal(sin.costeFatiga, 0);
+    const m = montar(f, "salv_voluntad", { aum_control_animico_inteligencia: true });
+    assert.equal(m.aplicado.id, "perspicacia");
+    assert.equal(m.costeFatiga, 2);
+    assert.equal(tiradaFija(resolver(conCA(1)), "salv_voluntad").condiciones?.some((c) => c.id === "aum_control_animico_inteligencia"), false);
+  });
+
+  test("nivel 2: activar la inmunidad al miedo cobra 1 de fatiga y pone su estado 10 rondas", () => {
+    const uso = usoDeAccionAumento(conCA(2), [], "aumentos_activar_control_animico");
+    assert.ok(uso.ok);
+    assert.equal(uso.sheet.fatigaActual, 7);
+    assert.deepEqual(uso.op, { tipo: "poner", estado: inmune });
+    assert.equal(resolver(conCA(1)).accionesAumentos.directas.some((a) => a.id === "aumentos_activar_control_animico"), false, "solo el 2");
+  });
+
+  test("activa: inmune al miedo (no se le pone, y uno puesto no hace nada); sin activar, no", () => {
+    const s = conCA(2);
+    assert.deepEqual(resolver(s, [inmune]).inmunidades, [{ estadoId: "miedo", fuente: "Control Anímico 2" }]);
+    assert.deepEqual(resolver(s).inmunidades, []);
+    const poner = { tipo: "poner" as const, estado: asustado };
+    assert.equal(operacionConInmunidad(s, poner, false, [inmune]).tipo, "inmune");
+    assert.equal(operacionConInmunidad(s, poner, false, []).tipo, "aplicar");
+    const conMiedo = montar(resolver(s, [asustado, inmune]), "atletismo");
+    assert.deepEqual(linea(conMiedo, /Miedo|Asustado/), []);
+    assert.ok(linea(montar(resolver(s, [asustado]), "atletismo"), /Miedo|Asustado/).length > 0);
+    assert.match(opcion(resolver(s, [inmune]), "salv_voluntad", "miedo")?.etiqueta ?? "", /inmune/);
   });
 });
