@@ -402,6 +402,15 @@ describe("gasto por modo (docs/prompt-gasto-recursos.md, Fase 1)", () => {
     assert.equal(parseSheet(JSON.parse(JSON.stringify(buena))).equipo.find((p) => p.instanciaId === "pp1")!.disparosPulso, 2);
   });
 
+  // Sync Drive 2026-11-14: «1 carga × nivel en turnos»; fuera la «Duración: Nivel».
+  test("Aguijón: 1 carga lo mantiene N turnos (nivel), sin la duración de efecto de antes", () => {
+    for (const nivel of [1, 3]) {
+      const fila = accionesDeAtaque(conProyectorPulso(nivel)).find((t) => t.label === "Golpear con Proyector de Pulso (Aguijón)")!;
+      assert.match(fila.nota ?? "", new RegExp(`1 carga lo mantiene ${nivel} turno\\(s\\)`));
+      assert.doesNotMatch(fila.nota ?? "", /Duración/);
+    }
+  });
+
   test("Golpear con Proyector de Pulso (Aguijón) gasta 1 carga", () => {
     const sheet = conProyectorPulso(1);
     const fila = accionesDeAtaque(sheet).find((t) => t.label === "Golpear con Proyector de Pulso (Aguijón)")!;

@@ -1291,10 +1291,12 @@ function tiradaGolpeAguijon(sheet: Sheet, mods: ModificadorConFuente[], pieza: P
     habilidad: "combate_melee",
     especialidadArma: ESPECIALIDAD_ATAQUE_ESPECIAL.proyector_pulso_aguijon,
     familiaArma: "ataque_melee", // sin empleo, como el disparo
-    // «Duración: Nivel» de la tabla, tal cual. TODO(revisar): no dice de qué es la duración.
+    // Sync Drive 2026-11-14: «1 carga × nivel en turnos» (fuera la «Duración: Nivel» de antes).
+    // TODO(revisar): la app no cuenta turnos de la pieza, así que cada golpe sigue gastando 1
+    // carga; si se golpea otra vez dentro de esos turnos, la carga se devuelve a mano en Recursos.
     nota: [
       "Repliega el emisor a un pincho corto de energía y lo descarga a bocajarro, casi sin gesto — Sutil.",
-      `Duración ${nivel} turno(s).`,
+      `1 carga lo mantiene ${nivel} turno(s): si vuelves a golpear dentro de ellos, no gasta otra (devuélvela en Recursos).`,
     ].join(" · "),
     efectosObjetivo: efectosDelProyector(pieza),
     ...conSigilo(sigiloProyectorPulso(sheet, pieza, null)),
