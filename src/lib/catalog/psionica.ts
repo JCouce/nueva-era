@@ -866,9 +866,9 @@ const RECONFIGURACION: AccionPoder = {
   motor: motorDeAccion(RECONFIGURACION_ID, { propias: true, tercero: ["salv_voluntad"] }),
 };
 
-// Modulación: 1 de fatiga por nivel empleado, y en sus efectos "nivel de poder" =
-// nivel EMPLEADO (excepción a la regla general, usuario 2026-09-30: si no, emplear
-// más no serviría de nada). Qué efectos hay depende del nivel POSEÍDO ("adquiere").
+// Modulación: 1 de fatiga fijo (toda Inducción cuesta 1 salvo que diga otra cosa,
+// usuario 2026-11-14), y en sus efectos "nivel de poder" = nivel EMPLEADO
+// (excepción a la regla general, usuario 2026-09-30; el selector se mantiene). Qué efectos hay depende del nivel POSEÍDO ("adquiere").
 // Grados desde el psiónico: su crítico = el fracaso crítico del objetivo.
 const MODULACION_ID = "psi_induccion_modulacion";
 const HIPOMANIA_ALIADO_ID = "psi_induccion_hipomania_aliado";
@@ -1008,7 +1008,7 @@ const MODULACION: AccionPoder = {
   id: MODULACION_ID,
   label: "Modulación",
   economia: "compleja",
-  fatiga: { base: 0, porNivel: 1 },
+  fatiga: 1,
   ejes: [
     ejeNivelEmpleado(() => ({})),
     // "modo": la opción da nombre a la tirada ("Sopor (nivel 3)").
@@ -1055,7 +1055,7 @@ const HIPOMANIA_ALIADO: AccionPoder = {
   label: "Hipomanía a un aliado",
   desdeNivel: 1,
   economia: "compleja",
-  fatiga: { base: 0, porNivel: 1 },
+  fatiga: 1,
   alcance: { base: 0, porNivelPoseido: 20 },
   objetivo: { tipo: "aliado" },
   desplazamiento: null,

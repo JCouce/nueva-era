@@ -1104,13 +1104,13 @@ describe("Inducción — tanda 2: Modulación", () => {
     resolverPoder(accionI(id), { nivelPoseido, elecciones, disciplina: IND })!;
   const coste = (id: string, p: ReturnType<typeof resolverI>) => costeFatiga(IND, `psi_induccion_${id}`, p).total;
 
-  test("1 de fatiga por nivel empleado; compleja, estándar desde nivel 2", () => {
+  test("1 de fatiga fijo, sea cual sea el nivel empleado; compleja, estándar desde nivel 2", () => {
     const n1 = resolverI("modulacion", 1);
     assert.equal(n1.economia, "compleja");
     assert.equal(coste("modulacion", n1), 1);
     const p = resolverI("modulacion", 4, { nivel: "n3" });
     assert.equal(p.economia, "estandar");
-    assert.equal(coste("modulacion", p), 3);
+    assert.equal(coste("modulacion", p), 1);
   });
 
   test("los efectos usan el nivel EMPLEADO en duraciones y dificultades", () => {
@@ -1150,10 +1150,10 @@ describe("Inducción — tanda 2: Modulación", () => {
     assert.match(resolverI("modulacion", 6, { objetivos: "varios" }).multiplesObjetivos!.texto, /hasta 6 víctimas/);
   });
 
-  test("Hipomanía a un aliado: sin tirada, nivel empleado en coste y turnos", () => {
+  test("Hipomanía a un aliado: sin tirada, 1 de fatiga fijo, nivel empleado en turnos", () => {
     const p = resolverI("hipomania_aliado", 3, { nivel: "n2" });
     assert.equal(p.resolucion.tipo, "sin_dado");
-    assert.equal(coste("hipomania_aliado", p), 2);
+    assert.equal(coste("hipomania_aliado", p), 1);
     assert.equal(p.economia, "estandar");
     assert.match(p.notas[0].texto, /durante 2 turnos/);
   });
