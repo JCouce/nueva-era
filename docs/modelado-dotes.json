@@ -6132,6 +6132,38 @@
       "candidataUX": null
     },
     {
+      "id": "dote_disparo_relampago",
+      "label": "Disparo Relámpago",
+      "grupo": "combate_distancia",
+      "coste": 4,
+      "requisitos": [
+        {
+          "tipo": "habilidad",
+          "id": "combate_distancia",
+          "min": 2
+        },
+        {
+          "tipo": "aplicado",
+          "id": "reflejos",
+          "min": 2
+        }
+      ],
+      "eleccion": null,
+      "repetible": false,
+      "sustituye": null,
+      "visible": true,
+      "efectos": [
+        {
+          "tipo": "texto",
+          "lugar": "familia:ataque_fuego",
+          "texto": "Como reacción, puedes disparar a un enemigo a tu alcance que haga una acción de movimiento, si ese ataque se resuelve normalmente como acción simple.",
+          "condicion": null,
+          "porque": "turno"
+        }
+      ],
+      "candidataUX": null
+    },
+    {
       "id": "dote_vigilancia_tactica",
       "label": "Vigilancia Táctica",
       "grupo": "exploracion",

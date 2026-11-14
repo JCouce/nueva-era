@@ -16,15 +16,13 @@
 > documento mete dentro de una dote pero es regla general del sistema va aparte, bajo
 > "Regla incluida en la dote (no es efecto de la dote)".
 >
-> Recuento: **121 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
-> Combate a Distancia 12 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 3 · Sigilo 8 ·
+> Recuento: **122 dotes**. Actitud 16 · Atletismo 22 · Biociencia 9 · Combate Melee 32 ·
+> Combate a Distancia 13 · Cultura 0 · Exploración 10 · Interpretación 0 · Pilotaje 3 · Sigilo 8 ·
 > Tecnociencia 1 · Psiónica 8. Ver "Notas de transcripción" al final.
 >
 > **Añadidas de la foto de Drive del 2026-10-23** (tanda de especialidades de Combate a
 > Distancia): *Arquero Poderoso*, *Pistolero* y *Pistolero Infernal*, transcritas con el mismo
-> criterio. Esa foto trae más dotes nuevas en Combate a Distancia (Fuego de Saturación, Fuego
-> de Supresión, Fuego de Barrera, Disparo de Interdicción, Lanzamiento Doble) y otros grupos
-> que **todavía no están aquí**: el resto del documento sigue siendo la foto del 2026-10-14.
+> criterio. El resto de dotes nuevas de esa foto, abajo en «Dotes atrasadas».
 >
 > **Añadidas de la foto de Drive del 2026-11-14** (`docs/plan-sync-2026-11-14.md`, T2.M1), con
 > el mismo criterio: *Ataque Coordinado*, *Defensa Coordinada*, *Estrategia de Combate*, *Interrogador Perspicaz* (Exploración) y *Diagnóstico de Sistemas*
@@ -33,6 +31,10 @@
 > *Perfil Bajo*, *Sustracción Rápida*, *Finta de Manos* (Sigilo), *Piloto de Exoarmadura*, *As de
 > Exoarmadura* y *Salto Servoasistido* (Pilotaje, grupo nuevo); y cambian *Imitación* y las tres
 > *Movimiento Sigiloso*.
+>
+> **Dotes atrasadas** (estaban en Drive desde fotos anteriores y no se habían transcrito;
+> sync del 2026-11-14, `docs/plan-sync-2026-11-14.md`, «Después del sync»), con el mismo criterio:
+> *Disparo Relámpago*.
 
 ## Actitud
 
@@ -962,6 +964,17 @@ Cuando el personaje realiza un ataque cuerpo a cuerpo contra un objetivo situado
 Obtiene un bonificador de **+1 a la tirada de ataque y** el objetivo inferior sufre un **penalizador de -2 a su tirada de salvación** para mantener el equilibrio y evitar caer derribado por la pendiente o el desnivel por maniobras del atacante.
 
 ## Combate a Distancia
+
+### Disparo Relámpago
+
+**Coste:** 4
+
+**Requisitos:**
+- Comabte *(sic)* a Distancia 2 · habilidad
+- Reflejos 2 · atributo aplicado
+
+**Efecto:**
+El personaje puede emplear una reacción para realizar una *(sic)* ataque a distancia dentro de su alcance contra un enemigo que realice una acción de movimiento siempre que el ataque en cuestión se resuelva como una acción simple.
 
 ### Cobertura Rápida
 

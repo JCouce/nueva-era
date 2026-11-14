@@ -1056,12 +1056,12 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
 (regla del usuario); solo se pregunta ante duda real.
 
 ### 9.1 Qué es una dote `[FIRME · DOTES]`
-- **121 dotes** con nombre, **coste** en puntos, **requisitos** y efecto en prosa,
+- **122 dotes** con nombre, **coste** en puntos, **requisitos** y efecto en prosa,
   ordenadas bajo la habilidad a la que pertenecen: Actitud 16 · Atletismo 22 · Biociencia 9 ·
-  Combate Melee 32 · Combate a Distancia 12 · Exploración 10 · Pilotaje 3 · Sigilo 8 ·
+  Combate Melee 32 · Combate a Distancia 13 · Exploración 10 · Pilotaje 3 · Sigilo 8 ·
   Tecnociencia 9 (8 en el subgrupo **Psiónica**). Cultura e Interpretación, sin dotes todavía. Las 3 últimas de
   Combate a Distancia (*Arquero Poderoso*, *Pistolero*, *Pistolero Infernal*) son de la foto
-  del 2026-10-23; el resto de dotes nuevas de esa foto no está transcrito todavía. De la foto
+  del 2026-10-23; el resto de dotes nuevas de esa foto, en «Dotes atrasadas» (abajo). De la foto
   del 2026-11-14 (T2.M1 del plan de sync): *Ataque Coordinado*, *Defensa Coordinada*, *Estrategia de Combate* e *Interrogador Perspicaz* (Exploración), y *Diagnóstico de
   Sistemas* (Tecnociencia). Las que dependen de habilidades nuevas, en E6 (S110): *Paso de
   Fantasma*, *Fundido Evasivo*, *Perfil Bajo*, *Sustracción Rápida*, *Finta de Manos* (Sigilo),
@@ -1114,6 +1114,12 @@ y plan: `docs/prompt-dotes.md`. **Manda siempre el documento nuevo** sobre lo an
   tirada de Tecnociencia (hoy solo Hackeo: la tirada libre no lleva casillas y Reparar no tira)
   y el jugador la marca cuando diagnostica un sistema de su especialidad (Informática o
   Mecánica). Sin tirada fija de diagnóstico: aceptado así (usuario, 2026-11-14).
+- **Dotes atrasadas** `[FIRME · DOTES, sync 2026-11-14]`: estaban en Drive desde fotos anteriores y no se
+  habían transcrito (`docs/plan-sync-2026-11-14.md`, «Después del sync»). Lo que la app aplica
+  y lo que es texto:
+  - *Disparo Relámpago*: texto en los disparos (atacar como reacción a quien se mueve, si el
+    ataque es de acción simple); la app no cuenta reacciones.
+  <!-- fin dotes atrasadas -->
 - El grupo solo ordena: no es requisito (*Mata Gigantes*, en Combate Melee, pide Táctica).
 - **Pool de creación** por letra: A 18 · B 15 · C 12 · D 9 · E 6 (`HOJA3`). Lo que sobra al
   aprobar la ficha **se pierde**.

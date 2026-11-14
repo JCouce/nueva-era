@@ -6506,6 +6506,52 @@ export const DOTES: readonly DoteCatalogo[] = [
     ]
   },
   {
+    "id": "dote_disparo_relampago",
+    "label": "Disparo Relámpago",
+    "grupo": "combate_distancia",
+    "coste": 4,
+    "requisitos": [
+      {
+        "tipo": "habilidad",
+        "id": "combate_distancia",
+        "min": 2
+      },
+      {
+        "tipo": "aplicado",
+        "id": "reflejos",
+        "min": 2
+      }
+    ],
+    "eleccion": null,
+    "repetible": false,
+    "sustituye": null,
+    "visible": true,
+    "texto": "El personaje puede emplear una reacción para realizar una *(sic)* ataque a distancia dentro de su alcance contra un enemigo que realice una acción de movimiento siempre que el ataque en cuestión se resuelva como una acción simple.",
+    "efectos": [
+      {
+        "tipo": "texto",
+        "lugar": "familia:ataque_fuego",
+        "texto": "Como reacción, puedes disparar a un enemigo a tu alcance que haga una acción de movimiento, si ese ataque se resuelve normalmente como acción simple.",
+        "condicion": null,
+        "porque": "turno",
+        "borrador": 0
+      }
+    ],
+    "limite": null,
+    "candidataUX": null,
+    "motor": [
+      {
+        "tipo": "texto",
+        "afecta": {
+          "modo": "accion_existente",
+          "id": "familia:ataque_fuego"
+        },
+        "mecanismo": "nota_fija",
+        "estado": "construido"
+      }
+    ]
+  },
+  {
     "id": "dote_vigilancia_tactica",
     "label": "Vigilancia Táctica",
     "grupo": "exploracion",
@@ -9107,9 +9153,9 @@ export const DOTES: readonly DoteCatalogo[] = [
 ];
 
 // Recuento por tanda (lo escribe el generador):
-//   223 efectos (213 en el borrador)
+//   224 efectos (214 en el borrador)
 //   construidos: 124
-//   texto: 99
+//   texto: 100
 //   pendientes D2b-1: 0
 //   pendientes D2b-2: 0
 //   pendientes D2c: 0
