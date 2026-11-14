@@ -67,6 +67,10 @@ export type Accion = {
   aplicadoSutil?: AplicadoId;
   habilidad: HabilidadId | null; // las salvaciones van con el aplicado a secas
   nota?: string;
+  // El tipo de acción que declara la fuente, en texto, cuando la fila lo trae de un catálogo que
+  // lo dice así (acciones de aumento: «Acción gratuita en tu turno o reacción»). Lo lee el Shock
+  // en fracaso (esComplejaOReaccion, rules/shock.ts); la pantalla lo enseña en `nota`.
+  economia?: string;
   // Texto que solo aplica si la tirada acaba en crítico (Feature 2, piloto en
   // el Cuchillo de Combate) — a diferencia de `nota`, que se muestra siempre.
   // Se pinta en ResultadoTirada.tsx solo cuando `resultado.critico` es true.
@@ -346,6 +350,8 @@ export type AccionDirecta = {
   // Como en Accion: el ítem que la crea.
   origen?: OrigenAporte;
   grupo: GrupoAccion;
+  // Como en Accion: el tipo de acción en texto (acciones de aumento).
+  economia?: string;
   // Como en Accion ("Levantar [escudo]": levantar_escudo), para los textos de dote.
   familiaArma?: FamiliaArma;
   empleoArma?: EmpleoArma;

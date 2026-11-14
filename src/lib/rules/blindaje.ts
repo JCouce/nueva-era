@@ -18,6 +18,7 @@ import { ajustarRecurso, MOTIVO_ESCUDO_ROTO, reconciliarRecursos } from "./recur
 import type { Sheet } from "./sheet";
 import type { EstadoActivo } from "./estados";
 import { origenDePieza, type OrigenAporte } from "./origen";
+import { bloqueoDeReaccion, type PiezaPenalizada } from "./shock";
 import { absorcionDeGradoContencion, ESTADO_CONTENCION_ID } from "../catalog/psionica";
 
 import { TIPOS_DANIO, cambiaEnCritico, type TipoDanio } from "../catalog/tiposDanio";
@@ -252,25 +253,32 @@ export function desgloseBlindaje(
 
 // La casilla "Bloqueado con el brazo biónico" de "Resistir daño" (A6a, R12), o null sin el Brazo
 // de nivel 2 o más. Sin coste. `bloqueada`: el tipo de daño no lo para el blindaje (el mismo
-// criterio que la armadura natural y Densificar).
+// criterio que la armadura natural y Densificar), o bloquear con el brazo es una reacción y el brazo
+// está en fracaso del Shock (`penalizadas`, FichaResuelta.piezasPenalizadas; bloqueoDeReaccion).
 export type CasillaBlindajeBrazo = { etiqueta: string; valor: number; nota: string; bloqueada: string | null };
 
-export function casillaBlindajeBrazo(sheet: Pick<Sheet, "equipo">, tipo: TipoDanio): CasillaBlindajeBrazo | null {
+export function casillaBlindajeBrazo(
+  sheet: Pick<Sheet, "equipo">,
+  tipo: TipoDanio,
+  penalizadas?: ReadonlyMap<string, PiezaPenalizada>,
+): CasillaBlindajeBrazo | null {
   const brazo = blindajeDelBrazo(sheet);
   if (!brazo) return null;
   const noCuenta = blindajeNoCuenta(tipo);
+  const porShock = bloqueoDeReaccion(penalizadas, brazo.origen);
   return {
     etiqueta: "Bloqueado con el brazo biónico",
     valor: brazo.valor,
     nota: `${brazo.fuente}: su blindaje solo protege el golpe que bloqueas con el brazo, como un escudo. No se apila con la armadura ni con la armadura natural: cuenta el mayor (el Escudo Deflector y el blindaje reactivo, aparte).`,
-    bloqueada: noCuenta ? MOTIVO_NO_CUENTA[tipo as "mental" | "fuego"] : null,
+    bloqueada: noCuenta ? MOTIVO_NO_CUENTA[tipo as "mental" | "fuego"] : porShock,
   };
 }
 
 // La casilla de blindaje reactivo de "Resistir daño" (Densificar, Enjambre 3+; A4b), o null sin
 // la pieza. Se cobra al marcarla y se devuelve al desmarcarla (lo hace el modal con estos
 // datos). `bloqueada`: por qué no se puede marcar ahora (el tipo de daño no lo para el
-// blindaje, o no llega la fatiga; marcada ya está pagada, así que la fatiga no la bloquea).
+// blindaje, o no llega la fatiga; marcada ya está pagada, así que la fatiga no la bloquea). Es una
+// reacción: con su pieza en fracaso del Shock (`penalizadas`), bloqueada (bloqueoDeReaccion).
 export type CasillaBlindajeReactivo = {
   etiqueta: string;
   valor: number;
@@ -291,10 +299,12 @@ export function casillaBlindajeReactivo(
   tipo: TipoDanio,
   marcada: boolean,
   fatiga: number = sheet.fatigaActual,
+  penalizadas?: ReadonlyMap<string, PiezaPenalizada>,
 ): CasillaBlindajeReactivo | null {
   const r = blindajeReactivoDeAumentos(sheet);
   if (!r) return null;
   const noCuenta = blindajeNoCuenta(tipo);
+  const porShock = bloqueoDeReaccion(penalizadas, r.origen);
   const deOtroTipo = r.tipos && !r.tipos.includes(tipo) ? (r.soloContra ?? "No vale contra este tipo de daño.") : null;
   const sinFatiga =
     !marcada && fatiga < r.costeFatiga ? `No te llega la fatiga: cuesta ${r.costeFatiga} y te quedan ${fatiga}.` : null;
@@ -303,7 +313,7 @@ export function casillaBlindajeReactivo(
     valor: r.valor,
     costeFatiga: r.costeFatiga,
     nota: r.nota,
-    bloqueada: noCuenta ? MOTIVO_NO_CUENTA[tipo as "mental" | "fuego"] : (deOtroTipo ?? sinFatiga),
+    bloqueada: noCuenta ? MOTIVO_NO_CUENTA[tipo as "mental" | "fuego"] : (deOtroTipo ?? porShock ?? sinFatiga),
   };
 }
 

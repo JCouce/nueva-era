@@ -33,7 +33,8 @@ import type { EstadoActivo } from "./estados";
 import { conExtrasDeFicha, type FichaResuelta } from "./fichaResuelta";
 import { montarTirada, SIN_ELECCION, tirarMontada } from "./montaje";
 import type { Sheet } from "./sheet";
-import { conShockEnLineas } from "./shock";
+import { bloqueoDeReaccion, conShockEnLineas } from "./shock";
+import { blindajeDelBrazo } from "./brazoBionico";
 import { textosSinDado } from "./textosTirada";
 import { ajustarDanioCategoria } from "./vitalidad";
 import { equipoPorId } from "../catalog/equipo";
@@ -156,11 +157,16 @@ export function resolverGolpe(ficha: FichaParaResistir, e: EntradaResistir): Gol
   // Sin las piezas apagadas por el Shock (S73): una Malla apagada no devuelve nada, y sin el brazo
   // no hay casilla de bloquear con él. El blindaje perdido de la armadura vive en la ficha y va igual.
   const sheet = ficha.fichaSinApagadas ?? ficha.ficha;
-  const conBrazo = e.conBrazo && Boolean(casillaBlindajeBrazo(sheet, e.tipo));
+  // Las dos casillas son reacciones con una pieza: con ella en fracaso del Shock no cuentan
+  // aunque vinieran marcadas (bloqueoDeReaccion).
+  const reactivo = blindajeReactivoDeAumentos(sheet);
+  const conReactivo = e.reactivo && Boolean(reactivo) && !bloqueoDeReaccion(ficha.piezasPenalizadas, reactivo?.origen);
+  const conBrazo =
+    e.conBrazo && Boolean(casillaBlindajeBrazo(sheet, e.tipo)) && !bloqueoDeReaccion(ficha.piezasPenalizadas, blindajeDelBrazo(sheet)?.origen);
   // El desglose, con la ficha entera y lo que aporta de verdad cada pieza tocada (pl-02): un
   // Escudo Deflector apagado sale «Escudo Deflector (shock)» a 0; penalizado, con su −N.
   const desglose = conShockEnLineas(
-    desgloseBlindaje(ficha.ficha, e.tipo, ficha.blindaje.armaduraNatural, e.reactivo && Boolean(blindajeReactivoDeAumentos(sheet)), conBrazo, ficha.blindaje.contencion),
+    desgloseBlindaje(ficha.ficha, e.tipo, ficha.blindaje.armaduraNatural, conReactivo, conBrazo, ficha.blindaje.contencion),
     { inutilizadas: ficha.piezasInutilizadas, penalizadas: ficha.piezasPenalizadas },
   );
   const blindaje = desglose.reduce((t, l) => t + l.valor, 0);

@@ -58,8 +58,10 @@ export type GradoEstado = {
   // Lo que este grado le hace a las piezas que el estado afecta (Estado.afectaPiezas):
   // `apagadas`, no funcionan (FichaResuelta.piezasInutilizadas); `penaliza`, −N a cada bono
   // suyo (sin bajar de 0) y a las tiradas para usarlas, que aplica la app (pl-02, usuario
-  // 2026-11-14; rules/shock.ts).
-  piezas?: { apagadas: true } | { penaliza: number };
+  // 2026-11-14; rules/shock.ts). `sinComplejasNiReacciones`: además, con esas piezas no se hacen
+  // acciones complejas ni reacciones (fracaso del Shock sobre los implantes, fuente aumentos.md
+  // «Implantes», sync Drive 2026-11-14; esComplejaOReaccion en rules/shock.ts).
+  piezas?: { apagadas: true } | { penaliza: number; sinComplejasNiReacciones?: true };
 };
 
 // Con qué se salva el estado cuando un efecto lo provoca (cuestionario eq-07, usuario
@@ -752,10 +754,11 @@ export const ESTADOS: Estado[] = [
         modificadores: [],
         detalle: [
           "Tus implantes funcionan peor: −2 a su bono y −2 al usarlos.",
+          "No puedes hacer acciones complejas ni reacciones con los implantes.",
           "Parálisis de fracaso durante 1 turno.",
         ],
         duracionTurnos: 1,
-        piezas: { penaliza: 2 },
+        piezas: { penaliza: 2, sinComplejasNiReacciones: true },
       },
       {
         id: "exito",

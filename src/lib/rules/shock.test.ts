@@ -16,7 +16,18 @@ import { descontarDuracion, type EstadoActivo } from "./estados";
 import { operacionesDe } from "./estadosFicha";
 import { aplicarOperacionEstado } from "./vidaPorEstados";
 import { planDeshacerEstados } from "./registro";
-import { afectacionDePiezas, alShockDePieza, conShockEnModificadores, shockDePieza, trozosDeEtiqueta } from "./shock";
+import {
+  afectacionDePiezas,
+  alShockDePieza,
+  conShockEnModificadores,
+  economiaSoloComplejaOReaccion,
+  esComplejaOReaccion,
+  esModoComplejo,
+  shockDePieza,
+  trozosDeEtiqueta,
+} from "./shock";
+import { casillaBlindajeBrazo, casillaBlindajeReactivo } from "./blindaje";
+import { ID_BLOQUEAR_BRAZO } from "./brazoBionico";
 import { accionesDeFarmacos, accionesDirectasDeFarmacos } from "./farmacos";
 import { idSelectorTipoAccion } from "./tipoAccion";
 import { consultaIndiceCondiciones } from "./equipo";
@@ -601,5 +612,123 @@ describe("trozosDeEtiqueta: la marca «(shock)» aparte, para resaltarla", () =>
     assert.deepEqual(trozosDeEtiqueta("Mira Telescópica (shock)"), [{ texto: "Mira Telescópica " }, { texto: "(shock)", shock: true }]);
     assert.deepEqual(trozosDeEtiqueta("Cobertura (shock) · Ojo"), [{ texto: "Cobertura " }, { texto: "(shock)", shock: true }, { texto: " · Ojo" }]);
     assert.deepEqual(trozosDeEtiqueta("Reflejos"), [{ texto: "Reflejos" }]);
+  });
+});
+
+// Fracaso del Shock sobre los implantes (fuente aumentos.md «Implantes», sync Drive 2026-11-14):
+// además del −2, «no podrá ejecutar acciones complejas ni reacciones con el implante».
+describe("Shock (fracaso): sin acciones complejas ni reacciones con los implantes", () => {
+  const MOTIVO_BRAZO = "Shock (fracaso): sin acciones complejas ni reacciones con Brazo Biónico.";
+  const MOTIVO_ENJAMBRE = "Shock (fracaso): sin acciones complejas ni reacciones con Enjambre Nanobot.";
+  // Brazo 4 (Fuerte: bloquea) con la Maza de Kerzul incorporada (Estándar y Compleja), Bloqueo, el
+  // Enjambre 4 (Densificar y Tempestad) y la Neuroprótesis 1.
+  const s: Sheet = (() => {
+    const b = con(
+      ficha,
+      { instanciaId: "brazo", catalogoId: "aum_brazo_bionico", nivel: 4, eleccion: "fuerte", armaIncorporada: "maza" },
+      { instanciaId: "maza", catalogoId: "kerzul_maza" },
+      { instanciaId: "enj", catalogoId: "aum_enjambre_nanobot", nivel: 4 },
+    );
+    const cm = b.habilidades.combate_melee;
+    return { ...b, habilidades: { ...b.habilidades, combate_melee: { ...cm, valor: Math.max(cm.valor, 1) } }, dotes: [...b.dotes, { id: "dote_bloqueo" }] };
+  })();
+  const bloquearBrazo = (f: FichaResuelta) => tiradas(f).find((t) => t.id === ID_BLOQUEAR_BRAZO)!;
+  const golpeMaza = (f: FichaResuelta) => tiradas(f).find((t) => t.origen?.instanciaId === "maza" && t.grupo === "Ataques")!;
+  const bloquearMaza = (f: FichaResuelta) => tiradas(f).find((t) => t.origen?.instanciaId === "maza" && t.grupo === "Defensa")!;
+  const activarNeuro = (f: FichaResuelta) => f.accionesAumentos.directas.find((a) => a.origen?.instanciaId === "neuro")!;
+  const tempestad = (f: FichaResuelta) => {
+    const fila = f.accionesAumentos.filas.find((x) => x.tipo === "tirada" && x.accion.origen?.instanciaId === "enj");
+    assert.ok(fila?.tipo === "tirada");
+    return conExtrasDeFicha(f, fila.accion);
+  };
+  const densificar = (f: FichaResuelta) => casillaBlindajeReactivo(f.ficha, "cinetico", false, f.fatigaEnJuego.actual, f.piezasPenalizadas)!;
+  const opcionesDeModo = (t: Accion) => {
+    const m = t.condiciones?.find((c) => c.id === "modo");
+    return m?.tipo === "opcion" ? m.opciones.map((o) => o.etiqueta) : [];
+  };
+
+  test("el grado fracaso del Shock del cuerpo lo marca y lo dice; el del equipo, no", () => {
+    const fracaso = estadoPorId("shock")!.grados.find((g) => g.id === "fracaso")!;
+    assert.deepEqual(fracaso.piezas, { penaliza: 2, sinComplejasNiReacciones: true });
+    assert.ok(fracaso.detalle.includes("No puedes hacer acciones complejas ni reacciones con los implantes."));
+    assert.deepEqual(estadoPorId("shock_equipo")!.grados.find((g) => g.id === "fracaso")!.piezas, { penaliza: 2 });
+    assert.deepEqual(estadoPorId("shock")!.grados.find((g) => g.id === "exito")!.piezas, { penaliza: 1 });
+    assert.equal(afectacionDePiezas(s, [shock("fracaso")]).penalizadas.get("brazo")?.sinComplejasNiReacciones, true);
+    assert.equal(afectacionDePiezas(s, [shock("exito")]).penalizadas.get("brazo")?.sinComplejasNiReacciones, undefined);
+  });
+
+  test("fracaso: Bloquear con el brazo biónico y bloquear con el arma incorporada, bloqueadas", () => {
+    const f = resolver(s, [shock("fracaso")]);
+    assert.deepEqual(bloquearBrazo(f).habilitacion, bloqueadaPor(MOTIVO_BRAZO));
+    assert.deepEqual(bloquearMaza(f).habilitacion, bloqueadaPor(MOTIVO_BRAZO));
+    // Sin Shock, activas.
+    const sin = resolver(s, []);
+    assert.equal(bloquearBrazo(sin).habilitacion, undefined);
+    assert.equal(bloquearMaza(sin).habilitacion, undefined);
+  });
+
+  test("fracaso: Densificar (reacción del Enjambre) bloqueada en Resistir daño y no suma aunque venga marcada", () => {
+    const f = resolver(s, [shock("fracaso")]);
+    assert.equal(densificar(f).bloqueada, MOTIVO_ENJAMBRE);
+    assert.equal(casillaBlindajeBrazo(f.ficha, "cinetico", f.piezasPenalizadas)?.bloqueada, MOTIVO_BRAZO);
+    const golpe = { tipo: "cinetico" as const, critico: false, danio: 10, reactivo: true, conBrazo: true, marcadas: [], rompeBlindaje: 0, categoria: null };
+    const r = resolverGolpe(f, golpe);
+    assert.ok(!r.desglose.some((l) => /Densificar|Bloqueado con el brazo/.test(l.etiqueta)));
+    const sin = resolver(s, []);
+    assert.equal(densificar(sin).bloqueada, null);
+    assert.ok(resolverGolpe(sin, golpe).desglose.some((l) => /Densificar/.test(l.etiqueta)));
+  });
+
+  test("fracaso: lo que admite otra vía o no es complejo sigue (Activar Neuroprótesis, Tempestad, el golpe Estándar)", () => {
+    const f = resolver(s, [shock("fracaso")]);
+    // «Acción gratuita en tu turno o reacción»: queda la gratuita.
+    assert.equal(activarNeuro(f).habilitacion, undefined);
+    assert.equal(bloqueoDeAccionAumento(f, activarNeuro(f).id), null);
+    assert.equal(tempestad(f).habilitacion, undefined);
+    // El golpe con la maza incorporada: sin el modo Compleja en el selector.
+    const golpe = golpeMaza(f);
+    assert.equal(golpe.habilitacion, undefined);
+    assert.deepEqual(opcionesDeModo(golpe), ["Estándar"]);
+    assert.deepEqual(opcionesDeModo(golpeMaza(resolver(s, []))), ["Estándar", "Compleja"]);
+  });
+
+  test("éxito del Shock y fracaso del Shock en el equipo: nada de esto se bloquea", () => {
+    for (const estados of [[shock("exito")], [shockEquipo("fracaso")]]) {
+      const f = resolver(s, estados);
+      assert.equal(bloquearBrazo(f).habilitacion, undefined);
+      assert.equal(bloquearMaza(f).habilitacion, undefined);
+      assert.equal(densificar(f).bloqueada, null);
+      assert.equal(activarNeuro(f).habilitacion, undefined);
+      assert.equal(tempestad(f).habilitacion, undefined);
+      assert.deepEqual(opcionesDeModo(golpeMaza(f)), ["Estándar", "Compleja"]);
+    }
+  });
+
+  test("economiaSoloComplejaOReaccion: todas las vías complejas o reacción", () => {
+    for (const e of ["Acción compleja", "Reacción", "reaccion", "compleja", "Acción compleja o reacción"]) assert.equal(economiaSoloComplejaOReaccion(e), true, e);
+    for (const e of [
+      "Acción gratuita en tu turno o reacción",
+      "Acción simple o reacción",
+      "Acción simple o estándar (cuenta la más compleja)",
+      "Acción estándar, cuerpo a cuerpo",
+      "Acción extendida de 10 minutos",
+      "",
+    ])
+      assert.equal(economiaSoloComplejaOReaccion(e), false, e);
+  });
+
+  test("esModoComplejo y esComplejaOReaccion", () => {
+    assert.equal(esModoComplejo("Compleja"), true);
+    assert.equal(esModoComplejo("Compleja (F. Auto)"), true);
+    assert.equal(esModoComplejo("Estándar / Compleja"), false);
+    assert.equal(esModoComplejo(undefined), false);
+    const hoja = (x: Partial<Accion>): Accion => ({ id: "x", label: "x", grupo: "Ataques", aplicado: "potencia", habilidad: null, ...x });
+    assert.equal(esComplejaOReaccion(hoja({ grupo: "Defensa" })), true);
+    assert.equal(esComplejaOReaccion({ id: "e", label: "Levantar", grupo: "Defensa", familiaArma: "levantar_escudo" }), false);
+    assert.equal(esComplejaOReaccion(hoja({ economia: "Acción compleja" })), true);
+    const modo = (etiqueta: string) => ({ id: etiqueta, etiqueta, danio: 1, formulaDanio: null, categoriaDanio: "Letal" });
+    assert.equal(esComplejaOReaccion(hoja({ ataque: { modos: [modo("Compleja")] } })), true);
+    assert.equal(esComplejaOReaccion(hoja({ ataque: { modos: [modo("Estándar"), modo("Compleja")] } })), false);
+    assert.equal(esComplejaOReaccion(hoja({})), false);
   });
 });

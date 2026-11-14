@@ -125,10 +125,14 @@ import { aplicadosPosibles, conTextosDeFicha, contextoDe, junta, textosDe, texto
 import {
   bonoConShock,
   conMarcaDeReglaPropia,
+  esComplejaOReaccion,
   etiquetaShock,
   MARCA_SHOCK,
   motivoApagada,
+  motivoSinComplejasNiReacciones,
   piezasDeEstado,
+  sinComplejasNiReacciones,
+  sinModosComplejos,
   type PiezaConReglaPropia,
   type PiezaPenalizada,
 } from "./shock";
@@ -818,20 +822,25 @@ function conPenalizadas(t: Accion, penalizadas: ReadonlyMap<string, PiezaPenaliz
   // Al usarla: −N a la tirada cuya pieza es ella.
   const usada = de(t.origen);
   const uso = usada ? [{ valor: -usada.valor, fuente: etiquetaShock(usada.origen.label), origen: usada.estado }] : [];
-  return {
+  // Fracaso del Shock sobre los implantes: con la pieza (la de la fila o la extremidad con la que
+  // se hace siempre) no hay modos «Compleja».
+  const sinComplejas =
+    sinComplejasNiReacciones(penalizadas, t.origen?.instanciaId) ?? sinComplejasNiReacciones(penalizadas, t.extremidad?.origen?.instanciaId);
+  const conPenalizacion: Accion = {
     ...t,
     ...(ajustesFijos !== t.ajustesFijos || uso.length > 0 ? { ajustesFijos: [...(ajustesFijos ?? []), ...uso] } : {}),
     ...(bonosTramo !== t.bonosTramo && { bonosTramo }),
     ...(condiciones !== t.condiciones && { condiciones }),
     ...(habilidadAlternativa !== alt && { habilidadAlternativa }),
   };
+  return sinComplejas ? sinModosComplejos(conPenalizacion) : conPenalizacion;
 }
 
 type FichaParaHabilitar = Pick<
   FichaResuelta,
   "ficha" | "modificadores" | "indiceCondiciones" | "textosTirada" | "extrasDotes" | "ventajasFijas" | "fallosCriticos"
 > &
-  Partial<Pick<FichaResuelta, "piezasInutilizadas" | "estados">>;
+  Partial<Pick<FichaResuelta, "piezasInutilizadas" | "piezasPenalizadas" | "estados">>;
 
 // Lo que depende de la ficha en la habilitación de una hoja (fase 6 de docs/aportes/plan.md),
 // sin lo que la hoja ya trae de quien la genera: eso lo junta conHabilitacion. Lo llaman
@@ -843,6 +852,9 @@ type FichaParaHabilitar = Pick<
 //      subsistema, herramienta, movimiento, implante (sus acciones y tiradas). Y la que se hace
 //      siempre con la extremidad de una pieza apagada (`extremidad.origen`: el arma incorporada
 //      en el Brazo Biónico): «Apagada por <estado> (<pieza>).».
+//   1b. La pieza (o esa extremidad) está en fracaso del Shock del cuerpo y la hoja es compleja o
+//      reacción (esComplejaOReaccion; fuente aumentos.md «Implantes», sync Drive 2026-11-14):
+//      bloqueada, «Shock (fracaso): sin acciones complejas ni reacciones con <pieza>.».
 //   2. S99: Rastreo y compañía sin su especialidad ni nada que les enganche, ocultas.
 export function habilitacionEnFicha(ficha: FichaParaHabilitar, hoja: Accion | AccionDirecta): Habilitacion {
   const pieza = hoja.origen?.instanciaId;
@@ -851,9 +863,12 @@ export function habilitacionEnFicha(ficha: FichaParaHabilitar, hoja: Accion | Ac
   // Biónico, A6b): si esa pieza está apagada, no se puede (usuario 2026-11-14).
   const conExtremidad = "extremidad" in hoja ? hoja.extremidad?.origen : undefined;
   const extremidadApagada = conExtremidad?.instanciaId ? ficha.piezasInutilizadas?.get(conExtremidad.instanciaId) : undefined;
+  const sinComplejas =
+    sinComplejasNiReacciones(ficha.piezasPenalizadas, pieza) ?? sinComplejasNiReacciones(ficha.piezasPenalizadas, conExtremidad?.instanciaId);
   return juntarHabilitacion(
     apagada ? bloqueadaPor(motivoApagada(apagada), "duro") : null,
     extremidadApagada ? bloqueadaPor(motivoApagada(extremidadApagada, conExtremidad!.label), "duro") : null,
+    sinComplejas && esComplejaOReaccion(hoja) ? bloqueadaPor(motivoSinComplejasNiReacciones(sinComplejas), "duro") : null,
     "soloConEspecialidad" in hoja && hoja.soloConEspecialidad && !enganchaTiradaFija(ficha, hoja) ? SIN_ESPECIALIDAD : null,
     "requiereEstado" in hoja && hoja.requiereEstado && !ficha.estados?.some((e) => e.estadoId === hoja.requiereEstado!.estadoId)
       ? bloqueadaPor(hoja.requiereEstado.motivo, "duro")

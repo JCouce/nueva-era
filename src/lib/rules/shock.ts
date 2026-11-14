@@ -15,7 +15,13 @@
 //     no se apaga ni lleva −N en ningún grado con efecto: hace lo suyo (Inyector 2, como el nivel
 //     1; Soporte Vital, salvaciones a +1 y sin resistencia térmica). Lo aplica piezasEnUso (el
 //     nivel) y conShockEnSalvaciones (el selector «Contra…»).
+//   - `sinComplejasNiReacciones` (fracaso del Shock del cuerpo; fuente aumentos.md «Implantes»,
+//     sync Drive 2026-11-14): además del −N, con la pieza no se hacen acciones complejas ni
+//     reacciones. Lo aplica habilitacionEnFicha (las hojas que lo son, esComplejaOReaccion, salen
+//     bloqueadas), conPiezasAfectadas (los modos «Compleja» fuera del selector) y Resistir daño
+//     (Densificar y «Bloqueado con el brazo biónico», bloqueoDeReaccion).
 // «Apagón» (Soporte Vital) es lo mismo que estar afectado por el Shock (pl-03, eq-28).
+import type { Accion, AccionDirecta } from "./acciones";
 import { equipoPorId, type Equipo } from "../catalog/equipo";
 import { estadoPorId, type GradoEstado } from "../catalog/estados";
 import type { AmenazaId, EfectoSalvacion } from "./aumentosTiradas";
@@ -87,7 +93,8 @@ export type PiezaConReglaPropia = { origen: OrigenAporte; regla: AlShock; estado
 // Una pieza tocada por un estado que la penaliza (fracaso, éxito). `valor`: lo que pierde cada
 // bono y lo que se resta al usarla. `estado`: el estado que la penaliza, de origen de la línea del
 // uso.
-export type PiezaPenalizada = { origen: OrigenAporte; valor: number; fuente: string; estado: OrigenAporte };
+// `sinComplejasNiReacciones`: el grado además le quita las acciones complejas y las reacciones.
+export type PiezaPenalizada = { origen: OrigenAporte; valor: number; fuente: string; estado: OrigenAporte; sinComplejasNiReacciones?: true };
 
 export type AfectacionDePiezas = {
   // instanciaId → el estado que la apaga («Shock», «Shock en el equipo»).
@@ -151,6 +158,7 @@ export function afectacionDePiezas(sheet: Pick<Sheet, "equipo">, estados: readon
           valor: t.piezas.penaliza,
           fuente: `${t.estadoLabel} (${t.grado.toLowerCase()})`,
           estado: { tipo: "estado", id: t.estadoId, label: t.estadoLabel },
+          ...(t.piezas.sinComplejasNiReacciones && { sinComplejasNiReacciones: true as const }),
         });
       }
     }
@@ -279,4 +287,76 @@ export function conShockEnLineas<L extends { etiqueta: string; valor: number; or
     const p = afectacion.penalizadas?.get(id);
     return p && l.valor > 0 ? { ...l, etiqueta: etiquetaShock(l.origen!.label), valor: bonoConShock(l.valor, p.valor) } : l;
   });
+}
+
+// ── Fracaso del Shock: sin acciones complejas ni reacciones con la pieza ─────────────────────
+
+// La pieza penalizada que además no admite acciones complejas ni reacciones, o undefined.
+export function sinComplejasNiReacciones(
+  penalizadas: ReadonlyMap<string, PiezaPenalizada> | undefined,
+  instanciaId: string | undefined,
+): PiezaPenalizada | undefined {
+  const p = instanciaId ? penalizadas?.get(instanciaId) : undefined;
+  return p?.sinComplejasNiReacciones ? p : undefined;
+}
+
+// «Shock (fracaso): sin acciones complejas ni reacciones con Brazo Biónico.»
+export const motivoSinComplejasNiReacciones = (p: Pick<PiezaPenalizada, "fuente" | "origen">) =>
+  `${p.fuente}: sin acciones complejas ni reacciones con ${p.origen.label}.`;
+
+const RE_COMPLEJA = /\bcompleja\b/i;
+const RE_REACCION = /\breacci[oó]n\b/i;
+
+// Un tipo de acción en texto que solo admite vías complejas o de reacción: cada alternativa («… o
+// …», «… / …»; lo que va entre paréntesis no cuenta: «(cuenta la más compleja)») es compleja o
+// reacción. «Acción gratuita en tu turno o reacción» no: queda la gratuita. Sin texto, no.
+export function economiaSoloComplejaOReaccion(economia: string): boolean {
+  const vias = economia
+    .replace(/\([^)]*\)/g, "")
+    .split(/\s+o\s+|\//)
+    .map((v) => v.trim())
+    .filter(Boolean);
+  return vias.length > 0 && vias.every((v) => RE_COMPLEJA.test(v) || RE_REACCION.test(v));
+}
+
+// Un modo de ataque de acción compleja por su etiqueta («Compleja», «Compleja (F. Auto)»). «Estándar
+// / Compleja» no: admite la estándar.
+export const esModoComplejo = (etiqueta: string | undefined) => etiqueta !== undefined && /^compleja\b/i.test(etiqueta.trim());
+
+// Si una hoja es una acción compleja o una reacción, con lo que ya declara (la app no cuenta
+// acciones). Criterio (docs/sistema.md §7.1):
+//   - Defensa (Esquivar, Bloquear con X, Bloquear con el brazo biónico): reacción. Levantar un
+//     escudo no: es simple.
+//   - `economia` (acciones de aumento): solo si todas sus vías son complejas o reacción.
+//   - Ataque cuyos modos son todos «Compleja». Con alguno que no, la hoja vale (los complejos los
+//     quita del selector sinModosComplejos).
+// Lo que no declara nada de esto no se bloquea.
+// TODO(revisar): sin cubrir porque la hoja no es del implante ni se hace siempre con él: la casilla
+// «Con el brazo biónico» (Bloquear con un arma que no está incorporada, o un modo Compleja con
+// ella marcada) y la segunda reacción de la Neuroprótesis 3 (es un texto en Defensa, no una hoja).
+export function esComplejaOReaccion(hoja: Accion | AccionDirecta): boolean {
+  if (hoja.grupo === "Defensa" && hoja.familiaArma !== "levantar_escudo") return true;
+  if (hoja.economia && economiaSoloComplejaOReaccion(hoja.economia)) return true;
+  const modos = "ataque" in hoja ? hoja.ataque?.modos : undefined;
+  return modos !== undefined && modos.length > 0 && modos.every((m) => esModoComplejo(m.etiqueta));
+}
+
+// La hoja sin los modos «Compleja» en su selector de modo (id "modo", condicionModo en combate.ts),
+// si le queda alguno que no lo sea. Si todos lo son, tal cual: la bloquea habilitacionEnFicha.
+export function sinModosComplejos(t: Accion): Accion {
+  const i = t.condiciones?.findIndex((c) => c.id === "modo" && c.tipo === "opcion") ?? -1;
+  if (i < 0) return t;
+  const selector = t.condiciones![i];
+  if (selector.tipo !== "opcion") return t;
+  const quedan = selector.opciones.filter((o) => !esModoComplejo(o.etiqueta));
+  if (quedan.length === selector.opciones.length || quedan.length === 0) return t;
+  const porDefecto = quedan.some((o) => o.id === selector.porDefecto) ? selector.porDefecto : quedan[0].id;
+  return { ...t, condiciones: t.condiciones!.map((c, j) => (j === i ? { ...selector, opciones: quedan, porDefecto } : c)) };
+}
+
+// Las casillas de reacción de Resistir daño que se hacen con una pieza (Densificar del Enjambre,
+// «Bloqueado con el brazo biónico»): el motivo si esa pieza está en fracaso del Shock, o null.
+export function bloqueoDeReaccion(penalizadas: ReadonlyMap<string, PiezaPenalizada> | undefined, origen: OrigenAporte | undefined): string | null {
+  const p = sinComplejasNiReacciones(penalizadas, origen?.instanciaId);
+  return p ? motivoSinComplejasNiReacciones(p) : null;
 }

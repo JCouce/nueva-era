@@ -948,6 +948,27 @@ imponen penalizadores por umbral:
   sustituye; el +Fuerza del Exoesqueleto en la base del brazo tampoco se reduce), el factor de
   vida (Hipertrofia) y los números que van dentro de un texto (Malla Plasmática: «devuelves 2 de
   plasma»).
+- **Fracaso del Shock: sin acciones complejas ni reacciones con los implantes** (fuente
+  `aumentos.md` «Implantes», sync Drive 2026-11-14: «Además, no podrá ejecutar acciones complejas
+  ni reacciones con el implante»). Solo el grado fracaso del Shock del cuerpo, no el del equipo
+  (`GradoEstado.piezas.sinComplejasNiReacciones`, que llega a `PiezaPenalizada`). La hoja cuya
+  pieza (`origen.instanciaId`) o extremidad (`extremidad.origen`: el arma incorporada en el Brazo)
+  es un implante así, y que es compleja o reacción, sale **bloqueada**: «Shock (fracaso): sin
+  acciones complejas ni reacciones con <pieza>.» (`habilitacionEnFicha`). La app no cuenta
+  acciones: lo decide con lo que ya declara cada hoja (`esComplejaOReaccion`, `rules/shock.ts`):
+  - **Defensa** (Bloquear con el brazo biónico, Bloquear con el arma incorporada): reacción.
+    Levantar un escudo, no (es simple).
+  - **Acciones de aumento** (`economia`): solo si **todas** sus vías son complejas o reacción (lo
+    de entre paréntesis no cuenta). «Acción gratuita en tu turno o reacción» (Activar
+    Neuroprótesis) sigue disponible por la gratuita; Tempestad (estándar), también.
+  - **Modos de ataque «Compleja»** de una hoja hecha con el implante: salen del selector de modo
+    (`sinModosComplejos`, en `conPiezasAfectadas`); si todos lo son, la hoja se bloquea.
+  - **Resistir daño**: Densificar (Enjambre) y «Bloqueado con el brazo biónico» son reacciones con
+    el implante: la casilla sale bloqueada con el motivo y no suma aunque viniera marcada
+    (`bloqueoDeReaccion`).
+  - Lo que no declara nada de esto no se bloquea. *TODO(revisar)*: la casilla «Con el brazo
+    biónico» en hojas que no son del brazo (Bloquear con un arma no incorporada, un modo Compleja
+    con la casilla marcada) y la segunda reacción de la Neuroprótesis 3 (texto, no hoja).
 - **«Apagón» = afectado por Shock (pl-03, eq-28)**: el del Soporte Vital es estar afectado por el
   Shock en el equipo (cualquier grado con efecto).
 - **Regla propia de una pieza (eq-29; decisiones del usuario 2026-11-14)**: la pieza que la

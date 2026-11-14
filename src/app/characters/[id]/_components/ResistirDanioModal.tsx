@@ -196,8 +196,8 @@ export function ResistirDanioModal({
   const durabilidad =
     escudoAplicado ?? (golpe && { recibe: golpe.aDurabilidad, de: golpe.durabilidadActual, a: golpe.durabilidadResultante });
   const seRompe = escudoAplicado ? escudoAplicado.a === 0 && escudoAplicado.de > 0 : Boolean(golpe?.seRompe);
-  const casilla = casillaBlindajeReactivo(ficha.ficha, tipo, reactivo, ficha.fatigaEnJuego.actual);
-  const casillaBrazo = casillaBlindajeBrazo(ficha.ficha, tipo);
+  const casilla = casillaBlindajeReactivo(ficha.ficha, tipo, reactivo, ficha.fatigaEnJuego.actual, ficha.piezasPenalizadas);
+  const casillaBrazo = casillaBlindajeBrazo(ficha.ficha, tipo, ficha.piezasPenalizadas);
   const enVivo = resolverGolpe(ficha, {
     tipo,
     critico: elegido.critico,
@@ -253,13 +253,13 @@ export function ResistirDanioModal({
   // Cambiar a un tipo en el que no vale (Mental, Fuego) la desmarca y devuelve la fatiga.
   const elegirTipo = (t: TipoDanio) => {
     const siguiente = pulsarTipoDanio(elegido, t);
-    const otra = casillaBlindajeReactivo(ficha.ficha, siguiente.tipo, reactivo, ficha.fatigaEnJuego.actual);
+    const otra = casillaBlindajeReactivo(ficha.ficha, siguiente.tipo, reactivo, ficha.fatigaEnJuego.actual, ficha.piezasPenalizadas);
     // Cambiar a un tipo en el que no vale (Mental, Fuego) la desmarca y devuelve la fatiga.
     if (reactivo && otra?.bloqueada) {
       onAjustarFatiga?.(otra.costeFatiga);
       setReactivo(false);
     }
-    if (casillaBlindajeBrazo(ficha.ficha, siguiente.tipo)?.bloqueada) setConBrazo(false);
+    if (casillaBlindajeBrazo(ficha.ficha, siguiente.tipo, ficha.piezasPenalizadas)?.bloqueada) setConBrazo(false);
     setEscudoAplicado(null);
     setElegido(siguiente);
   };
