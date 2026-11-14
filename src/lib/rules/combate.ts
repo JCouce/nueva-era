@@ -743,13 +743,13 @@ function mallaPlasmaticaEquipada(sheet: Sheet): { instanciaId: string; nivel: nu
 // arbitra si se combinan ambos, mismo criterio de confianza en el jugador
 // que el resto de toggles independientes.
 // Efectos del plasma liberado (R7, 2026-10-24, docs/fuente/equipamiento.md): en los niveles 1-2,
-// solo en crítico uno de los habituales (dificultad 6 + nivel); desde el 3, "causan efecto de
+// solo en crítico uno de los habituales, a elección del personaje (dificultad 6 + nivel); desde el 3, "causan efecto de
 // shock y de llamarada (dificultad 5 + nivel), en caso de crítico efecto de fusión (dificultad
 // 7 + nivel)". Vale para los dos sacrificios.
 function efectosPlasmaLiberado(nivel: number): string {
   return nivel >= 3
     ? `Causa shock y llamarada (dificultad ${5 + nivel}); en crítico, fusión (dificultad ${7 + nivel}).`
-    : `Sin sus efectos salvo en crítico: shock, llamarada o fusión — dificultad de absorción ${6 + nivel}.`;
+    : `Sin sus efectos salvo en crítico: shock, llamarada o fusión, a tu elección — dificultad de absorción ${6 + nivel}.`;
 }
 
 function condicionesSacrificioColchon(nivel: number): CondicionTirada[] {

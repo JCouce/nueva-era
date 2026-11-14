@@ -450,7 +450,7 @@ export const SUBSISTEMAS: Subsistema[] = [
             "reactivarse.",
           "Sacrificando 2 puntos del colchón (acción gratuita, se declara antes de atacar), suma 1 " +
             "nivel de daño de plasma a un golpe melee desarmado; en crítico puede causar shock, " +
-            "llamarada o fusión (dificultad 6 + nivel).",
+            "llamarada o fusión, a elección del personaje (dificultad 6 + nivel).",
           "Si el usuario recibe un golpe melee, devuelve daño de plasma igual al nivel del " +
             "subsistema.",
           "Al activarse: -8 al sigilo (percepción visual) y neutraliza por completo el camuflaje " +
