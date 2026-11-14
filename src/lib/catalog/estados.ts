@@ -1301,6 +1301,7 @@ export const ESTADOS_DE_FARMACO: Estado[] = [
         // «+2 a la iniciativa y +1 a las acciones físicas basadas en Agilidad o Fuerza» (S94): físicas
         // = tiradas con Fortaleza, Potencia o Reflejos, sin las salvaciones. No se apilan entre sí:
         // una iniciativa con Reflejos se queda en +2.
+        // TODO(revisar): el Irota (fármacos a la mitad, §14.9) recibe el +2 entero; sería +1.
         modificadores: [
           { tipo: "tirada", alcance: { tipo: "grupo", grupo: "Iniciativa" }, valor: 2, noApila: "ultra_estimulante" },
           {

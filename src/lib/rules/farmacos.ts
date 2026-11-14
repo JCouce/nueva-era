@@ -34,8 +34,8 @@ import {
 } from "../catalog/estados";
 
 // Los tres que no llevan tirada (docs/checklist-motor-vs-prosa-2026-09-24.md
-// / prompt-gasto-recursos.md): el nota explica el efecto, "Usar" solo gasta
-// la dosis, sin resolución de d12 de por medio.
+// / prompt-gasto-recursos.md): "Usar" gasta la dosis y pone su estado (ESTADO_AL_USAR), sin
+// resolución de d12 de por medio.
 const SIN_TIRADA = new Set(["farmaco_analgesico", "farmaco_antipatogeno", "farmaco_ultra_estimulante"]);
 
 // El estado que pone usar la dosis (fármacos como estados, usuario 2026-11-14): «Bajo Analgésico»
