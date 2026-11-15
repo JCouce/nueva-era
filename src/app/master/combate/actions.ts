@@ -780,16 +780,20 @@ export async function anotarDanioTiradaAction(destino: unknown, id: unknown, dan
   return { ok: true };
 }
 
-// «Ver más» de la consola: todas las tiradas guardadas de esa fila en este combate. Bajo
-// demanda, para no mandar el historial entero en cada refresco del polling.
+// «Ver más» de la consola y de la ficha: todas las tiradas guardadas de esa fila en este combate.
+// Bajo demanda, para no mandar el historial entero en cada refresco del polling. Las tiradas de
+// la mesa son públicas (usuario, 2026-11-15): cualquier usuario logueado ve las de cualquier
+// fila, NPC incluidos, mientras el combate esté en curso; el máster, en cualquier estado.
 export async function historialTiradasAction(
   combatienteId: unknown,
 ): Promise<{ ok: true; tiradas: TiradaCombate[] } | { ok: false; error: string }> {
-  const user = await requireMaster();
-  if (!user) return { ok: false, error: "Solo el máster puede ver el historial de tiradas." };
+  const user = await requireUser();
   const id = z.string().min(1).max(60).safeParse(combatienteId);
   if (!id.success) return { ok: false, error: "Datos no válidos" };
-  const fila = await prisma.combatiente.findUnique({ where: { id: id.data }, select: { tiradas: true } });
+  const fila = await prisma.combatiente.findFirst({
+    where: { id: id.data, ...(user.role === "MASTER" ? {} : { combate: { estado: "EN_CURSO" } }) },
+    select: { tiradas: true },
+  });
   if (!fila) return { ok: false, error: "Ese combatiente ya no está en la cola." };
   return { ok: true, tiradas: leerTiradasCombate(fila.tiradas) };
 }

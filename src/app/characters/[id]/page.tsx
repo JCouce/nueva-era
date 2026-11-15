@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
-import { parseSheet, parseSnapshot, leerEstados, estadosDeCombatiente, reconciliarVidaConEstados, danioDeFoto } from "@/lib/rules";
+import { parseSheet, parseSnapshot, leerEstados, estadosDeCombatiente, reconciliarVidaConEstados, danioDeFoto, tiradasDeFila } from "@/lib/rules";
 import { AppHeader } from "@/components/AppHeader";
 import { HudCard } from "@/components/HudCard";
 import { StatusControl } from "@/app/master/MasterControls";
@@ -39,8 +39,6 @@ export default async function CharacterPage({
     include: {
       combatientes: {
         orderBy: { orden: "asc" },
-        // Las tiradas de la cola son para la consola del máster: ni hacen falta aquí ni las ve el jugador.
-        omit: { tiradas: true },
         include: { character: { select: { estados: true } } },
       },
     },
@@ -48,10 +46,13 @@ export default async function CharacterPage({
   const combateRaw = abierto?.estado === "EN_CURSO" ? abierto : null;
   const combate = combateRaw && {
     ...combateRaw,
-    combatientes: combateRaw.combatientes.map(({ character, ...c }) => ({
+    combatientes: combateRaw.combatientes.map(({ character, tiradas, ...c }) => ({
       ...c,
       danio: danioDeFoto(c.danio, c.pgActual, c.pgMax),
       estados: estadosDeCombatiente({ ...c, character }),
+      // Las tiradas de la mesa las ven todos, NPC incluidos (usuario, 2026-11-15). Como en la
+      // consola: solo la ronda actual; el historial, con «Ver más» (historialTiradasAction).
+      ...tiradasDeFila(tiradas, combateRaw.ronda),
     })),
   };
   // Si el personaje no tiene fila en este combate, no hay "su combate" que

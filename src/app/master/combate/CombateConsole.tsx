@@ -41,7 +41,7 @@ import { useAvisosMando } from "@/components/mando/useAvisosMando";
 import type { AccionesMando, ObjetivoMando } from "@/components/mando/tipos";
 import { darCreditosAction, darXpAction, deshacerRegistroAction, limpiarEstadosAction } from "../actions";
 import { NpcAccionesPanel } from "./NpcAccionesPanel";
-import { BloquesTiradas, HistorialTiradasModal } from "./TiradasCombatiente";
+import { BloquesTiradas, HistorialTiradasModal } from "@/components/TiradasCombatiente";
 import { enlaceDeCombatiente } from "@/lib/navegacionCombate";
 import { ContadorRondas, type EnCola } from "./ContadorRondas";
 import {

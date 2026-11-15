@@ -10,6 +10,7 @@ import {
   leerTiradasCombate,
   resumenDeTirada,
   textoContra,
+  tiradasDeFila,
   tiradasDeRonda,
   type TiradaCombate,
   type TiradaNueva,
@@ -116,5 +117,24 @@ describe("agrupar por ronda", () => {
     assert.deepEqual(g.map((x) => x.ronda), [3, 1]);
     assert.deepEqual(g[1].acciones.map((t) => t.id), ["a"]);
     assert.deepEqual(g[1].esquivas.map((t) => t.id), ["b"]);
+  });
+});
+
+describe("tiradasDeFila", () => {
+  const lista = [anadirTirada([], nueva("a"), 1, 1)[0], anadirTirada([], nueva("b", "esquiva"), 2, 2)[0]];
+
+  test("solo la ronda actual, y si hubo algo antes", () => {
+    const f = tiradasDeFila(lista, 2);
+    assert.deepEqual(f.tiradasRonda.esquivas.map((t) => t.id), ["b"]);
+    assert.equal(f.tiradasRonda.acciones.length, 0);
+    assert.equal(f.hayTiradasAnteriores, true);
+  });
+
+  test("al cambiar de ronda la fila se vacía; Json vacío o roto, nada", () => {
+    const f = tiradasDeFila(lista, 3);
+    assert.equal(f.tiradasRonda.acciones.length + f.tiradasRonda.esquivas.length, 0);
+    assert.equal(f.hayTiradasAnteriores, true);
+    assert.deepEqual(tiradasDeFila(null, 1), { tiradasRonda: { ronda: 1, acciones: [], esquivas: [] }, hayTiradasAnteriores: false });
+    assert.equal(tiradasDeFila("basura", 1).hayTiradasAnteriores, false);
   });
 });

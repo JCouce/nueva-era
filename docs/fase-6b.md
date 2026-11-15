@@ -782,3 +782,6 @@ enemigo ataque de verdad, solo llevar la cuenta de su PG a ojo. Con encuentros d
   `registrarTiradaAction`, `anotarDanioTiradaAction`, `historialTiradasAction`
   (`master/combate/actions.ts`). La consola solo recibe la ronda actual; el historial se pide
   al abrir «Ver más».
+  Los jugadores también las ven, NPC incluidos (usuario, 2026-11-15): la cola de la pestaña
+  Combate de la ficha pinta los mismos bloques (`components/TiradasCombatiente.tsx`) y su
+  «Ver más» abre el historial mientras el combate siga EN_CURSO.

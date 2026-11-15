@@ -9,10 +9,17 @@
 // docs/fase-6b.md bloque 3).
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { describirEstadosActivos, type CategoriaDanio, type DanioVida, type EstadoActivo } from "@/lib/rules";
+import {
+  describirEstadosActivos,
+  type CategoriaDanio,
+  type DanioVida,
+  type EstadoActivo,
+  type RondaDeTiradas,
+} from "@/lib/rules";
 import { HudCard } from "@/components/HudCard";
 import { AvisoChips, ChipEstado, type ChipsDeFicha } from "@/components/ChipEstado";
 import { ControlVida, nombreDanio } from "@/components/ficha/ControlVida";
+import { BloquesTiradas, HistorialTiradasModal } from "@/components/TiradasCombatiente";
 import { ajustarDanioCombatienteAction, ajustarFatigaAction } from "@/app/master/combate/actions";
 
 type CombatienteView = {
@@ -29,6 +36,9 @@ type CombatienteView = {
   characterId: string | null;
   derrotado: boolean;
   estados: EstadoActivo[];
+  // Sus tiradas de la ronda actual; las ven todos, NPC incluidos (usuario, 2026-11-15).
+  tiradasRonda: RondaDeTiradas;
+  hayTiradasAnteriores: boolean;
 };
 
 export type CombateView = {
@@ -60,6 +70,10 @@ export function CombateTab({
   const deltaRef = useRef<HTMLInputElement | null>(null);
   // Categoría de la vida: la del control compacto, que usa también el ±N de "PG".
   const [categoria, setCategoria] = useState<CategoriaDanio>("letal");
+  // «Ver más»: la id de la fila cuyo historial de tiradas está abierto. Se guarda la id, no la
+  // fila, para que la ronda actual del modal siga viva con el polling.
+  const [historialDe, setHistorialDe] = useState<string | null>(null);
+  const historialAbierto = historialDe ? (combate.combatientes.find((c) => c.id === historialDe) ?? null) : null;
   const turnoActual = combate.combatientes[combate.turnoIndex] ?? null;
 
   // Mismo patrón sin control de React que CombateConsole.tsx (2.4): un solo
@@ -190,6 +204,11 @@ export function CombateTab({
                     </button>
                   </div>
                 )}
+                <BloquesTiradas
+                  ronda={c.tiradasRonda}
+                  hayAnteriores={c.hayTiradasAnteriores}
+                  onVerMas={() => setHistorialDe(c.id)}
+                />
               </HudCard>
             </li>
           );
@@ -197,6 +216,16 @@ export function CombateTab({
       </ul>
 
       {error && <p className="font-mono text-xs text-danger">{error}</p>}
+
+      {historialAbierto && (
+        <HistorialTiradasModal
+          combatienteId={historialAbierto.id}
+          nombre={historialAbierto.nombre}
+          rondaActual={combate.ronda}
+          actual={historialAbierto.tiradasRonda}
+          onCerrar={() => setHistorialDe(null)}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-// Las tiradas de cada combatiente en la consola (rules/tiradasCombate.ts): en la fila, las de
+// Las tiradas de cada combatiente en la cola (rules/tiradasCombate.ts), igual en la consola del
+// máster y en la ficha del jugador (CombateTab): en la fila, las de
 // la ronda actual en dos bloques (Tiradas y Esquivas); «Ver más» abre el historial de este
 // combate por ronda (R3, R2, R1…), pedido al servidor al abrirlo.
 import { useEffect, useState } from "react";
@@ -14,7 +15,7 @@ import {
 } from "@/lib/rules";
 import { Modal } from "@/components/Modal";
 import { FOCO } from "@/components/mando/controles";
-import { historialTiradasAction } from "./actions";
+import { historialTiradasAction } from "@/app/master/combate/actions";
 
 // Mismo idioma que el historial de la ficha (tonoResultado, AccionesTab): acento = crítico,
 // cian = éxito, peligro = fracaso crítico, apagado = fracaso.

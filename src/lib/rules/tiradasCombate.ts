@@ -111,6 +111,19 @@ export function tiradasDeRonda(lista: TiradaCombate[], ronda: number): RondaDeTi
   );
 }
 
+// Lo que viaja con cada fila de la cola (consola del máster y ficha del jugador): solo la ronda
+// actual y si hay algo antes; el historial entero se pide aparte con «Ver más», para no mandarlo
+// en cada refresco del polling.
+export type TiradasDeFila = { tiradasRonda: RondaDeTiradas; hayTiradasAnteriores: boolean };
+
+export function tiradasDeFila(json: unknown, ronda: number): TiradasDeFila {
+  const lista = leerTiradasCombate(json);
+  return {
+    tiradasRonda: tiradasDeRonda(lista, ronda),
+    hayTiradasAnteriores: lista.some((t) => t.ronda !== ronda),
+  };
+}
+
 // El historial, de la ronda más reciente a la primera; dentro de cada una, en orden de llegada.
 export function agruparTiradasPorRonda(lista: TiradaCombate[]): RondaDeTiradas[] {
   const rondas = [...new Set(lista.map((t) => t.ronda))].sort((a, b) => b - a);

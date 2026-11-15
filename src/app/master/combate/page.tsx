@@ -14,8 +14,7 @@ import {
   textoEntradaRegistro,
   danioDeFoto,
   SIN_AJUSTE_UMBRALES,
-  leerTiradasCombate,
-  tiradasDeRonda,
+  tiradasDeFila,
 } from "@/lib/rules";
 import { CombateConsole } from "./CombateConsole";
 import { NO_BORRADA } from "@/lib/borrado";
@@ -54,7 +53,6 @@ export default async function CombatePage() {
     ...combateRaw,
     combatientes: combateRaw.combatientes.map(({ character, tiradas: tiradasJson, ...c }) => {
       const sheet = c.sheet ? parseSheet(c.sheet) : null;
-      const tiradas = leerTiradasCombate(tiradasJson);
       // A7: las del jugador, con su ficha en vivo; las del NPC, con su foto. Los estados
       // automáticos (Heridas, Fatiga, Inconsciencia), con la vida y la fatiga de la fila.
       const deFicha = character ? parseSheet(character.stats) : sheet;
@@ -76,10 +74,7 @@ export default async function CombatePage() {
         xp: character?.xp ?? null,
         creditos: character?.creditos ?? null,
         sheet,
-        // Solo las de la ronda actual: el historial («Ver más») se pide aparte
-        // (historialTiradasAction), para no mandarlo entero en cada refresco del polling.
-        tiradasRonda: tiradasDeRonda(tiradas, combateRaw.ronda),
-        hayTiradasAnteriores: tiradas.some((t) => t.ronda !== combateRaw.ronda),
+        ...tiradasDeFila(tiradasJson, combateRaw.ronda),
       };
     }),
   };
