@@ -60,6 +60,7 @@
 //   textosRegistro.ts  textos del centro de mando: entradas del registro, duraciones, hora relativa (E1c)
 //   turnos.ts          combate en el centro de mando: vuelta, contador de rondas, resumen, vida en la Mesa (E1d)
 //   ajusteVida.ts      pestaña Vida del máster: daño/curación, vista previa y umbral que cruza
+//   vidaEnJuego.ts     en combate hay una sola vida, la de la foto: dónde caen los ajustes de la ficha
 //   origen.ts          OrigenAporte: de qué ítem viene cada aporte a una tirada (fase 2 de docs/aportes/plan.md)
 //   shock.ts           Shock sobre las piezas: cómo le afecta a cada una, cuáles apaga, cuáles penaliza (el −N a sus bonos) y la regla propia de las que la declaran (T7a, T7b, S73, pl-02, eq-29)
 //   explicacionEstado.ts  lo que explica el modal de un estado (ChipEstado): grado, duración, inmunidad y piezas tocadas
@@ -124,6 +125,7 @@ export * from "./registro";
 export * from "./textosRegistro";
 export * from "./turnos";
 export * from "./ajusteVida";
+export * from "./vidaEnJuego";
 export * from "./origen";
 export * from "./habilitacion";
 export * from "./aportes";

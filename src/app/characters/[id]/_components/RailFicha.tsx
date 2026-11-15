@@ -42,7 +42,8 @@ export function RailFicha({
   chips?: ChipsDeFicha;
 }) {
   const sheet = ficha.ficha;
-  const { vida, fatiga } = ficha.salud;
+  // En combate, la vida y la fatiga de mi fila (una sola vida); fuera, las de la ficha.
+  const { vida, fatiga, danio } = ficha.vital;
   const especie = ficha.especie
     ? [ficha.especie.especie, ficha.especie.casta, ficha.especie.linaje].flatMap((o) => (o ? [o.label] : [])).join(" · ")
     : "sin especie";
@@ -71,23 +72,23 @@ export function RailFicha({
       <Bloque titulo="salud">
         <ControlVida
           variante="compacta"
-          actual={sheet.vidaActual}
-          max={vida}
-          danio={ficha.danio}
+          actual={vida.actual}
+          max={vida.max}
+          danio={danio}
           disabled={soloLectura}
           onAjustar={onAjustarDanio}
         />
         <Vital
           label="Fatiga"
-          actual={sheet.fatigaActual}
-          max={fatiga}
+          actual={fatiga.actual}
+          max={fatiga.max}
           tono="info"
           disabled={soloLectura}
           onAjustar={onAjustarFatiga}
         />
         {sheet.fatigaTemporal > 0 && (
           <p className="font-mono text-[10px] leading-relaxed text-info">
-            {sheet.fatigaTemporal} temporal de Proeza · efectiva {sheet.fatigaActual - sheet.fatigaTemporal}
+            {sheet.fatigaTemporal} temporal de Proeza · efectiva {ficha.fatigaEnJuego.efectiva}
           </p>
         )}
       </Bloque>

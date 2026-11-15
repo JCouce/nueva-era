@@ -37,6 +37,8 @@ import { duracionDe, estadoActivoCon, textoDuracionActivable, type DuracionEstad
 import type { CondicionTirada } from "./condiciones";
 import type { OperacionEstado } from "./vidaPorEstados";
 import { ajustarVida, pagarFatiga, topesDeVida } from "./vitalidad";
+import { ajustarVitalEnJuego, type VitalDeFoto } from "./vidaEnJuego";
+import type { DanioVida } from "./danio";
 import type { Sheet } from "./sheet";
 import { origenDePieza, type OrigenAporte } from "./origen";
 import { bloqueadaPor, motivoDeBloqueo } from "./habilitacion";
@@ -328,7 +330,17 @@ export type UsoAccionAumento =
   // `sheet`: con la fatiga cobrada y la vida sumada. `op`: lo que hay que hacer en
   // Character.estados (null, nada). `mensaje`: qué ha pasado, para el jugador.
   // `coste`: la fatiga cobrada (la acción adicional repetida cuesta más que la de la fila).
-  | { ok: true; accion: AccionDeAumento; sheet: Sheet; op: OperacionEstado | null; mensaje: string; coste: number };
+  // `foto`: con combate en curso, la vida de la foto tras curar (Sanar letal); la de la ficha no
+  // se toca (una sola vida, vidaEnJuego.ts). Sin cambio en la foto, no viene.
+  | {
+      ok: true;
+      accion: AccionDeAumento;
+      sheet: Sheet;
+      op: OperacionEstado | null;
+      mensaje: string;
+      coste: number;
+      foto?: { pgActual: number; danio: DanioVida };
+    };
 
 // Activar (A5a): el grado sale de la elección (obligatoria si la acción la trae).
 function usoDeActivar(
@@ -387,13 +399,15 @@ function usoDeAdicional(
 // llega la fatiga, y devuelve lo que hay que escribir. `extra.eleccion`: lo elegido en el modal
 // de activar (Neuroprótesis 2); `extra.repetida`: la casilla "ya usada" de la acción adicional.
 // `fatiga`: la fatiga en juego (fatigaEnJuego, td-25); en combate, la de la foto. `coste` del
-// resultado es lo cobrado de ella: quien escribe lo resta tal cual a la foto.
+// resultado es lo cobrado de ella: quien escribe lo resta tal cual a la foto. `foto`: la del combate
+// en curso; con ella, la vida que se cura es la suya (td-13, usuario 2026-11-15).
 export function usoDeAccionAumento(
   sheet: Sheet,
   estados: readonly EstadoActivo[],
   accionId: string,
   extra: ExtraAccionAumento = {},
   fatiga: number = sheet.fatigaActual,
+  foto: VitalDeFoto | null = null,
 ): UsoAccionAumento {
   const accion = accionesDeAumentos(sheet, estados, fatiga).directas.find((a) => a.id === accionId);
   if (!accion) return { ok: false, error: "No tienes esa acción (falta el aumento o tiene un requisito roto)." };
@@ -412,6 +426,22 @@ export function usoDeAccionAumento(
   if (efecto?.tipo === "desactivar") {
     const op = operacionDeEfecto(efecto, estados);
     return { ok: true, accion, sheet: pagado, op, mensaje: op ? `Desactivada: ${accion.fuente}.` : "Ya no estaba activa.", coste: cobrado };
+  }
+  if (efecto?.tipo === "vida" && foto) {
+    const tras = ajustarVitalEnJuego(pagado, estados, foto, { recurso: "vida", delta: efecto.delta }).foto ?? foto;
+    const texto =
+      tras.pgActual === foto.pgActual
+        ? "Ya estabas al máximo de vida."
+        : `+${tras.pgActual - foto.pgActual} de vida (${tras.pgActual}/${foto.pgMax}).`;
+    return {
+      ok: true,
+      accion,
+      sheet: pagado,
+      op: null,
+      mensaje: [coste, texto].filter(Boolean).join(" "),
+      coste: cobrado,
+      ...(tras !== foto && { foto: { pgActual: tras.pgActual, danio: tras.danio } }),
+    };
   }
   if (efecto?.tipo === "vida") {
     const curado = ajustarVida(pagado, efecto.delta, estados);

@@ -15,7 +15,6 @@ import {
   type FichaResuelta,
   type RecursoInstancia,
   type MaterialTier,
-  fatigaEfectiva,
   textoDescanso,
   type CategoriaDanio,
   type DanioVida,
@@ -95,8 +94,9 @@ export function RecursosTab({
   onLiberarUsoEscena?: (id: string) => void;
 }) {
   const sheet = ficha.ficha;
-  // El máximo con todos los estados: el mismo al que topan curar y el recorte (topesDeVida, td-12).
-  const { vida, fatiga } = ficha.salud;
+  // La vida y la fatiga que se ven y se ajustan: en combate, las de mi fila (una sola vida); fuera,
+  // las de la ficha contra el máximo con todos los estados (topesDeVida, td-12).
+  const vital = ficha.vital;
   // Solo los tipos que ya se poseen (docs/tareas.md, 2026-09-27) — para
   // descubrir/comprar tipos nuevos ya está Tienda, que es donde se compran
   // (comprar NO vive aquí, a diferencia de Materiales: 14 piezas con ficha
@@ -160,9 +160,9 @@ export function RecursosTab({
     <div className="flex flex-col gap-3">
       {ficha.bolsaAumentos !== null && <BolsaAumentos bolsa={ficha.bolsaAumentos} />}
       <p className="border-b border-border pb-2 font-mono text-[10px] uppercase tracking-widest text-muted">
-        {"//SYSTEM · vida y fatiga"}
+        {vital.deCombate ? "//SYSTEM · vida y fatiga · combate en curso" : "//SYSTEM · vida y fatiga"}
       </p>
-      <ControlVida actual={sheet.vidaActual} max={vida} danio={ficha.danio} onAjustar={onAjustarDanio} />
+      <ControlVida actual={vital.vida.actual} max={vital.vida.max} danio={vital.danio} onAjustar={onAjustarDanio} />
       {/* Escudo (colchón de Malla Plasmática) justo debajo de Vida, pedido
           del usuario 2026-09-27 — mismo criterio que un HUD de videojuego:
           vida y su escudo van juntos, fatiga es un recurso aparte. */}
@@ -179,8 +179,8 @@ export function RecursosTab({
       ))}
       <EstadoCard
         titulo="Fatiga"
-        actual={sheet.fatigaActual}
-        max={fatiga}
+        actual={vital.fatiga.actual}
+        max={vital.fatiga.max}
         tono="info"
         nota={textoDescanso()}
         onAjustar={onAjustarFatiga}
@@ -190,7 +190,7 @@ export function RecursosTab({
         (ficha.psionica.paraEfectos.traslacion > 0 || sheet.fatigaTemporal > 0) && (
           <FatigaTemporalCard
             valor={sheet.fatigaTemporal}
-            efectiva={fatigaEfectiva(sheet)}
+            efectiva={ficha.fatigaEnJuego.efectiva}
             onAjustar={onAjustarFatigaTemporal}
             onTerminarEscena={onTerminarEscena}
           />

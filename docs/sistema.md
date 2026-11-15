@@ -579,6 +579,13 @@ imponen penalizadores por umbral:
   (`vitalidadAlSalirDeCombate`, `rules/vitalidad.ts`), sin bajar de 0; con varias filas, la
   misma que enseña la Mesa (`fotoEnMesa`). Solo si el combate estaba en curso (en preparación la
   foto es la de entrada). Va en la misma transacción que lo cierra (`terminarCombateAction`).
+  *En combate hay una sola vida, la de la foto; la ficha la enseña y la escribe (usuario,
+  2026-11-15).* Con el jugador en un combate en curso, la cabecera y Recursos pintan la vida, la
+  fatiga y el desglose de su fila (`FichaResuelta.vital`), y los −/+ de vida, curar/dañar por
+  categoría, −/+ de fatiga, devolver la de Densificar, el daño propio de los poderes y Sanar letal
+  escriben en la foto, con sus topes, sin tocar la ficha (`ajustarVitalEnJuego`,
+  `rules/vidaEnJuego.ts`); al terminar se copia a la ficha (arriba), así que no se pierde nada. La
+  fatiga temporal de Proeza no es de la foto y sigue en la ficha.
 - **Daño específico** (eléctrico, fuego, frío, corrosivo, plasma, sónico, tóxico, mental),
   cada uno con su categoría de gravedad y su efecto asociado. El **mental omite armaduras**.
   *En la app (2026-10-24, aviso de Murillo: "el fuego es daño grave"):* la gravedad de
@@ -2465,8 +2472,9 @@ sobreesfuerzo.
     tirada, poderes) solo bajaba `stats.fatigaActual`: la foto no se enteraba. Ahora la misma
     diferencia va también a la foto del combate abierto (suelo 0, tope su máximo), en la misma
     transacción: `pagarFatigaAction`, `usarAccionAumentoAction` (también Sanar letal, que sube
-    la vida) y devolver la fatiga de Densificar. El +/- de Recursos sigue siendo solo de la
-    ficha, y el ajuste de la fila propia en Combate, solo de la foto.
+    la vida) y devolver la fatiga de Densificar. ~~El +/- de Recursos sigue siendo solo de la
+    ficha~~ (desde 2026-11-15, en combate, a la foto: una sola vida, §7 td-13), y el ajuste de la
+    fila propia en Combate, solo de la foto.
     `TODO(revisar)`: el "no te llega la fatiga" de las acciones mira la de la ficha, no la de
     la foto.
 - *En la app (A6a, Brazo Biónico: atributos, casilla, bloqueo y blindaje; usuario, 2026-10-22):*

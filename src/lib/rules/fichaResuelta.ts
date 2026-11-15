@@ -24,7 +24,7 @@ import {
   ventajasFijasDeAumentos,
   type VentajaFija,
 } from "./aumentosTiradas";
-import { normalizarDanio, type DanioVida } from "./danio";
+import { danioVacio, normalizarDanio, type DanioVida } from "./danio";
 import { ESTADO_CAMUFLAJE_ID, estadoPorId } from "../catalog/estados";
 import { accionEsconderArma, mallaAnulaCamuflaje, ocultacionDeFicha, textoSigiloPorSentido, type OcultacionDeFicha } from "./sigilo";
 import { absorcionDeContencion, tieneEscudoMelee, type AbsorcionPropia, type ArmaduraNatural } from "./blindaje";
@@ -208,6 +208,15 @@ export type FichaResuelta = {
   // Desglose de la vida perdida (danio.ts) contra el máximo de `salud`, el que pinta la barra:
   // cuadra con lo que se ve aunque un estado del máster mueva el máximo.
   danio: DanioVida;
+  // La vida y la fatiga que se enseñan y que ajustan los botones de la ficha: en un combate en
+  // curso, las de la foto (`vitalidad`, una sola vida: vidaEnJuego.ts); si no, las de la ficha
+  // contra `salud`, con `danio`. `salud` y `danio` siguen siendo los de la ficha.
+  vital: {
+    vida: { actual: number; max: number };
+    fatiga: { actual: number; max: number };
+    danio: DanioVida;
+    deCombate: boolean;
+  };
   alerta: number;
   // Umbrales de §7 con la vida/fatiga de `vitalidad` (fatiga efectiva) y lo que hacen
   // a velocidad y carga, ya aplicado en movimiento, vuelo, levitación y cargaMaxima (sin lo de
@@ -360,7 +369,8 @@ export type OpcionesFicha = {
 // NPC de la consola: la de su fila, no la de su plantilla. Lo decide quien llama.
 export type VitalidadActual =
   | { origen: "ficha" }
-  | { origen: "combate"; pgActual: number; pgMax: number; fatigaActual: number; fatigaMax: number };
+  // `danio`: el desglose de la foto (danioDeFoto); sin él, todo lo perdido es letal.
+  | { origen: "combate"; pgActual: number; pgMax: number; fatigaActual: number; fatigaMax: number; danio?: DanioVida };
 
 export const VITALIDAD_DE_FICHA: VitalidadActual = { origen: "ficha" };
 
@@ -448,6 +458,7 @@ export function resolverFicha(
       ? { pg: vitalidad.pgActual, pgMax: vitalidad.pgMax, fatiga: vitalidad.fatigaActual - sheet.fatigaTemporal, fatigaMax: vitalidad.fatigaMax }
       : { pg: sheet.vidaActual, pgMax: maximos.vida, fatiga: fatigaEfectiva(sheet), fatigaMax: maximos.fatiga };
   const enJuego = fatigaEnJuego(sheet, vitalidad.origen === "combate" ? vitalidad : null);
+  const danioFicha = normalizarDanio(sheet.danio, Math.max(0, maximos.vida - sheet.vidaActual));
   const umbrales = {
     salud: umbralSalud(v.pg, v.pgMax),
     fatiga: umbralFatiga(v.fatiga, v.fatigaMax),
@@ -512,7 +523,21 @@ export function resolverFicha(
       ) as Record<AplicadoId, DesgloseDerivado>,
     },
     salud: maximos,
-    danio: normalizarDanio(sheet.danio, Math.max(0, maximos.vida - sheet.vidaActual)),
+    danio: danioFicha,
+    vital:
+      vitalidad.origen === "combate"
+        ? {
+            vida: { actual: vitalidad.pgActual, max: vitalidad.pgMax },
+            fatiga: { actual: vitalidad.fatigaActual, max: vitalidad.fatigaMax },
+            danio: normalizarDanio(vitalidad.danio ?? danioVacio(), Math.max(0, vitalidad.pgMax - vitalidad.pgActual)),
+            deCombate: true,
+          }
+        : {
+            vida: { actual: sheet.vidaActual, max: maximos.vida },
+            fatiga: { actual: sheet.fatigaActual, max: maximos.fatiga },
+            danio: danioFicha,
+            deCombate: false,
+          },
     alerta: alerta(sheet, modificadores),
     umbrales: { ...umbrales, movimiento: porUmbral },
     ajusteUmbrales,

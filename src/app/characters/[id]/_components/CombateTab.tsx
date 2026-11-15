@@ -18,6 +18,8 @@ import { ajustarDanioCombatienteAction, ajustarFatigaAction } from "@/app/master
 type CombatienteView = {
   id: string;
   nombre: string;
+  // Posición en la cola: entre dos filas del mismo jugador, la última (fotoEnMesa).
+  orden: number;
   pgActual: number;
   pgMax: number;
   // Desglose de lo perdido en la foto (danioDeFoto).

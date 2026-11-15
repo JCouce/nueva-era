@@ -77,10 +77,8 @@ import {
   ajustarGranada,
   ajustarMunicionEspecial,
   ajustarFarmaco,
-  ajustarVida,
-  ajustarDanioCategoria,
+  ajustarVitalEnJuego,
   type CategoriaDanio,
-  ajustarFatiga,
   pagarFatiga,
   ajustarFatigaTemporal,
   terminarEscena,
@@ -89,6 +87,7 @@ import {
   liberarUsoEscena,
   RECURSOS_POR_LETRA,
   estadosParaPintar,
+  fotoEnMesa,
   fichaSoloLectura,
   type EstadoFicha,
   type AtributoId,
@@ -262,6 +261,12 @@ export function CharacterSheet({
   // la pestaña no sale, y si venía elegida del móvil, cae igual.
   const cabina = useCabina();
   const activeEfectivo: TabId = active === "combate" && (!combate || cabina) ? "personaje" : active;
+
+  // Fase 6b bloque 3: mi fila en el combate activo, si la hay. `combate` ya
+  // viene null desde el servidor si este personaje no está metido dentro
+  // (page.tsx). Con varias filas mías (me derrotaron y volví a entrar), la misma
+  // que usa el servidor (fotoEnMesa): su vida es la que se ve y se ajusta.
+  const miCombatiente = combate ? fotoEnMesa(combate.combatientes.filter((c) => c.characterId === characterId)) : null;
 
   // Refs con el último valor, para leerlos dentro de los saves con debounce.
   // Se sincronizan en efecto, no en render: escribirlas durante el render
@@ -497,8 +502,11 @@ export function CharacterSheet({
     setSheet((s) => ajustarFarmaco(s, catalogoId, delta));
     runSave(() => ajustarFarmacoAction(characterId, catalogoId, delta), setSheet);
   };
+  // Vida y fatiga: en un combate en curso hay una sola vida, la de mi fila (usuario, 2026-11-15),
+  // y el servidor escribe en ella. Sin adelanto optimista en combate: la ficha local no es lo que
+  // se ve, y la foto nueva llega con la revalidación que hace la acción. Fuera, adelanto en la ficha.
   const commitAjustarVida = (delta: number) => {
-    setSheet((s) => ajustarVida(s, delta, estados));
+    if (!miCombatiente) setSheet((s) => ajustarVitalEnJuego(s, estados, null, { recurso: "vida", delta }).sheet);
     runSave(() => ajustarVidaAction(characterId, delta), setSheet);
   };
   // «Recibir» en Resistir daño (T2): lo aplica el servidor (recibirDanioAction), en la foto del
@@ -534,18 +542,17 @@ export function CharacterSheet({
     };
   };
   const commitAjustarDanio = (categoria: CategoriaDanio, delta: number) => {
-    setSheet((s) => ajustarDanioCategoria(s, categoria, delta, estados));
+    if (!miCombatiente) setSheet((s) => ajustarVitalEnJuego(s, estados, null, { recurso: "vida", categoria, delta: -delta }).sheet);
     runSave(() => ajustarDanioAction(characterId, categoria, delta), setSheet);
   };
   const commitAjustarFatiga = (delta: number) => {
-    setSheet((s) => ajustarFatiga(s, delta, estados));
+    if (!miCombatiente) setSheet((s) => ajustarVitalEnJuego(s, estados, null, { recurso: "fatiga", delta }).sheet);
     runSave(() => ajustarFatigaAction(characterId, delta), setSheet);
   };
-  // Densificar desmarcado (A4b): devuelve lo que cobró pagarFatigaAction, también a la foto
-  // del combate (A5b).
+  // Densificar desmarcado (A4b): devuelve lo que cobró pagarFatigaAction; en combate, a mi fila.
   const commitDevolverFatiga = (delta: number) => {
     if (delta <= 0) return;
-    setSheet((s) => ajustarFatiga(s, delta, estados));
+    if (!miCombatiente) setSheet((s) => ajustarVitalEnJuego(s, estados, null, { recurso: "fatiga", delta }).sheet);
     runSave(() => devolverFatigaAction(characterId, delta), setSheet);
   };
   const commitPagarFatiga = (coste: number, permiteTemporal: boolean) => {
@@ -722,11 +729,6 @@ export function CharacterSheet({
   };
 
 
-  // Fase 6b bloque 3: mi fila en el combate activo, si la hay. `combate` ya
-  // viene null desde el servidor si este personaje no está metido dentro
-  // (page.tsx) — esto solo busca cuál de las filas es la mía para resaltar
-  // turno/estados en la tira compacta.
-  const miCombatiente = combate?.combatientes.find((c) => c.characterId === characterId) ?? null;
   // Mis tiradas, a la consola del máster (por ronda), solo con combate en curso y yo en la cola.
   // En segundo plano y sin aviso: si no llegan, la tirada aquí sigue igual. El servidor vuelve a
   // comprobar que hay combate en curso y que la ficha es mía.
@@ -752,6 +754,7 @@ export function CharacterSheet({
             pgMax: miCombatiente.pgMax,
             fatigaActual: miCombatiente.fatigaActual,
             fatigaMax: miCombatiente.fatigaMax,
+            danio: miCombatiente.danio,
           }
         : VITALIDAD_DE_FICHA,
     [miCombatiente],
@@ -760,7 +763,9 @@ export function CharacterSheet({
   const puntosAttr = puntosAtributosDisponibles(sheet);
   // Con el ajuste de coste de la especie (§14.6), el mismo que aplica el servidor.
   const puntosSkill = puntosHabilidadesDisponibles(sheet, ficha.ajusteCoste);
-  const { vida, fatiga } = ficha.salud;
+  // Los máximos que se ven: en combate, los de mi fila (FichaResuelta.vital).
+  const vida = ficha.vital.vida.max;
+  const fatiga = ficha.vital.fatiga.max;
   const esMiTurno = !!(miCombatiente && combate!.combatientes[combate!.turnoIndex]?.id === miCombatiente.id);
   const misEstadosActivos = miCombatiente ? estadosParaPintar(ficha) : [];
 

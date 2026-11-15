@@ -407,20 +407,24 @@ export async function fotoEnJuego(characterId: string) {
   return fotoEnMesa(fotos);
 }
 
-// Lo que escribe «Recibir» en Resistir daño (T2, recibirGolpe en rules/resistirDanio.ts): la ficha
-// (blindaje perdido y, fuera de combate, la vida) y, con combate en curso, la vida de la foto, en
-// una transacción. `ficha` null: la ficha no cambia. Mismo contrato que guardarFichaConFotos: no
-// comprueba permisos y devuelve false si la ficha cambió desde `leida` (td-22).
-export async function guardarGolpe(
+// La ficha y la foto del combate en curso en una transacción. La usan «Recibir» en Resistir daño
+// (T2, recibirGolpe en rules/resistirDanio.ts: blindaje perdido en la ficha y, fuera de combate, la
+// vida) y los botones de vida y fatiga de la ficha, que en combate escriben solo en la foto (una
+// sola vida, rules/vidaEnJuego.ts). `ficha` null: la ficha no cambia; de la foto se escribe lo que
+// venga. Mismo contrato que guardarFichaConFotos: no comprueba permisos y devuelve false si la
+// ficha cambió desde `leida` (td-22).
+export type VitalDeFotoParaGuardar = { id: string; pgActual?: number; fatigaActual?: number; danio?: DanioVida };
+
+export async function guardarFichaYFoto(
   characterId: string,
   leida: FichaLeida,
   ficha: Sheet | null,
-  foto: { id: string; pgActual: number; danio: DanioVida } | null,
+  foto: VitalDeFotoParaGuardar | null,
 ): Promise<boolean> {
   try {
     await prisma.$transaction(async (tx) => {
       if (ficha) await escribirFicha(tx, characterId, leida, { stats: ficha });
-      if (foto) await tx.combatiente.update({ where: { id: foto.id }, data: { pgActual: foto.pgActual, danio: foto.danio } });
+      if (foto) await escribirVitalDeFoto(tx, foto);
     });
     if (foto) revalidarEstados([characterId]);
     return true;
@@ -428,6 +432,10 @@ export async function guardarGolpe(
     if (e instanceof FichaCambiada) return false;
     throw e;
   }
+}
+
+async function escribirVitalDeFoto(tx: Tx, { id, pgActual, fatigaActual, danio }: VitalDeFotoParaGuardar) {
+  await tx.combatiente.update({ where: { id }, data: { pgActual, fatigaActual, ...(danio && { danio }) } });
 }
 
 // Guarda la ficha que ha cobrado o sumado vida o fatiga por su cuenta (pagar fatiga, acciones
@@ -443,18 +451,26 @@ export async function guardarFichaConFotos(
   antes: Sheet,
   despues: Sheet,
   fatigaCobrada?: number,
+  vidaFoto?: { id: string; pgActual: number; danio: DanioVida },
 ): Promise<boolean> {
   try {
     const tocadas = await prisma.$transaction(async (tx) => {
       await escribirFicha(tx, characterId, leida, { stats: despues });
-      if (antes.vidaActual === despues.vidaActual && antes.fatigaActual === despues.fatigaActual && !fatigaCobrada) return 0;
+      // La vida curada en la foto (Sanar letal en combate): ya calculada contra ella, se escribe
+      // tal cual y después de los cobros, que no mueven la vida (la ficha no la cambia).
+      const vida = vidaFoto ? 1 : 0;
+      if (antes.vidaActual === despues.vidaActual && antes.fatigaActual === despues.fatigaActual && !fatigaCobrada) {
+        if (vidaFoto) await escribirVitalDeFoto(tx, vidaFoto);
+        return vida;
+      }
       const fotos = await tx.combatiente.findMany({
         where: { characterId, combate: COMBATE_ABIERTO },
         select: { id: true, pgActual: true, pgMax: true, fatigaActual: true, fatigaMax: true },
       });
       const cobradas = fotos.map((c) => fotoTrasCambioDeFicha(c, antes, despues, fatigaCobrada));
       await escribirFotosCobradas(tx, fotos, cobradas);
-      return cobradas.filter((c, i) => c !== fotos[i]).length;
+      if (vidaFoto) await escribirVitalDeFoto(tx, vidaFoto);
+      return cobradas.filter((c, i) => c !== fotos[i]).length + vida;
     });
     if (tocadas > 0) revalidarEstados([characterId]);
     return true;

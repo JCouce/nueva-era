@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { revalidarPanelMaster } from "@/lib/revalidarMaster";
 import { requireUser, canEditCharacter } from "@/lib/auth-helpers";
-import { acabarEstadoDePersonaje, cambiarEstadosDePersonajes, fotoEnJuego, guardarFichaConFotos, guardarGolpe } from "@/lib/estadosPersonaje";
+import { acabarEstadoDePersonaje, cambiarEstadosDePersonajes, fotoEnJuego, guardarFichaConFotos, guardarFichaYFoto } from "@/lib/estadosPersonaje";
 import { escribirFicha, FichaCambiada, MENSAJE_FICHA_CAMBIADA, type FichaLeida } from "@/lib/escrituraFicha";
 import type { Prisma } from "@/generated/prisma/client";
 import { z } from "zod";
@@ -56,11 +56,10 @@ import {
   comprarMunicionEspecial,
   ajustarMunicionEspecial,
   municionEspecialPorId,
-  ajustarVida,
-  ajustarDanioCategoria,
   CATEGORIAS_DANIO,
   type CategoriaDanio,
-  ajustarFatiga,
+  ajustarVitalEnJuego,
+  type AjusteVital,
   type MaterialTier,
   type AtributoId,
   type HabilidadId,
@@ -666,13 +665,44 @@ export async function dispararPulsoAction(characterId: string, instanciaId: unkn
   return persist(ctx, characterId, dispararPulso(ctx.sheet, parsed.data));
 }
 
-// Vida y fatiga (docs/tareas.md, 2026-09-27): recurso persistente del propio
-// personaje, no de una instancia de equipo — mismo criterio "libre de
-// créditos" que ajustarRecursoAction, solo anota cuánto queda.
-export async function ajustarVidaAction(characterId: string, delta: number): Promise<SaveResult> {
+// La foto del combate en curso con su desglose leído, o null si el personaje no está en ninguno.
+async function vitalEnJuego(characterId: string) {
+  const foto = await fotoEnJuego(characterId);
+  return (
+    foto && {
+      id: foto.id,
+      pgActual: foto.pgActual,
+      pgMax: foto.pgMax,
+      fatigaActual: foto.fatigaActual,
+      fatigaMax: foto.fatigaMax,
+      danio: danioDeFoto(foto.danio, foto.pgActual, foto.pgMax),
+    }
+  );
+}
+
+// Vida y fatiga (docs/tareas.md, 2026-09-27): recurso persistente del propio personaje, sin
+// coste, solo anota cuánto queda. En un combate en curso hay una sola vida, la de la foto
+// (usuario, 2026-11-15): el ajuste va a ella y la ficha no se toca (al terminar el combate se le
+// copia, td-13). Dónde cae y cuánto, ajustarVitalEnJuego.
+async function ajustarVital(characterId: string, ajuste: AjusteVital): Promise<SaveResult> {
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(ctx, characterId, ajustarVida(ctx.sheet, delta, ctx.estados));
+  const foto = await vitalEnJuego(characterId);
+  const r = ajustarVitalEnJuego(ctx.sheet, ctx.estados, foto, ajuste);
+  if (!foto) return persist(ctx, characterId, r.sheet);
+  if (r.foto && r.foto !== foto) {
+    const { id, pgActual, fatigaActual, danio } = r.foto;
+    if (!(await guardarFichaYFoto(characterId, ctx.leida, null, { id, pgActual, fatigaActual, danio }))) return CONFLICTO;
+  }
+  return { ok: true, sheet: ctx.sheet };
+}
+
+const deltaVitalSchema = z.number().int().min(-999).max(999);
+
+export async function ajustarVidaAction(characterId: string, delta: number): Promise<SaveResult> {
+  const parsed = deltaVitalSchema.safeParse(delta);
+  if (!parsed.success) return { ok: false, error: "Ajuste de vida no válido" };
+  return ajustarVital(characterId, { recurso: "vida", delta: parsed.data });
 }
 
 // Daño de vida por categoría (docs/sistema.md §7, pregunta 24): delta > 0 recibe, < 0 cura
@@ -689,9 +719,8 @@ export async function ajustarDanioAction(
 ): Promise<SaveResult> {
   const parsed = ajusteDanioSchema.safeParse({ categoria, delta });
   if (!parsed.success) return { ok: false, error: "Ajuste de daño no válido" };
-  const ctx = await loadEditable(characterId);
-  if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(ctx, characterId, ajustarDanioCategoria(ctx.sheet, parsed.data.categoria, parsed.data.delta, ctx.estados));
+  // AjusteVital cuenta como la vida: positivo cura.
+  return ajustarVital(characterId, { recurso: "vida", categoria: parsed.data.categoria, delta: -parsed.data.delta });
 }
 
 // «Recibir» en Resistir daño (T2 del cuestionario, 2026-11-13): resta lo que entra de la vida —
@@ -720,14 +749,14 @@ export async function recibirDanioAction(characterId: string, entrada: unknown):
   const vidaFoto = foto && { pgActual: foto.pgActual, pgMax: foto.pgMax, danio: danioDeFoto(foto.danio, foto.pgActual, foto.pgMax) };
   const r = recibirGolpe(ctx.sheet, golpe, ctx.estados, vidaFoto, deshacer);
   const ficha = r.sheet === ctx.sheet ? null : r.sheet;
-  if (!(await guardarGolpe(characterId, ctx.leida, ficha, foto && r.foto && { id: foto.id, ...r.foto }))) return CONFLICTO;
+  if (!(await guardarFichaYFoto(characterId, ctx.leida, ficha, foto && r.foto && { id: foto.id, ...r.foto }))) return CONFLICTO;
   return { ok: true, sheet: r.sheet, aplicado: r.aplicado };
 }
 
 export async function ajustarFatigaAction(characterId: string, delta: number): Promise<SaveResult> {
-  const ctx = await loadEditable(characterId);
-  if ("error" in ctx) return { ok: false, error: ctx.error };
-  return persist(ctx, characterId, ajustarFatiga(ctx.sheet, delta, ctx.estados));
+  const parsed = deltaVitalSchema.safeParse(delta);
+  if (!parsed.success) return { ok: false, error: "Ajuste de fatiga no válido" };
+  return ajustarVital(characterId, { recurso: "fatiga", delta: parsed.data });
 }
 
 // Pago de fatiga de un poder psiónico, de las casillas de una tirada y de las acciones sin
@@ -749,14 +778,15 @@ export async function pagarFatigaAction(
   return { ok: true, sheet };
 }
 
-// Devolver fatiga que se acaba de cobrar (desmarcar Densificar en "Resistir daño", A4b): como
-// ajustarFatigaAction, pero en combate también a la foto, para deshacer lo que hizo
-// pagarFatigaAction. El +/- de Recursos sigue siendo solo de la ficha.
+// Devolver fatiga que se acaba de cobrar (desmarcar Densificar en "Resistir daño", A4b): deshace
+// lo que hizo pagarFatigaAction. En un combate en curso, a la foto, como el −/+ de fatiga (una
+// sola vida); fuera, a la ficha, y con un combate en preparación también a su foto (A5b).
 export async function devolverFatigaAction(characterId: string, cantidad: number): Promise<SaveResult> {
   if (!Number.isInteger(cantidad) || cantidad <= 0 || cantidad > 99) return { ok: false, error: "Cantidad no válida" };
+  if (await fotoEnJuego(characterId)) return ajustarVital(characterId, { recurso: "fatiga", delta: cantidad });
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
-  const sheet = ajustarFatiga(ctx.sheet, cantidad, ctx.estados);
+  const { sheet } = ajustarVitalEnJuego(ctx.sheet, ctx.estados, null, { recurso: "fatiga", delta: cantidad });
   if (!(await guardarFichaConFotos(characterId, ctx.leida, ctx.sheet, sheet))) return CONFLICTO;
   return { ok: true, sheet };
 }
@@ -864,18 +894,20 @@ export async function usarAccionAumentoAction(characterId: string, accionId: unk
   const ctx = await loadEditable(characterId);
   if ("error" in ctx) return { ok: false, error: ctx.error };
   // La fatiga que se comprueba y se cobra es la en juego: con combate en curso, la de la foto (td-25).
-  const foto = await fotoEnJuego(characterId);
+  const foto = await vitalEnJuego(characterId);
   const enJuego = fatigaEnJuego(ctx.sheet, foto);
   // Lo que depende de la ficha (un implante apagado por el Shock); la fatiga, usoDeAccionAumento.
   const resuelta = resolverFicha(ctx.sheet, { estados: ctx.estados, vitalidad: VITALIDAD_DE_FICHA, aprobada: ctx.aprobada });
   const bloqueo = bloqueoDeAccionAumento(resuelta, parsed.data);
   if (bloqueo) return { ok: false, error: bloqueo };
-  const uso = usoDeAccionAumento(ctx.sheet, ctx.estados, parsed.data, parsedExtra.data ?? {}, enJuego);
+  // Con la foto, Sanar letal cura la vida del combate (una sola vida), no la de la ficha.
+  const uso = usoDeAccionAumento(ctx.sheet, ctx.estados, parsed.data, parsedExtra.data ?? {}, enJuego, foto);
   if (!uso.ok) return { ok: false, error: uso.error };
   const coste = uso.coste;
   const cobrada = foto ? coste : undefined;
   if (!uso.op) {
-    if (!(await guardarFichaConFotos(characterId, ctx.leida, ctx.sheet, uso.sheet, cobrada))) return CONFLICTO;
+    const vidaFoto = foto && uso.foto ? { id: foto.id, ...uso.foto } : undefined;
+    if (!(await guardarFichaConFotos(characterId, ctx.leida, ctx.sheet, uso.sheet, cobrada, vidaFoto))) return CONFLICTO;
     return { ok: true, sheet: uso.sheet, mensaje: uso.mensaje };
   }
   const hecho = await cambiarEstadosDePersonajes(
