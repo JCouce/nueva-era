@@ -298,6 +298,27 @@ function conExtremidad(sheet: Sheet, mods: ModificadorConFuente[], e: AtributosE
 
 // "Potencia · Brazo Biónico 2: Fuerza 3 (tuya 1), Agilidad 2 (tuya 2)": solo los atributos del
 // aplicado que cambia la extremidad.
+// Los estados que tocan de verdad un atributo o una habilidad (la Enfermedad, el Personalizado del
+// máster) ya van dentro del valor del aplicado o de la habilidad: se nombran en su etiqueta para que
+// el desglose diga de dónde sale sin sumarlo dos veces (usuario, 2026-11-15).
+const conSignoDesglose = (n: number) => (n > 0 ? `+${n}` : `−${-n}`);
+function conEstadosEnEtiqueta(etiqueta: string, notas: string[]): string {
+  return notas.length > 0 ? `${etiqueta} (${notas.join(", ")})` : etiqueta;
+}
+function notasEstadosAplicado(aplicadoId: AplicadoId, mods: ModificadorConFuente[]): string[] {
+  const de: readonly string[] = APLICADOS.find((a) => a.id === aplicadoId)!.de;
+  return mods.flatMap((m) =>
+    m.origen === "estado" && m.tipo === "atributo" && m.valor !== 0 && de.includes(m.id)
+      ? [`${m.fuente} ${conSignoDesglose(m.valor)} ${ATRIBUTOS.find((a) => a.id === m.id)!.label}`]
+      : [],
+  );
+}
+function notasEstadosHabilidad(habilidad: HabilidadId, mods: ModificadorConFuente[]): string[] {
+  return mods.flatMap((m) =>
+    m.origen === "estado" && m.tipo === "habilidad" && m.valor !== 0 && m.id === habilidad ? [`${m.fuente} ${conSignoDesglose(m.valor)}`] : [],
+  );
+}
+
 function etiquetaAplicado(sheet: Sheet, aplicadoId: AplicadoId, mods: ModificadorConFuente[], e: AtributosExtremidad | undefined): string {
   const def = APLICADOS.find((a) => a.id === aplicadoId)!;
   if (!e) return def.label;
@@ -428,9 +449,20 @@ export function montarTirada(ficha: FichaParaTirada, tirada: Accion, eleccion: E
 
   const habilidadLabel = tirada.habilidad ? HABILIDADES.find((h) => h.id === tirada.habilidad)!.label : null;
   const desglose: LineaDesglose[] = [
-    { etiqueta: etiquetaAplicado(ficha.ficha, aplicadoId, mods, extremidad), valor: mod.aplicado },
-    ...(habilidadLabel
-      ? [{ etiqueta: `${habilidadLabel}${enEspecialidad ? " (especialidad)" : ""}`, valor: mod.habilidad ?? 0 }]
+    {
+      etiqueta: conEstadosEnEtiqueta(etiquetaAplicado(ficha.ficha, aplicadoId, mods, extremidad), notasEstadosAplicado(aplicadoId, mods)),
+      valor: mod.aplicado,
+    },
+    ...(habilidadLabel && tirada.habilidad
+      ? [
+          {
+            etiqueta: conEstadosEnEtiqueta(
+              `${habilidadLabel}${enEspecialidad ? " (especialidad)" : ""}`,
+              notasEstadosHabilidad(tirada.habilidad, mods),
+            ),
+            valor: mod.habilidad ?? 0,
+          },
+        ]
       : []),
     ...ajustesFijos.map((a) => ({ etiqueta: a.fuente, valor: a.valor })),
     ...desgloseAlcance(mods, ctx),

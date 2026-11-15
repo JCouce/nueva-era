@@ -25,7 +25,7 @@ import {
   fotoEnMesa,
   topesDeVida,
   leerEstados,
-  estadoActivoCon,
+  activoAAplicar,
   estadosAlCerrarVuelta,
   pasarTurno,
   vidaTrasCambioDeEstados,
@@ -43,7 +43,7 @@ import {
   tiradaNuevaSchema,
   type TiradaCombate,
   type CategoriaDanio,
-  type DuracionEstado,
+  type EstadoAAplicar,
   type InmuneAlAplicar,
   type OperacionEstado,
 } from "@/lib/rules";
@@ -598,7 +598,7 @@ async function cambiarEstadosDeLaCola(
 
 export async function aplicarEstadoEnCombateAction(input: {
   combatienteIds: string[];
-  estado: { estadoId: string; gradoId: string; duracion: DuracionEstado };
+  estado: EstadoAAplicar;
   motivo?: string;
   forzar?: boolean;
 }): Promise<MandoResult> {
@@ -608,7 +608,7 @@ export async function aplicarEstadoEnCombateAction(input: {
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
 
   const { combatienteIds, estado, motivo, forzar } = parsed.data;
-  const nuevo = estadoActivoCon(estado.estadoId, estado.gradoId, estado.duracion);
+  const nuevo = activoAAplicar(estado);
   return cambiarEstadosDeLaCola(user.id, combatienteIds, { tipo: "poner", estado: nuevo }, motivo, forzar);
 }
 

@@ -5,12 +5,12 @@ import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import { requireUser } from "@/lib/auth-helpers";
 import {
-  estadoActivoCon,
+  activoAAplicar,
   parseSheet,
   snapshotFromSheet,
   transicionRevision,
   type CategoriaDanio,
-  type DuracionEstado,
+  type EstadoAAplicar,
   type InmuneAlAplicar,
   type RecursoMaster,
 } from "@/lib/rules";
@@ -209,7 +209,7 @@ export type EstadosResult = MandoResult;
 // `forzar` ("Aplicar igualmente") se le pone forzado.
 export async function aplicarEstadoAPersonajesAction(input: {
   characterIds: string[];
-  estado: { estadoId: string; gradoId: string; duracion: DuracionEstado };
+  estado: EstadoAAplicar;
   motivo?: string;
   forzar?: boolean;
 }): Promise<EstadosResult> {
@@ -219,7 +219,7 @@ export async function aplicarEstadoAPersonajesAction(input: {
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Entrada inválida." };
 
   const { characterIds, estado, motivo, forzar } = parsed.data;
-  const nuevo = estadoActivoCon(estado.estadoId, estado.gradoId, estado.duracion);
+  const nuevo = activoAAplicar(estado);
   const hecho = await cambiarEstadosDePersonajes(
     characterIds,
     { tipo: "poner", estado: nuevo },

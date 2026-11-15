@@ -22,6 +22,15 @@ import type { PiezasDeEstado } from "./shock";
 import type { AlcanceModificador, ModificadorConFuente, OrigenModificador, RecursoUmbral } from "./modificadores";
 import { esEstadoDeAumento, estadoParaPintar, estadoPorId } from "../catalog/estados";
 import { ESTADO_ESTABILIZADO_ID, reduccionDeGradoEstabilizado } from "../catalog/psionica";
+import {
+  estadoDeActivo,
+  esPersonalizadoAAplicar,
+  GRADO_PERSONALIZADO,
+  nuevoIdPersonalizado,
+  resumenPersonalizado,
+  type EstadoAAplicar,
+  type EstadoPersonalizado,
+} from "./estadoPersonalizado";
 
 export type UmbralSalud = "normal" | "herido" | "malherido" | "moribundo";
 export type UmbralFatiga = "normal" | "fatigado" | "exhausto";
@@ -305,6 +314,9 @@ export type EstadoActivo = {
   valor?: number;
   // Qué concreta el estado, si cabe en una etiqueta («Mosquito» en Arma escondida).
   nota?: string;
+  // Solo el «Personalizado» del máster (estadoId «custom:…», rules/estadoPersonalizado.ts): su
+  // nombre y sus líneas. Opcional por lo mismo que finDeEscena.
+  custom?: EstadoPersonalizado;
 };
 
 // Inmunidad a un estado del catálogo (A7: Ojo Biónico 2-4, Regeneración Tisular), con la pieza
@@ -313,7 +325,8 @@ export type Inmunidad = { estadoId: string; fuente: string };
 
 // La inmunidad que deja sin efecto este estado puesto, o null: la hay y no se forzó.
 export function inmunidadQueAnula(activo: EstadoActivo, inmunidades: readonly Inmunidad[]): Inmunidad | null {
-  if (activo.forzado) return null;
+  // Al personalizado no le alcanza ninguna inmunidad (usuario, 2026-11-15).
+  if (activo.forzado || activo.custom) return null;
   return inmunidades.find((i) => i.estadoId === activo.estadoId) ?? null;
 }
 
@@ -347,6 +360,13 @@ export function estadoActivoCon(estadoId: string, gradoId: string, duracion: Dur
   }
 }
 
+// Lo que pide el panel del máster, como EstadoActivo: un personalizado estrena id propio (así
+// conviven varios en el mismo objetivo). `id`: para los tests.
+export function activoAAplicar(e: EstadoAAplicar, id: string = nuevoIdPersonalizado()): EstadoActivo {
+  if (!esPersonalizadoAAplicar(e)) return estadoActivoCon(e.estadoId, e.gradoId, e.duracion);
+  return { ...estadoActivoCon(id, GRADO_PERSONALIZADO, e.duracion), custom: e.custom };
+}
+
 // Traduce los estados que el máster ha aplicado a un combatiente en
 // ModificadorConFuente[] — calcado de modificadoresDeEquipo()
 // (lib/rules/equipo.ts): un estadoId o gradoId que ya no exista en el
@@ -361,7 +381,7 @@ export function modificadoresDeEstados(
   estabilizado: Estabilizacion | null = null,
 ): ModificadorConFuente[] {
   return activos.flatMap((activo): ModificadorConFuente[] => {
-    const estado = estadoPorId(activo.estadoId);
+    const estado = estadoDeActivo(activo);
     if (!estado) return [];
     const grado = estado.grados.find((g) => g.id === activo.gradoId);
     if (!grado) return [];
@@ -473,6 +493,7 @@ export function textoDuracionActivable(d: DuracionEstado): string {
 // «dificultad 12 · Mosquito», «14»: el número del estado (T4) con su etiqueta y su nota.
 // En uno prolongable, el número es la fatiga de prolongarlo: va en su botón, no aquí.
 function textoValorEstado(ea: EstadoActivo): string | undefined {
+  if (ea.custom) return resumenPersonalizado(ea.custom);
   if (ea.valor === undefined || estadoPorId(ea.estadoId)?.prolongable) return ea.nota;
   const etiqueta = estadoPorId(ea.estadoId)?.valor?.etiqueta;
   return [`${etiqueta ? `${etiqueta} ` : ""}${ea.valor}`, ea.nota].filter(Boolean).join(" · ");
@@ -482,7 +503,7 @@ function textoValorEstado(ea: EstadoActivo): string | undefined {
 export function describirEstadosActivos(activos: EstadoActivo[], inmunidades: readonly Inmunidad[] = []): EstadoActivoDescrito[] {
   return activos.map((ea) => {
     const anula = inmunidadQueAnula(ea, inmunidades);
-    const estado = estadoPorId(ea.estadoId);
+    const estado = estadoDeActivo(ea);
     const grado = estado?.grados.find((g) => g.id === ea.gradoId);
     const valorTexto = textoValorEstado(ea);
     return {

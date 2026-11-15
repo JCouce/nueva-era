@@ -935,6 +935,26 @@ imponen penalizadores por umbral:
   y el combate del máster, marcados «automático», sin duración ni ×. La inconsciencia de
   sobrecarga psiónica no es derivable y la sigue poniendo el máster; si está puesta a mano y
   además sale derivada, se enseña una vez, la puesta.
+- **Estado «Personalizado» del máster** `[FIRME · usuario, 2026-11-15]`. Tarjeta del panel de
+  estados (grupo «Personalizado»): **nombre libre** (obligatorio, recortado a 40 caracteres) y
+  **una o varias líneas** «atributo básico o habilidad ± N» (N entero, distinto de 0, entre −10 y
+  +10; hasta 8 líneas), con la duración de siempre (rondas, fin de escena, hasta quitarlo). Se
+  pone a uno o varios objetivos (jugadores en `Character.estados`, NPC en `Combatiente.estados`),
+  se quita con su × o desde su tarjeta del panel y entra en el registro con Deshacer. Cada uno
+  lleva **id propio** (`custom:<8 hex>`, lo pone el servidor), así que **conviven varios** en el
+  mismo objetivo; sus datos viajan en el propio estado guardado (`EstadoActivo.custom`), no en el
+  catálogo (`rules/estadoPersonalizado.ts`; lectura tolerante en `leerEstados`: lo que no encaja
+  se descarta). **El bono a un atributo toca el atributo de verdad (usuario, 2026-11-15)**, como
+  la Enfermedad: cascada a aplicados, vida y fatiga (con S75 si baja el máximo). Las líneas de
+  atributo y de habilidad salen nombradas en el desglose de la tirada, dentro de la línea del
+  aplicado o de la habilidad («Fortaleza (Bendición del chamán +2 Aguante)»); vale para todo
+  estado que toque un atributo o una habilidad. **No le alcanza ninguna inmunidad.** El chip
+  enseña el nombre y el resumen («+2 Fuerza, −1 Sigilo»).
+- **Grupos del panel de estados** (usuario, 2026-11-15): la rejilla del máster va en secciones
+  plegables — Control, Sorpresa, Sentidos y mente, Energía y elementos, Salud, Fármacos,
+  Personalizado y Otros (lo que solo se quita, y cualquier estado sin grupo asignado). El mapa
+  vive en `catalog/estados.ts` (`GRUPO_DE_ESTADO`); un test falla si un estado de `ESTADOS` se
+  queda sin grupo. Con búsqueda se abren los grupos con resultados y se ocultan los vacíos.
 
 ### 7.1 Shock sobre cuerpo y equipo `[FIRME · fuente/reglas-base.md (Shock) + cuestionario de cierre pl-01, pl-02, pl-03, eq-28, eq-29, di-07; usuario 2026-11-14]`
 

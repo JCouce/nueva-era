@@ -3,7 +3,7 @@
 // (Shock, Shock en el equipo), qué piezas de ESA ficha apaga o hace funcionar peor. Vale para
 // todos los estados: los que no tocan piezas solo enseñan su explicación. La pantalla pinta esto
 // tal cual; las piezas las pone estadosParaPintar (fichaResuelta.ts) con la ficha.
-import { estadoPorId } from "../catalog/estados";
+import { estadoDeActivo } from "./estadoPersonalizado";
 import type { EstadoActivoDescrito } from "./estados";
 import { etiquetaDuracion } from "./textosRegistro";
 import { AMENAZAS, type AmenazaId } from "./aumentosTiradas";
@@ -27,7 +27,7 @@ export type ExplicacionEstado = {
 };
 
 export function explicacionDeEstado(e: EstadoActivoDescrito): ExplicacionEstado {
-  const estado = estadoPorId(e.estadoId);
+  const estado = estadoDeActivo(e);
   const grado = estado?.grados.find((g) => g.id === e.gradoId);
   const efecto = e.detalle.length > 0 ? e.detalle : (grado?.detalle ?? []);
   const resumen = estado && !efecto.includes(estado.resumen) ? estado.resumen : null;

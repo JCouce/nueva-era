@@ -1489,17 +1489,66 @@ export function esEstadoDeAumento(id: string): boolean {
   return ESTADOS_DE_AUMENTO.some((e) => e.id === id);
 }
 
+// Los grupos de la rejilla del máster (usuario, 2026-11-15), en el orden en que se pintan. Los de
+// ESTADOS van por GRUPO_DE_ESTADO; los de fármaco, todos a «Fármacos»; «Personalizado» es el estado
+// a medida (rules/estadoPersonalizado.ts), que no está en el catálogo; lo demás (lo que solo se
+// quita y un estado nuevo sin grupo) cae en «Otros», al final: nunca desaparece de la rejilla.
+export type GrupoEstadoId = "control" | "sorpresa" | "sentidos" | "energia" | "salud" | "farmacos" | "personalizado" | "otros";
+
+export const GRUPOS_ESTADO: readonly { id: GrupoEstadoId; label: string }[] = [
+  { id: "control", label: "Control" },
+  { id: "sorpresa", label: "Sorpresa" },
+  { id: "sentidos", label: "Sentidos y mente" },
+  { id: "energia", label: "Energía y elementos" },
+  { id: "salud", label: "Salud" },
+  { id: "farmacos", label: "Fármacos" },
+  { id: "personalizado", label: "Personalizado" },
+  { id: "otros", label: "Otros" },
+];
+
+export const GRUPO_DE_ESTADO: Readonly<Record<string, Exclude<GrupoEstadoId, "farmacos" | "personalizado" | "otros">>> = {
+  aturdido: "control",
+  atrapado: "control",
+  inmovilizado: "control",
+  derribado: "control",
+  paralisis: "control",
+  entorpecido: "control",
+  inconsciencia: "control",
+  sorprendido: "sorpresa",
+  desprevenido: "sorpresa",
+  ceguera: "sentidos",
+  sordera: "sentidos",
+  confusion: "sentidos",
+  miedo: "sentidos",
+  llamarada: "energia",
+  congelacion: "energia",
+  corrosion: "energia",
+  fusion: "energia",
+  shock: "energia",
+  shock_equipo: "energia",
+  hemorragia: "salud",
+  enfermedad: "salud",
+  envenenamiento: "salud",
+  dosis_acumulada: "salud",
+  supresores: "salud",
+};
+
+export function grupoDeEstado(id: string): GrupoEstadoId {
+  if (Object.hasOwn(GRUPO_DE_ESTADO, id)) return GRUPO_DE_ESTADO[id];
+  return ESTADOS_DE_FARMACO.some((e) => e.id === id) ? "farmacos" : "otros";
+}
+
 // La rejilla del panel de estados del máster: el catálogo que pone (ESTADOS y los de fármaco, para
 // arreglar lo que haga falta: fármacos como estados, usuario 2026-11-14) y, detrás, los que llevan
 // puestos sus objetivos aunque no los ponga él (de ocultación, de aumento, de poder, de equipo),
-// solo para quitarlos (T4: el máster quita el Sigilo de un jugador).
-export function estadosDelPanel(puestos: readonly string[]): { estado: Estado; soloQuitar: boolean }[] {
+// solo para quitarlos (T4: el máster quita el Sigilo de un jugador), en «Otros».
+export function estadosDelPanel(puestos: readonly string[]): { estado: Estado; soloQuitar: boolean; grupo: GrupoEstadoId }[] {
   const pone = [...ESTADOS, ...ESTADOS_DE_FARMACO];
   const aparte = [...new Set(puestos)].flatMap((id) => {
     const e = pone.some((x) => x.id === id) ? null : estadoPorId(id);
-    return e ? [{ estado: e, soloQuitar: true }] : [];
+    return e ? [{ estado: e, soloQuitar: true, grupo: "otros" as const }] : [];
   });
-  return [...pone.map((estado) => ({ estado, soloQuitar: false })), ...aparte];
+  return [...pone.map((estado) => ({ estado, soloQuitar: false, grupo: grupoDeEstado(estado.id) })), ...aparte];
 }
 
 // Los que el propio jugador puede quitarse desde su ficha: los de poder, los de ocultación y los

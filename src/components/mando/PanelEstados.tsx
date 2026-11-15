@@ -1,17 +1,29 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import {
+  ATRIBUTOS,
   estadosDelPanel,
+  esIdPersonalizado,
+  GRUPOS_ESTADO,
+  HABILIDADES,
+  MAX_LINEAS_PERSONALIZADO,
+  MAX_NOMBRE_PERSONALIZADO,
   MAX_RONDAS_ESTADO,
+  MAX_VALOR_PERSONALIZADO,
   estadoPorId,
   etiquetaDuracion,
   listaLegible,
   nombreCorto,
+  resumenPersonalizado,
   textoInmuneAlAplicar,
   type DuracionEstado,
   type Estado,
+  type EstadoActivoDescrito,
+  type EstadoPersonalizado,
+  type GrupoEstadoId,
   type InmuneAlAplicar,
+  type ModificadorPersonalizado,
 } from "@/lib/rules";
 import { Boton, FOCO, Fila, Opcion, Stepper } from "./controles";
 import { HojaInferior } from "./HojaInferior";
@@ -30,11 +42,29 @@ const gradoInicial = (e: Estado) => (e.grados.some((g) => g.id === "fracaso") ? 
 // A7: lo que no se aplicó por inmune, a la espera de "Aplicar igualmente".
 type PorForzar = { estado: EstadoAAplicar; label: string; inmunes: InmuneAlAplicar[] };
 
-// Pestaña Estados del panel de mando: buscador, rejilla del catálogo y la configuración
-// del elegido (grado, duración, efecto). En escritorio la configuración va debajo de la
-// rejilla; en móvil, tocar un estado abre la hoja inferior (CSS: los dos montados,
-// cada uno escondido en su breakpoint). `enLinea`: la configuración siempre debajo y
-// nunca la hoja propia, para cuando el panel ya va dentro de una (combate en móvil, E1d).
+// La tarjeta «Personalizado» de la rejilla (crear uno nuevo). No es un id del catálogo ni «custom:…».
+const NUEVO_PERSONALIZADO = "__personalizado";
+const TEXTO_NUEVO_PERSONALIZADO = "Nombre libre y bonos o penalizadores a atributos y habilidades.";
+
+// Una línea del formulario del personalizado: el objetivo va como «atributo:fuerza» para el <select>.
+type LineaForm = { clave: number; objetivo: string; valor: number };
+const OBJETIVO_INICIAL = `atributo:${ATRIBUTOS[0].id}`;
+
+function lineaDeForm(l: LineaForm): ModificadorPersonalizado | null {
+  const [tipo, id] = l.objetivo.split(":");
+  if (tipo === "atributo") {
+    const a = ATRIBUTOS.find((x) => x.id === id);
+    return a ? { tipo, id: a.id, valor: l.valor } : null;
+  }
+  const h = HABILIDADES.find((x) => x.id === id);
+  return tipo === "habilidad" && h ? { tipo, id: h.id, valor: l.valor } : null;
+}
+
+// Pestaña Estados del panel de mando: buscador, rejilla del catálogo por grupos plegables y la
+// configuración del elegido (grado, duración, efecto). En escritorio la configuración va debajo de
+// la rejilla; en móvil, tocar un estado abre la hoja inferior (CSS: los dos montados, cada uno
+// escondido en su breakpoint). `enLinea`: la configuración siempre debajo y nunca la hoja propia,
+// para cuando el panel ya va dentro de una (combate en móvil, E1d).
 export function PanelEstados({
   objetivos,
   acciones,
@@ -59,23 +89,64 @@ export function PanelEstados({
   const [error, setError] = useState<string | null>(null);
   const [porForzar, setPorForzar] = useState<PorForzar | null>(null);
   const [pendiente, startTransition] = useTransition();
+  // Grupos abiertos a mano. Arranca abierto solo Control, el que más se usa (usuario, 2026-11-15);
+  // el resto plegado para que la rejilla quepa de un vistazo.
+  const [abiertos, setAbiertos] = useState<ReadonlySet<GrupoEstadoId>>(() => new Set<GrupoEstadoId>(["control"]));
+  const [nombreCustom, setNombreCustom] = useState("");
+  const [lineas, setLineas] = useState<LineaForm[]>([{ clave: 0, objetivo: OBJETIVO_INICIAL, valor: 1 }]);
+  const [siguienteClave, setSiguienteClave] = useState(1);
 
   const q = normalizar(busqueda.trim());
-  // Los que llevan puestos y no se ponen desde aquí (Sigilo…), al final y solo para quitarlos.
+  const coincide = (texto: string) => !q || normalizar(texto).includes(q);
+  // Los que llevan puestos y no se ponen desde aquí (Sigilo…), en «Otros» y solo para quitarlos.
   const delPanel = estadosDelPanel(objetivos.flatMap((o) => o.estados.filter((e) => !e.automatico).map((e) => e.estadoId)));
-  const lista = delPanel.map((x) => x.estado).filter((e) => !q || normalizar(e.label).includes(q));
-  const estado = estadoId ? estadoPorId(estadoId) : null;
-  const soloQuitar = delPanel.some((x) => x.soloQuitar && x.estado.id === estadoId);
+  // Los personalizados que ya llevan los objetivos, uno por id, para poder quitarlos desde aquí
+  // (la Mesa no tiene × en sus chips).
+  const personalizadosPuestos = [
+    ...new Map(
+      objetivos.flatMap((o) => o.estados.filter((e) => e.custom && esIdPersonalizado(e.estadoId))).map((e) => [e.estadoId, e]),
+    ).values(),
+  ];
+  const puestoElegido: EstadoActivoDescrito | null = personalizadosPuestos.find((e) => e.estadoId === estadoId) ?? null;
+  const nuevoElegido = estadoId === NUEVO_PERSONALIZADO;
+  const estado = estadoId && !nuevoElegido && !esIdPersonalizado(estadoId) ? estadoPorId(estadoId) : null;
+  const soloQuitar = delPanel.some((x) => x.soloQuitar && x.estado.id === estadoId) || !!puestoElegido;
   const grado = estado?.grados.find((g) => g.id === gradoId) ?? estado?.grados[0] ?? null;
 
+  const custom: EstadoPersonalizado = {
+    nombre: nombreCustom.trim(),
+    modificadores: lineas.flatMap((l) => {
+      const m = lineaDeForm(l);
+      return m ? [m] : [];
+    }),
+  };
+  const customListo = custom.nombre !== "" && custom.modificadores.length > 0;
+  // Lo elegido, para títulos y avisos: «Aturdido», «Bendición del chamán».
+  const titulo = estado?.label ?? puestoElegido?.nombre ?? (nuevoElegido ? custom.nombre || "Personalizado" : null);
+
+  const trasElegir = () => {
+    setError(null);
+    setPorForzar(null);
+    if (!enLinea) setHoja(true);
+  };
   const elegirEstado = (e: Estado) => {
     setEstadoId(e.id);
     const g = gradoInicial(e);
     setGradoId(g);
     proponerDuracion(e, g);
-    setError(null);
-    setPorForzar(null);
-    if (!enLinea) setHoja(true);
+    trasElegir();
+  };
+  const elegirNuevoPersonalizado = () => {
+    setEstadoId(NUEVO_PERSONALIZADO);
+    setGradoId(null);
+    // Lo más habitual en uno a medida (una bendición, un favor) es que dure la escena.
+    setTipoDuracion("escena");
+    trasElegir();
+  };
+  const elegirPuesto = (e: EstadoActivoDescrito) => {
+    setEstadoId(e.estadoId);
+    setGradoId(null);
+    trasElegir();
   };
   // Si el documento da una duración por defecto para el grado, se propone en rondas.
   const proponerDuracion = (e: Estado, g: string) => {
@@ -90,7 +161,8 @@ export function PanelEstados({
     tipoDuracion === "rondas" ? { tipo: "rondas", rondas } : tipoDuracion === "escena" ? { tipo: "escena" } : { tipo: "hastaQuitarlo" };
   const nombres = listaLegible(objetivos.map((o) => nombreCorto(o.nombre)));
   // Los automáticos (la Inconsciencia por la vida o la fatiga) no se quitan: no están puestos.
-  const conEste = estado ? objetivos.filter((o) => o.estados.some((e) => e.estadoId === estado.id && !e.automatico)) : [];
+  const idQuitable = estado?.id ?? puestoElegido?.estadoId ?? null;
+  const conEste = idQuitable ? objetivos.filter((o) => o.estados.some((e) => e.estadoId === idQuitable && !e.automatico)) : [];
   // A7: los objetivos inmunes a un estado, con la pieza ("Javi (Ojo Biónico 2)").
   const inmunesA = (estadoId: string) =>
     objetivos.flatMap((o) => {
@@ -100,12 +172,22 @@ export function PanelEstados({
   const inmunesAlElegido = estado ? inmunesA(estado.id) : [];
 
   // A quien es inmune no se le pone (A7): el resto lo recibe y el aviso de abajo ofrece
-  // "Aplicar igualmente" solo para ellos.
+  // "Aplicar igualmente" solo para ellos. Al personalizado no le alcanza ninguna inmunidad.
   const aplicar = () => {
-    if (!estado || !grado || objetivos.length === 0) return;
+    if (objetivos.length === 0) return;
+    let aAplicar: EstadoAAplicar;
+    let label: string;
+    if (nuevoElegido) {
+      if (!customListo) return setError("Ponle un nombre y al menos un bono.");
+      aAplicar = { custom, duracion };
+      label = custom.nombre;
+    } else {
+      if (!estado || !grado) return;
+      aAplicar = { estadoId: estado.id, gradoId: grado.id, duracion };
+      label = estado.label;
+    }
     setError(null);
     setPorForzar(null);
-    const aAplicar: EstadoAAplicar = { estadoId: estado.id, gradoId: grado.id, duracion };
     startTransition(async () => {
       const r = await acciones.aplicarEstado(
         objetivos.map((o) => o.id),
@@ -116,9 +198,9 @@ export function PanelEstados({
       const aplicados = objetivos.filter((o) => !inmunes.some((i) => i.id === o.id));
       if (aplicados.length > 0) {
         const a = listaLegible(aplicados.map((o) => nombreCorto(o.nombre)));
-        onAviso({ mensaje: `${estado.label} a ${a}`, registroId: r.registroId, tono: "ok" });
+        onAviso({ mensaje: `${label} a ${a}`, registroId: r.registroId, tono: "ok" });
       }
-      if (inmunes.length > 0) return setPorForzar({ estado: aAplicar, label: estado.label, inmunes });
+      if (inmunes.length > 0) return setPorForzar({ estado: aAplicar, label, inmunes });
       setHoja(false);
       onAplicado?.();
     });
@@ -142,23 +224,133 @@ export function PanelEstados({
     });
   };
   const quitar = () => {
-    if (!estado || conEste.length === 0) return;
+    if (!idQuitable || !titulo || conEste.length === 0) return;
     setError(null);
     startTransition(async () => {
-      const r = await acciones.quitarEstado(conEste.map((o) => o.id), estado.id);
+      const r = await acciones.quitarEstado(conEste.map((o) => o.id), idQuitable);
       if (!r.ok) return setError(r.error);
       setHoja(false);
       onAplicado?.();
       const quien = listaLegible(conEste.map((o) => nombreCorto(o.nombre)));
-      onAviso({ mensaje: `Quitado ${estado.label} a ${quien}`, registroId: r.registroId, tono: "ok" });
+      onAviso({ mensaje: `Quitado ${titulo} a ${quien}`, registroId: r.registroId, tono: "ok" });
     });
   };
 
-  const textoAplicar = estado
-    ? `Aplicar ${estado.label}${objetivos.length > 1 ? ` a ${objetivos.length}` : ""}`
-    : "Aplicar";
+  const textoAplicar = titulo ? `Aplicar ${titulo}${objetivos.length > 1 ? ` a ${objetivos.length}` : ""}` : "Aplicar";
+  const puedeAplicar = objetivos.length > 0 && !pendiente && (!nuevoElegido || customListo);
 
-  const configuracion = estado && grado && soloQuitar ? (
+  const filaDuracion = (
+    <Fila etiqueta="Duración">
+      <Opcion elegida={tipoDuracion === "rondas"} onClick={() => setTipoDuracion("rondas")}>
+        Rondas
+      </Opcion>
+      <Opcion elegida={tipoDuracion === "escena"} onClick={() => setTipoDuracion("escena")}>
+        Fin de escena
+      </Opcion>
+      <Opcion elegida={tipoDuracion === "hastaQuitarlo"} onClick={() => setTipoDuracion("hastaQuitarlo")}>
+        Hasta quitarlo
+      </Opcion>
+      {tipoDuracion === "rondas" && (
+        <Stepper valor={rondas} onCambio={setRondas} min={1} max={MAX_RONDAS_ESTADO} etiqueta="Rondas" />
+      )}
+    </Fila>
+  );
+  const avisoError = error && (
+    <p role="alert" className="border border-danger px-3 py-2 text-sm text-danger">
+      {error}
+    </p>
+  );
+
+  const cambiarLinea = (clave: number, cambio: Partial<Omit<LineaForm, "clave">>) =>
+    setLineas((ls) => ls.map((l) => (l.clave === clave ? { ...l, ...cambio } : l)));
+  const anadirLinea = () => {
+    setLineas((ls) => [...ls, { clave: siguienteClave, objetivo: OBJETIVO_INICIAL, valor: 1 }]);
+    setSiguienteClave((c) => c + 1);
+  };
+
+  const formularioPersonalizado = (
+    <>
+      <label className="grid gap-2">
+        <span className="font-mono text-xs uppercase tracking-widest text-muted">Nombre</span>
+        <input
+          type="text"
+          value={nombreCustom}
+          onChange={(e) => setNombreCustom(e.target.value)}
+          maxLength={MAX_NOMBRE_PERSONALIZADO}
+          placeholder="Bendición del chamán"
+          autoComplete="off"
+          className={`min-h-11 w-full border border-border bg-night px-3 placeholder:text-muted ${FOCO}`}
+        />
+      </label>
+      <div className="grid gap-2">
+        <span className="font-mono text-xs uppercase tracking-widest text-muted">Bonos</span>
+        {lineas.map((l, i) => (
+          <div key={l.clave} className="flex flex-wrap items-center gap-2">
+            <select
+              value={l.objetivo}
+              onChange={(e) => cambiarLinea(l.clave, { objetivo: e.target.value })}
+              aria-label={`Bono ${i + 1}: atributo o habilidad`}
+              className={`min-h-11 min-w-0 flex-1 basis-40 border border-border bg-night px-2 text-foreground ${FOCO}`}
+            >
+              <optgroup label="Atributos básicos">
+                {ATRIBUTOS.map((a) => (
+                  <option key={a.id} value={`atributo:${a.id}`}>
+                    {a.label}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="Habilidades">
+                {HABILIDADES.map((h) => (
+                  <option key={h.id} value={`habilidad:${h.id}`}>
+                    {h.label}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+            <Stepper
+              valor={l.valor}
+              // El 0 no existe: al cruzarlo se salta al otro lado.
+              onCambio={(n) => cambiarLinea(l.clave, { valor: n === 0 ? (l.valor > 0 ? -1 : 1) : n })}
+              min={-MAX_VALOR_PERSONALIZADO}
+              max={MAX_VALOR_PERSONALIZADO}
+              etiqueta={`Bono ${i + 1}`}
+            />
+            {lineas.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setLineas((ls) => ls.filter((x) => x.clave !== l.clave))}
+                aria-label={`Quitar el bono ${i + 1}`}
+                className={`grid size-11 shrink-0 place-items-center border border-border text-lg text-muted hover:text-foreground ${FOCO}`}
+              >
+                ×
+              </button>
+            )}
+          </div>
+        ))}
+        {lineas.length < MAX_LINEAS_PERSONALIZADO && (
+          <Boton variante="fantasma" onClick={anadirLinea} className="justify-self-start px-0">
+            + Añadir bono
+          </Boton>
+        )}
+      </div>
+      {filaDuracion}
+      <div className="grid gap-1 border-l-2 border-accent py-1 pl-3">
+        <span className="font-mono text-xs uppercase tracking-widest text-muted">Efecto · {etiquetaDuracion(duracion)}</span>
+        <p className="text-[0.95rem] leading-snug">
+          {custom.modificadores.length > 0 ? resumenPersonalizado(custom) : "Sin bonos todavía."}
+        </p>
+      </div>
+      {avisoError}
+    </>
+  );
+
+  const configuracion: ReactNode = puestoElegido ? (
+    <p className="border-l-2 border-accent py-1 pl-3 text-[0.95rem] leading-snug">
+      {puestoElegido.valorTexto}. Personalizado ya puesto: aquí solo se quita; para cambiarlo, quítalo y pon otro.
+    </p>
+  ) : nuevoElegido ? (
+    formularioPersonalizado
+  ) : estado && grado && soloQuitar ? (
     <p className="border-l-2 border-accent py-1 pl-3 text-[0.95rem] leading-snug">{estado.resumen} Lo pone la ficha del jugador; aquí solo se quita.</p>
   ) : estado && grado && (
     <>
@@ -179,20 +371,7 @@ export function PanelEstados({
           ))}
         </Fila>
       )}
-      <Fila etiqueta="Duración">
-        <Opcion elegida={tipoDuracion === "rondas"} onClick={() => setTipoDuracion("rondas")}>
-          Rondas
-        </Opcion>
-        <Opcion elegida={tipoDuracion === "escena"} onClick={() => setTipoDuracion("escena")}>
-          Fin de escena
-        </Opcion>
-        <Opcion elegida={tipoDuracion === "hastaQuitarlo"} onClick={() => setTipoDuracion("hastaQuitarlo")}>
-          Hasta quitarlo
-        </Opcion>
-        {tipoDuracion === "rondas" && (
-          <Stepper valor={rondas} onCambio={setRondas} min={1} max={MAX_RONDAS_ESTADO} etiqueta="Rondas" />
-        )}
-      </Fila>
+      {filaDuracion}
       <div className="grid gap-1 border-l-2 border-accent py-1 pl-3">
         <span className="font-mono text-xs uppercase tracking-widest text-muted">
           {estado.grados.length > 1 ? grado.label : "Efecto"} · {etiquetaDuracion(duracion)}
@@ -225,13 +404,61 @@ export function PanelEstados({
           </div>
         </div>
       )}
-      {error && (
-        <p role="alert" className="border border-danger px-3 py-2 text-sm text-danger">
-          {error}
-        </p>
-      )}
+      {avisoError}
     </>
   );
+
+  // Las tarjetas de cada grupo, ya filtradas por la búsqueda. Un grupo vacío no se pinta.
+  const tarjetasDe = (grupo: GrupoEstadoId): ReactNode[] => {
+    const delCatalogo = delPanel
+      .filter((x) => x.grupo === grupo && coincide(x.estado.label))
+      .map((x) => (
+        <Tarjeta
+          key={x.estado.id}
+          titulo={x.estado.label}
+          texto={x.estado.resumen}
+          elegida={x.estado.id === estadoId}
+          onClick={() => elegirEstado(x.estado)}
+          inmunes={inmunesA(x.estado.id)}
+        />
+      ));
+    if (grupo !== "personalizado") return delCatalogo;
+    return [
+      ...(coincide("Personalizado") || coincide("Nuevo personalizado")
+        ? [
+            <Tarjeta
+              key={NUEVO_PERSONALIZADO}
+              titulo="Personalizado"
+              texto={TEXTO_NUEVO_PERSONALIZADO}
+              elegida={nuevoElegido}
+              onClick={elegirNuevoPersonalizado}
+              nuevo
+            />,
+          ]
+        : []),
+      ...personalizadosPuestos
+        .filter((e) => coincide(e.nombre))
+        .map((e) => (
+          <Tarjeta
+            key={e.estadoId}
+            titulo={e.nombre}
+            texto={`${e.valorTexto ?? ""} · puesto a ${listaLegible(
+              objetivos.filter((o) => o.estados.some((x) => x.estadoId === e.estadoId)).map((o) => nombreCorto(o.nombre)),
+            )}`}
+            elegida={e.estadoId === estadoId}
+            onClick={() => elegirPuesto(e)}
+          />
+        )),
+    ];
+  };
+  const grupos = GRUPOS_ESTADO.map((g) => ({ ...g, tarjetas: tarjetasDe(g.id) })).filter((g) => g.tarjetas.length > 0);
+  const alternarGrupo = (id: GrupoEstadoId) =>
+    setAbiertos((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
 
   return (
     <div className="grid gap-4">
@@ -250,25 +477,38 @@ export function PanelEstados({
         />
       </label>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(150px,1fr))]">
-        {lista.map((e) => (
-          <button
-            key={e.id}
-            type="button"
-            aria-pressed={e.id === estadoId}
-            onClick={() => elegirEstado(e)}
-            className={`grid min-h-20 content-start gap-1 border p-2.5 text-left transition ${
-              e.id === estadoId ? "border-accent bg-accent/5" : "border-border bg-surface hover:border-muted"
-            } ${FOCO}`}
-          >
-            <b className="font-display text-[0.98rem] leading-tight">{e.label}</b>
-            <span className="line-clamp-2 text-sm leading-snug text-muted">{e.resumen}</span>
-            {inmunesA(e.id).length > 0 && (
-              <span className="text-xs leading-snug text-info">Inmune: {listaLegible(inmunesA(e.id))}</span>
-            )}
-          </button>
-        ))}
-        {lista.length === 0 && <p className="col-span-full text-muted">Ningún estado se llama así.</p>}
+      <div className="grid gap-2">
+        {grupos.map((g) => {
+          // Con búsqueda, abiertos todos los que tienen resultados (los vacíos ya no están).
+          const abierto = !!q || abiertos.has(g.id);
+          const panelId = `grupo-estados-${g.id}`;
+          return (
+            <section key={g.id} className="grid gap-2">
+              <button
+                type="button"
+                aria-expanded={abierto}
+                aria-controls={panelId}
+                onClick={() => alternarGrupo(g.id)}
+                disabled={!!q}
+                className={`flex min-h-11 w-full items-center justify-between gap-3 border-b border-border px-1 text-left transition hover:border-muted disabled:cursor-default ${FOCO}`}
+              >
+                <span className="font-mono text-xs uppercase tracking-widest text-foreground">{g.label}</span>
+                <span className="flex items-center gap-2 font-mono text-xs text-muted">
+                  {g.tarjetas.length}
+                  <span aria-hidden="true" className={`inline-block transition ${abierto ? "rotate-90 text-accent" : ""}`}>
+                    ›
+                  </span>
+                </span>
+              </button>
+              {abierto && (
+                <div id={panelId} className="grid grid-cols-2 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(150px,1fr))]">
+                  {g.tarjetas}
+                </div>
+              )}
+            </section>
+          );
+        })}
+        {grupos.length === 0 && <p className="text-muted">Ningún estado se llama así.</p>}
       </div>
 
       {/* Escritorio (o `enLinea`): configuración debajo de la rejilla. */}
@@ -293,7 +533,7 @@ export function PanelEstados({
                   </Boton>
                 )}
                 {!soloQuitar && (
-                  <Boton variante="primario" onClick={aplicar} disabled={objetivos.length === 0 || pendiente}>
+                  <Boton variante="primario" onClick={aplicar} disabled={!puedeAplicar}>
                     {pendiente ? "Aplicando…" : textoAplicar}
                   </Boton>
                 )}
@@ -306,25 +546,20 @@ export function PanelEstados({
       </div>
 
       {/* Móvil: hoja inferior. */}
-      {hoja && estado && (
+      {hoja && titulo && configuracion && (
         <HojaInferior
-          titulo={estado.label}
+          titulo={titulo}
           onCerrar={() => setHoja(false)}
           className="lg:hidden"
           pie={
             <div className="grid gap-2">
               {conEste.length > 0 && (
                 <Boton variante="aviso" onClick={quitar} disabled={pendiente} className="w-full">
-                  Quitar {estado.label} a {listaLegible(conEste.map((o) => nombreCorto(o.nombre)))}
+                  Quitar {titulo} a {listaLegible(conEste.map((o) => nombreCorto(o.nombre)))}
                 </Boton>
               )}
               {!soloQuitar && (
-                <Boton
-                  variante="primario"
-                  onClick={aplicar}
-                  disabled={objetivos.length === 0 || pendiente}
-                  className="min-h-13 w-full text-lg"
-                >
+                <Boton variante="primario" onClick={aplicar} disabled={!puedeAplicar} className="min-h-13 w-full text-lg">
                   {objetivos.length === 0 ? "Elige a quién arriba" : pendiente ? "Aplicando…" : textoAplicar}
                 </Boton>
               )}
@@ -336,5 +571,44 @@ export function PanelEstados({
         </HojaInferior>
       )}
     </div>
+  );
+}
+
+function Tarjeta({
+  titulo,
+  texto,
+  elegida,
+  onClick,
+  inmunes = [],
+  nuevo = false,
+}: {
+  titulo: string;
+  texto: string;
+  elegida: boolean;
+  onClick: () => void;
+  inmunes?: string[];
+  // La de crear un personalizado: borde discontinuo, para que no se lea como un estado más.
+  nuevo?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={elegida}
+      onClick={onClick}
+      className={`grid min-h-20 content-start gap-1 border p-2.5 text-left transition ${nuevo ? "border-dashed" : ""} ${
+        elegida ? "border-accent bg-accent/5" : "border-border bg-surface hover:border-muted"
+      } ${FOCO}`}
+    >
+      <b className="font-display text-[0.98rem] leading-tight">
+        {nuevo && (
+          <span aria-hidden="true" className="text-accent">
+            +{" "}
+          </span>
+        )}
+        {titulo}
+      </b>
+      <span className="line-clamp-2 text-sm leading-snug text-muted">{texto}</span>
+      {inmunes.length > 0 && <span className="text-xs leading-snug text-info">Inmune: {listaLegible(inmunes)}</span>}
+    </button>
   );
 }

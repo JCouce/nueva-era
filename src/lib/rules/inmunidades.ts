@@ -59,7 +59,8 @@ export function operacionConInmunidad(
   if (op.tipo === "quitar") return { tipo: "aplicar", op };
   const limpio: EstadoActivo = { ...op.estado };
   delete limpio.forzado;
-  const inmunidad = sheet ? inmunidadContra(sheet, op.estado.estadoId, estados) : null;
+  // El personalizado no tiene inmunidad que valga (usuario, 2026-11-15).
+  const inmunidad = sheet && !op.estado.custom ? inmunidadContra(sheet, op.estado.estadoId, estados) : null;
   if (!inmunidad) return { tipo: "aplicar", op: { tipo: "poner", estado: limpio } };
   if (forzar) return { tipo: "aplicar", op: { tipo: "poner", estado: { ...limpio, forzado: true } } };
   return { tipo: "inmune", inmunidad };

@@ -91,6 +91,7 @@ export * from "./aprobacion";
 export * from "./prioridad";
 export * from "./estados";
 export * from "./estadosFicha";
+export * from "./estadoPersonalizado";
 export * from "./npc";
 export * from "./npcAleatorio";
 export * from "./blindaje";

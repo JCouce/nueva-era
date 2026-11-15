@@ -5,6 +5,7 @@
 import { estadoPorId } from "../catalog/estados";
 import { descontarDuracion, type EstadoActivo } from "./estados";
 import type { OperacionEstado } from "./vidaPorEstados";
+import { esIdPersonalizado, esIdPersonalizadoValido, GRADO_PERSONALIZADO, leerPersonalizado } from "./estadoPersonalizado";
 
 // Tope de cordura para una duración en rondas: más que esto es un dato roto.
 export const MAX_RONDAS_ESTADO = 999;
@@ -47,19 +48,24 @@ export const esEstadoLegado = (estadoId: string): boolean => Object.hasOwn(LEGAD
 // Nunca revienta: lo que no es una lista da []; una entrada sin ids, o con un estado o
 // grado que ya no existe en el catálogo, se descarta; una duración que no se entiende
 // queda como "hasta quitarlo" (que el máster lo vea y lo quite, mejor que perderlo). Un
-// estadoId repetido se queda con la última entrada, como al aplicarlo dos veces.
+// estadoId repetido se queda con la última entrada, como al aplicarlo dos veces. Un personalizado
+// («custom:…») vale solo con su id bien formado, el grado único y un `custom` legible
+// (leerPersonalizado); si no, se descarta como uno que ya no existe.
 export function leerEstados(json: unknown): EstadoActivo[] {
   if (!Array.isArray(json)) return [];
   const porId = new Map<string, EstadoActivo>();
   for (const e of json) {
     if (typeof e !== "object" || e === null) continue;
-    const { estadoId: idGuardado, gradoId: gradoGuardado, rondasRestantes, finDeEscena, forzado, cubre, valor, nota } = e as Record<
+    const { estadoId: idGuardado, gradoId: gradoGuardado, rondasRestantes, finDeEscena, forzado, cubre, valor, nota, custom } = e as Record<
       string,
       unknown
     >;
     if (typeof idGuardado !== "string" || typeof gradoGuardado !== "string") continue;
     const { estadoId, gradoId } = traducirLegado(idGuardado, gradoGuardado);
-    if (!estadoPorId(estadoId)?.grados.some((g) => g.id === gradoId)) continue;
+    const personalizado = esIdPersonalizado(estadoId) ? leerPersonalizado(custom) : null;
+    if (esIdPersonalizado(estadoId)) {
+      if (!personalizado || !esIdPersonalizadoValido(estadoId) || gradoId !== GRADO_PERSONALIZADO) continue;
+    } else if (!estadoPorId(estadoId)?.grados.some((g) => g.id === gradoId)) continue;
     const activo: EstadoActivo = rondasValidas(rondasRestantes)
       ? { estadoId, gradoId, rondasRestantes }
       : rondasRestantes == null && finDeEscena === true
@@ -73,6 +79,7 @@ export function leerEstados(json: unknown): EstadoActivo[] {
       ...(cubiertos && { cubre: cubiertos }),
       ...(valorValido(valor) && { valor }),
       ...(typeof nota === "string" && nota.length > 0 && { nota: nota.slice(0, MAX_NOTA_ESTADO) }),
+      ...(personalizado && { custom: personalizado }),
     });
   }
   return [...porId.values()];

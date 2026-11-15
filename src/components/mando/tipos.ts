@@ -1,6 +1,6 @@
 import type {
   CategoriaDanio,
-  DuracionEstado,
+  EstadoAAplicar,
   EstadoActivoDescrito,
   InmuneAlAplicar,
   Inmunidad,
@@ -29,7 +29,8 @@ export type ObjetivoMando = {
 // `inmunes` (A7, solo al aplicar un estado): a quién no se le puso por inmune.
 export type ResultadoMando = { ok: true; registroId: string | null; inmunes?: InmuneAlAplicar[] } | { ok: false; error: string };
 
-export type EstadoAAplicar = { estadoId: string; gradoId: string; duracion: DuracionEstado };
+// Del catálogo o «Personalizado» (rules/estadoPersonalizado.ts).
+export type { EstadoAAplicar } from "@/lib/rules";
 
 // Lo que hace el panel, inyectado por quien lo monta: la Mesa llama a las acciones de
 // personaje; el combate (E1d) podrá mandar a los NPC por su propio camino.

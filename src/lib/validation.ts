@@ -7,6 +7,7 @@ import { esEspecialidadDe } from "./catalog/especialidades";
 import { estadoPorId } from "./catalog/estados";
 import { MAX_RONDAS_ESTADO } from "./rules/estadosFicha";
 import { CATEGORIAS_DANIO } from "./rules/danio";
+import { MAX_LINEAS_PERSONALIZADO, MAX_NOMBRE_PERSONALIZADO, MAX_VALOR_PERSONALIZADO } from "./rules/estadoPersonalizado";
 
 // Login flexible para el grupo: acepta usuario simple (no hace falta email) y
 // contraseñas cortas. El campo se llama `email` porque mapea a User.email.
@@ -65,12 +66,47 @@ export const duracionEstadoSchema = z.discriminatedUnion("tipo", [
   z.object({ tipo: z.literal("hastaQuitarlo") }),
 ]);
 
-export const estadoAAplicarSchema = z
-  .object({ estadoId: idCatalogo, gradoId: idCatalogo, duracion: duracionEstadoSchema })
+const estadoDelCatalogoSchema = z
+  .strictObject({ estadoId: idCatalogo, gradoId: idCatalogo, duracion: duracionEstadoSchema })
   .refine((v) => estadoPorId(v.estadoId)?.grados.some((g) => g.id === v.gradoId) ?? false, {
     message: "Ese estado o grado no existe en el catálogo.",
     path: ["gradoId"],
   });
+
+// El «Personalizado» (rules/estadoPersonalizado.ts): nombre recortado y líneas «atributo básico o
+// habilidad ± N», N entero distinto de 0. El id no viene del cliente: lo pone activoAAplicar.
+const valorPersonalizadoSchema = z
+  .number()
+  .int("Tiene que ser un número entero.")
+  .min(-MAX_VALOR_PERSONALIZADO)
+  .max(MAX_VALOR_PERSONALIZADO)
+  .refine((n) => n !== 0, "El bono no puede ser 0.");
+
+const lineaPersonalizadoSchema = z.discriminatedUnion("tipo", [
+  z.strictObject({ tipo: z.literal("atributo"), id: atributoLibreSchema, valor: valorPersonalizadoSchema }),
+  z.strictObject({
+    tipo: z.literal("habilidad"),
+    id: z.enum(HABILIDADES.map((h) => h.id) as [HabilidadId, ...HabilidadId[]]),
+    valor: valorPersonalizadoSchema,
+  }),
+]);
+
+export const estadoPersonalizadoSchema = z.strictObject({
+  nombre: z
+    .string()
+    .max(200)
+    .transform((s) => s.trim().slice(0, MAX_NOMBRE_PERSONALIZADO).trim())
+    .refine((s) => s !== "", "Ponle un nombre al estado."),
+  modificadores: z
+    .array(lineaPersonalizadoSchema)
+    .min(1, "Añade al menos un bono.")
+    .max(MAX_LINEAS_PERSONALIZADO, `Como mucho ${MAX_LINEAS_PERSONALIZADO} bonos.`),
+});
+
+export const estadoAAplicarSchema = z.union([
+  estadoDelCatalogoSchema,
+  z.strictObject({ custom: estadoPersonalizadoSchema, duracion: duracionEstadoSchema }),
+]);
 
 // Por qué lo hace el máster (registro, E1b). Vacío = sin motivo.
 export const motivoSchema = z
